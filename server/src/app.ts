@@ -1,9 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import helmet from 'helmet'; // New: For security headers
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { Types } from 'mongoose';
 
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
@@ -13,12 +15,11 @@ import messageRoutes from './routes/messageRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/adminRoutes';
 
-import Message from './models/Message';
-import Conversation from './models/Conversation';
+import Message, { IMessage } from './models/Message';
+import Conversation, { IConversation } from './models/Conversation';
 import User from './models/User.model';
-// import Notification from './models/Notification'; // Not directly used here, but in notificationController
 import { createAndEmitNotification } from './controllers/notificationController';
-import errorHandler from './middleware/errorHandler'; // Import error handler
+import errorHandler from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -27,6 +28,9 @@ const httpServer = createServer(app);
 
 connectDB();
 
+// Security Middleware
+app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
+
 app.use(express.json({ limit: '50mb' }));
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
 
@@ -34,6 +38,7 @@ app.get('/', (req, res) => {
   res.send('PassitPal Backend API is running!');
 });
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/users', userRoutes);
@@ -41,6 +46,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
@@ -61,7 +67,7 @@ io.use(async (socket: Socket, next) => {
     if (!user) {
       return next(new Error('Authentication error: User not found'));
     }
-    if (user.isBlocked) { // Check if user is blocked on socket connection
+    if (user.isBlocked) {
       return next(new Error('Authentication error: Account blocked'));
     }
     socket.data.user = user;
@@ -76,7 +82,7 @@ io.on('connection', (socket: Socket) => {
   console.log(`Socket connected: ${socket.id} for user: ${user.email}`);
 
   connectedUsers.set(user._id.toString(), socket.id);
-  socket.join(user._id.toString());
+  socket.join(user._id.toString()); // Join a room named after the user's ID
 
   socket.on('sendMessage', async ({ conversationId, text, recipientId }) => {
     try {
@@ -85,9 +91,9 @@ io.on('connection', (socket: Socket) => {
         return;
       }
 
-      const conversation = await Conversation.findById(conversationId);
+      const conversation = await Conversation.findById(conversationId) as IConversation;
 
-      if (!conversation || !conversation.participants.includes(user._id)) {
+      if (!conversation || !conversation.participants.some(p => p.equals(user._id))) {
         console.error('User not authorized for this conversation.');
         return;
       }
@@ -97,11 +103,11 @@ io.on('connection', (socket: Socket) => {
         sender: user._id,
         text,
         readBy: [user._id]
-      });
+      }) as IMessage;
 
       await newMessage.save();
 
-      conversation.lastMessage = newMessage._id; // _id is now correctly typed
+      conversation.lastMessage = newMessage._id as Types.ObjectId;
       conversation.updatedAt = new Date();
       await conversation.save();
 
@@ -144,5 +150,10 @@ httpServer.listen(PORT, () => {
   console.log(`Socket.IO listening on port ${PORT}`);
 });
 
-// Error handling middleware (MUST be the last middleware)
+// New: 404 Not Found Middleware - MUST be placed AFTER all routes
+app.use((req, res, next) => {
+  res.status(404).json({ message: `Not Found - ${req.originalUrl}` });
+});
+
+// Global Error Handler Middleware - MUST be placed LAST
 app.use(errorHandler);

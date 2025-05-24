@@ -104,7 +104,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
 
     // Mark messages as read by the current user
     await Message.updateMany(
-      { conversation: conversationId, _id: { $nin: conversation.readBy } }, // Only unread messages
+      { conversation: conversationId, readBy: { $ne: req.user._id } }, // Only unread messages for this user
       { $addToSet: { readBy: req.user._id } } // Add user to readBy array
     );
 

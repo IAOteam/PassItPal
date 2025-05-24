@@ -1,64 +1,48 @@
-import mongoose, { Schema, Document, Types } from 'mongoose'; // Import Types
-import bcrypt from 'bcryptjs';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IUser extends Document {
-  _id: Types.ObjectId; // Explicitly type _id
-  username?: string;
+  _id: Types.ObjectId;
   email: string;
-  password?: string;
-  mobileNumber?: string; // Optional for buyers, mandatory for sellers
+  password?: string; // Optional because external login might not have a password
+  username?: string; // Buyer-specific
+  mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
-  location?: {
-    city: string;
-    latitude?: number;
-    longitude?: number;
-  };
-  profilePictureUrl?: string;
-  isEmailVerified: boolean;
+  city: string;
+  latitude: number;
+  longitude: number;
   isMobileVerified: boolean;
-  isBlocked: boolean; // Added isBlocked field
-  registrationDate: Date;
-  comparePassword: (candidatePassword: string) => Promise<boolean>;
+  isEmailVerified: boolean; // New: Track email verification
+  isBlocked: boolean;
+  otp?: string;
+  otpExpiry?: Date;
+  otpVerifiedAt?: Date; // New: Timestamp for when an OTP was last successfully verified (mobile or email)
+  profilePictureUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema: Schema = new Schema({
-  username: { type: String, unique: true, sparse: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: function(this: IUser) { return this.role !== 'admin'; } }, // Explicit `this` type
-  mobileNumber: {
-    type: String,
-    unique: true,
-    sparse: true,
-    required: function(this: IUser): boolean { return this.role === 'seller'; } // Explicit `this` type and return boolean
-  },
+  password: { type: String, select: false }, // Don't return password by default
+  username: { type: String },
+  mobileNumber: { type: String, unique: true, sparse: true }, // sparse allows multiple nulls
   role: { type: String, enum: ['buyer', 'seller', 'admin'], default: 'buyer' },
-  location: {
-    city: { type: String },
-    latitude: { type: Number },
-    longitude: { type: Number }
-  },
-  profilePictureUrl: { type: String },
-  isEmailVerified: { type: Boolean, default: false },
+  city: { type: String, required: true },
+  latitude: { type: Number, required: true },
+  longitude: { type: Number, required: true },
   isMobileVerified: { type: Boolean, default: false },
-  isBlocked: { type: Boolean, default: false }, // Added to schema
-  registrationDate: { type: Date, default: Date.now }
+  isEmailVerified: { type: Boolean, default: false }, // New field
+  isBlocked: { type: Boolean, default: false },
+  otp: { type: String },
+  otpExpiry: { type: Date },
+  otpVerifiedAt: { type: Date }, // New field
+  profilePictureUrl: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-UserSchema.pre<IUser>('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  if (this.password) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  }
-  next();
-});
-
-UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  if (!this.password) return false;
-  return bcrypt.compare(candidatePassword, this.password);
-};
+// GeoJSON Point Schema for location based queries
+UserSchema.index({ location: '2dsphere' });
 
 const User = mongoose.model<IUser>('User', UserSchema);
 export default User;

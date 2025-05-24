@@ -2,7 +2,9 @@ import { Request, Response } from 'express';
 import Listing, { IListing } from '../models/Listing.model';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
-import { createAndEmitNotification } from './notificationController'; // Import notification helper
+import { createAndEmitNotification } from './notificationController';
+import { Types } from 'mongoose';
+import { geocodeAddress } from '../utils/geocodingService'; // New: Import geocoding service
 
 dotenv.config();
 
@@ -22,9 +24,7 @@ export const createListing = async (req: Request, res: Response) => {
     askingPrice,
     originalPrice,
     availableCredits,
-    city,
-    latitude,
-    longitude,
+    locationName, // New: Taking locationName instead of city, latitude, longitude directly
     adImageBase64
   } = req.body;
 
@@ -36,6 +36,13 @@ export const createListing = async (req: Request, res: Response) => {
     if (!req.user.isMobileVerified) {
       return res.status(403).json({ message: 'Seller mobile number must be verified to create listings.' });
     }
+
+    // New: Geocode locationName
+    const geocodeResult = await geocodeAddress(locationName);
+    if (!geocodeResult) {
+      return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
+    }
+    const { latitude, longitude, formattedAddress } = geocodeResult;
 
     let adImageUrl: string | undefined;
 
@@ -54,21 +61,20 @@ export const createListing = async (req: Request, res: Response) => {
       askingPrice,
       originalPrice,
       availableCredits,
-      city,
+      city: formattedAddress, // Use the formatted address from geocoding
       latitude,
       longitude,
       adImageUrl
     });
 
-    const listing = await newListing.save();
+    const listing = await newListing.save() as IListing;
 
-    // Notify the seller that their listing was created successfully
-    if (req.user) { // Added check for req.user
+    if (req.user) {
       await createAndEmitNotification(
         req.user._id.toString(),
         'listing_update',
         `Your listing "${listing.cultPassType}" was created successfully.`,
-        `/listing/${listing._id.toString()}` // Ensure _id is string
+        `/listing/${listing._id.toString()}`
       );
     }
 
@@ -80,34 +86,51 @@ export const createListing = async (req: Request, res: Response) => {
 };
 
 // @route   GET /api/listings
-// @desc    Get all active Cult Fit pass listings (optionally by location)
+// @desc    Get all active Cult Fit pass listings (optionally by location or name)
 // @access  Public
 export const getListings = async (req: Request, res: Response) => {
-  const { city, latitude, longitude, radiusKm } = req.query;
+  const { locationName, latitude, longitude, radiusKm } = req.query; // locationName is new
 
   try {
     let query: any = { isAvailable: true };
+    let searchLat: number | undefined;
+    let searchLon: number | undefined;
 
-    if (city && typeof city === 'string') {
-      query.city = new RegExp(city, 'i');
+    // New: If locationName is provided, geocode it
+    if (locationName && typeof locationName === 'string') {
+      const geocodeResult = await geocodeAddress(locationName);
+      if (geocodeResult) {
+        searchLat = geocodeResult.latitude;
+        searchLon = geocodeResult.longitude;
+        // Optionally, if you want to filter by city name directly, you can add:
+        // query.city = new RegExp(geocodeResult.formattedAddress.split(',')[0].trim(), 'i');
+      } else {
+        // If locationName couldn't be geocoded, we might proceed without location filter
+        // or return an error depending on desired behavior. For now, just warn.
+        console.warn(`Could not geocode locationName: ${locationName}`);
+      }
+    } else if (latitude && longitude) {
+      // Fallback to direct lat/lon if provided (e.g., from browser location)
+      searchLat = parseFloat(latitude as string);
+      searchLon = parseFloat(longitude as string);
     }
 
-    if (latitude && longitude && radiusKm) {
-      const lat = parseFloat(latitude as string);
-      const lon = parseFloat(longitude as string);
+    if (searchLat !== undefined && searchLon !== undefined && radiusKm) {
       const radius = parseFloat(radiusKm as string);
 
-      if (!isNaN(lat) && !isNaN(lon) && !isNaN(radius)) {
+      if (!isNaN(searchLat) && !isNaN(searchLon) && !isNaN(radius) && radius > 0) {
+        // Note: For a 2dsphere index, coordinates are [longitude, latitude]
         query.location = {
           $geoWithin: {
-            $centerSphere: [[lon, lat], radius / 6378.1]
+            $centerSphere: [[searchLon, searchLat], radius / 6378.1] // Earth's radius in km
           }
         };
+        // If using location search, remove city filter unless specifically needed
         delete query.city;
       }
     }
 
-    const listings = await Listing.find(query).populate('seller', 'username email mobileNumber role location');
+    const listings = await Listing.find(query).populate('seller', 'username email mobileNumber role profilePictureUrl city');
     res.json(listings);
   } catch (error: any) {
     console.error('Error fetching listings:', error.message);
@@ -118,9 +141,9 @@ export const getListings = async (req: Request, res: Response) => {
 // @route   GET /api/listings/:id
 // @desc    Get a single Cult Fit pass listing by ID
 // @access  Public
-export const getListingById = async (req: Request, res: Response) => { // Exported correctly
+export const getListingById = async (req: Request, res: Response) => {
   try {
-    const listing = await Listing.findById(req.params.id).populate('seller', 'username email mobileNumber role location');
+    const listing = await Listing.findById(req.params.id).populate('seller', 'username email mobileNumber role city profilePictureUrl') as IListing;
 
     if (!listing) {
       return res.status(404).json({ message: 'Listing not found.' });
@@ -147,14 +170,14 @@ export const updateListing = async (req: Request, res: Response) => {
     askingPrice,
     originalPrice,
     availableCredits,
-    city,
-    latitude,
-    longitude,
-    adImageBase64
+    locationName, // New: Allow updating via locationName
+    adImageBase64,
+    isAvailable, // Allow seller to mark as sold/available
+    isPromoted // Admin-only, but useful to keep in sync for clarity (controller logic will restrict)
   } = req.body;
 
   try {
-    let listing = await Listing.findById(id);
+    let listing = await Listing.findById(id) as IListing;
 
     if (!listing) {
       return res.status(404).json({ message: 'Listing not found.' });
@@ -179,19 +202,41 @@ export const updateListing = async (req: Request, res: Response) => {
       askingPrice,
       originalPrice,
       availableCredits,
-      city,
-      latitude,
-      longitude,
       adImageUrl: newAdImageUrl,
+      isAvailable, // Allow seller to update availability
       updatedAt: new Date()
     };
 
-    Object.keys(updatedFields).forEach(key => updatedFields[key as keyof IListing] === undefined && delete updatedFields[key as keyof IListing]);
+    // Handle locationName update
+    if (locationName) {
+      const geocodeResult = await geocodeAddress(locationName);
+      if (geocodeResult) {
+        updatedFields.latitude = geocodeResult.latitude;
+        updatedFields.longitude = geocodeResult.longitude;
+        updatedFields.city = geocodeResult.formattedAddress;
+      } else {
+        return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
+      }
+    }
+
+    // Only allow admin to update isPromoted directly
+    if (req.user.role === 'admin' && typeof isPromoted === 'boolean') {
+      updatedFields.isPromoted = isPromoted;
+    }
 
 
-    listing = await Listing.findByIdAndUpdate(id, { $set: updatedFields }, { new: true });
+    Object.keys(updatedFields).forEach(key => {
+      // Ensure we don't set undefined values for fields that are not optional
+      // Also, explicitly check for undefined to avoid removing valid false/0 values
+      if (updatedFields[key as keyof IListing] === undefined) {
+          delete updatedFields[key as keyof IListing];
+      }
+    });
 
-    if (listing && req.user) { // Added check for req.user
+
+    listing = await Listing.findByIdAndUpdate(id, { $set: updatedFields }, { new: true }) as IListing;
+
+    if (listing && req.user) {
       await createAndEmitNotification(
         req.user._id.toString(),
         'listing_update',
@@ -215,7 +260,7 @@ export const updateListing = async (req: Request, res: Response) => {
 // @access  Private (Seller only)
 export const deleteListing = async (req: Request, res: Response) => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id) as IListing;
 
     if (!listing) {
       return res.status(404).json({ message: 'Listing not found.' });
@@ -227,7 +272,7 @@ export const deleteListing = async (req: Request, res: Response) => {
 
     await Listing.deleteOne({ _id: req.params.id });
 
-    if (req.user) { // Added check for req.user
+    if (req.user) {
       await createAndEmitNotification(
         req.user._id.toString(),
         'listing_update',

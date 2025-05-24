@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { registerUser, loginUser, requestOtp, verifyOtp, resendOtp, deleteOtp } from '../controllers/authController';
-import { body } from 'express-validator'; // Import body for validation
-import { validate } from '../middleware/validationMiddleware'; // Import validation middleware
+import { body, param } from 'express-validator'; // param is not strictly needed here but keeping if future routes use it
+import { validate } from '../middleware/validationMiddleware';
+import { registerUser, loginUser, requestOtp, verifyOtpController, resendOtp, deleteOtp } from '../controllers/authController'; // Renamed verifyOtp to verifyOtpController to avoid conflict
 
 const router = Router();
 
@@ -26,12 +26,14 @@ router.post(
       .if(body('role').equals('buyer')).notEmpty().withMessage('Buyer must provide a username.'),
     body('city')
       .notEmpty().withMessage('City is required.'),
+    // Latitude and Longitude are now optional for registration as they will be derived from city if needed
+    // The client will ideally send these, but the backend can also derive from city
     body('latitude')
-      .isFloat().withMessage('Latitude must be a valid number.'),
+      .optional().isFloat().withMessage('Latitude must be a valid number.'),
     body('longitude')
-      .isFloat().withMessage('Longitude must be a valid number.'),
+      .optional().isFloat().withMessage('Longitude must be a valid number.'),
   ],
-  validate, // Apply validation middleware
+  validate,
   registerUser
 );
 
@@ -42,18 +44,16 @@ router.post(
     body('email').isEmail().withMessage('Please enter a valid email address.'),
     body('password').notEmpty().withMessage('Password is required.')
   ],
-  validate, // Apply validation middleware
+  validate,
   loginUser
 );
 
-// Request OTP (for mobile number verification)
+// Request OTP (for email or mobile number verification)
 router.post(
   '/request-otp',
   [
-    body('mobileNumber')
-      .isMobilePhone('any').withMessage('Please enter a valid mobile number.'),
-    body('email')
-      .isEmail().withMessage('Please enter a valid email address.'),
+    body('email').isEmail().withMessage('Please enter a valid email address.'),
+    body('type').isIn(['email', 'mobile']).withMessage('OTP type must be "email" or "mobile".'),
   ],
   validate,
   requestOtp
@@ -63,11 +63,12 @@ router.post(
 router.post(
   '/verify-otp',
   [
-    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits long.'),
     body('email').isEmail().withMessage('Please enter a valid email address.'),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits long.'),
+    body('type').isIn(['email', 'mobile']).withMessage('OTP type must be "email" or "mobile".'),
   ],
   validate,
-  verifyOtp
+  verifyOtpController // Use the renamed controller function
 );
 
 // Resend OTP
@@ -75,6 +76,7 @@ router.post(
   '/resend-otp',
   [
     body('email').isEmail().withMessage('Please enter a valid email address.'),
+    body('type').isIn(['email', 'mobile']).withMessage('OTP type must be "email" or "mobile".'),
   ],
   validate,
   resendOtp
@@ -89,6 +91,5 @@ router.delete(
   validate,
   deleteOtp
 );
-
 
 export default router;

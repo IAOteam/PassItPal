@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { body, param, query } from 'express-validator';
+import { validate } from '../middleware/validationMiddleware';
+import { protect, authorizeRoles } from '../middleware/authMiddleware';
 import {
   createListing,
   getListings,
@@ -6,9 +9,6 @@ import {
   updateListing,
   deleteListing
 } from '../controllers/listingController';
-import { protect, authorizeRoles } from '../middleware/authMiddleware';
-import { body, param, query } from 'express-validator'; // Import validation functions
-import { validate } from '../middleware/validationMiddleware';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ const router = Router();
 router.get(
   '/',
   [
-    query('city').optional().isString().trim().escape().withMessage('City must be a string.'),
+    query('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Search by location name
     query('latitude').optional().isFloat().withMessage('Latitude must be a number.'),
     query('longitude').optional().isFloat().withMessage('Longitude must be a number.'),
     query('radiusKm').optional().isFloat({ min: 0.1 }).withMessage('Radius must be a positive number.')
@@ -44,9 +44,7 @@ router.post(
     body('askingPrice').isFloat({ min: 0 }).withMessage('Asking price must be a positive number.'),
     body('originalPrice').isFloat({ min: 0 }).withMessage('Original price must be a positive number.'),
     body('availableCredits').optional().isString().trim().escape(),
-    body('city').notEmpty().withMessage('City is required.'),
-    body('latitude').isFloat().withMessage('Latitude must be a valid number.'),
-    body('longitude').isFloat().withMessage('Longitude must be a valid number.'),
+    body('locationName').notEmpty().isString().trim().escape().withMessage('Location name is required.'), // New: Required location name
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.')
   ],
   validate,
@@ -63,10 +61,9 @@ router.put(
     body('askingPrice').optional().isFloat({ min: 0 }).withMessage('Asking price must be a positive number.'),
     body('originalPrice').optional().isFloat({ min: 0 }).withMessage('Original price must be a positive number.'),
     body('availableCredits').optional().isString().trim().escape(),
-    body('city').optional().notEmpty().withMessage('City cannot be empty.'),
-    body('latitude').optional().isFloat().withMessage('Latitude must be a valid number.'),
-    body('longitude').optional().isFloat().withMessage('Longitude must be a valid number.'),
-    body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.')
+    body('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Optional location name
+    body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.'),
+    body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean.') // Allow seller to update availability
   ],
   validate,
   updateListing

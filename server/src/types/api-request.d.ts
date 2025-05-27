@@ -1,4 +1,5 @@
-import { IUser } from '../models/User.model'; // Adjust path if necessary
+import { Request } from 'express';
+import { IUser } from '../models/User'; // Adjust path if necessary
 
 declare global {
   namespace Express {

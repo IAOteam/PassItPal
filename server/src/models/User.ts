@@ -7,9 +7,11 @@ export interface IUser extends Document {
   username?: string; // Buyer-specific
   mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
-  city: string;
-  latitude: number;
-  longitude: number;
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+    city: string;
+  };
   isMobileVerified: boolean;
   isEmailVerified: boolean; // New: Track email verification
   isBlocked: boolean;
@@ -27,9 +29,20 @@ const UserSchema: Schema = new Schema({
   username: { type: String },
   mobileNumber: { type: String, unique: true, sparse: true }, // sparse allows multiple nulls
   role: { type: String, enum: ['buyer', 'seller', 'admin'], default: 'buyer' },
-  city: { type: String, required: true },
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
+  location: {
+        type: {
+          type: String,
+          enum: ['Point'],
+          required: true,
+          default: 'Point'
+  },
+  coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+  },
+        city: { type: String, required: true }
+  },
+  
   isMobileVerified: { type: Boolean, default: false },
   isEmailVerified: { type: Boolean, default: false }, // New field
   isBlocked: { type: Boolean, default: false },

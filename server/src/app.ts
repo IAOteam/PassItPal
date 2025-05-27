@@ -1,4 +1,4 @@
-import express from 'express';
+import express,{ Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet'; // New: For security headers
@@ -17,7 +17,7 @@ import adminRoutes from './routes/adminRoutes';
 
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
-import User from './models/User.model';
+import User from './models/User';
 import { createAndEmitNotification } from './controllers/notificationController';
 import errorHandler from './middleware/errorHandler';
 
@@ -34,7 +34,7 @@ app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
 app.use(express.json({ limit: '50mb' }));
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('PassitPal Backend API is running!');
 });
 
@@ -143,7 +143,7 @@ io.on('connection', (socket: Socket) => {
 });
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -151,7 +151,7 @@ httpServer.listen(PORT, () => {
 });
 
 // New: 404 Not Found Middleware - MUST be placed AFTER all routes
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({ message: `Not Found - ${req.originalUrl}` });
 });
 

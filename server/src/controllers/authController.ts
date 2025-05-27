@@ -1,27 +1,40 @@
-import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import User from '../models/User.model';
-import { generateToken } from '../utils/jwt';
-import { sendOtp, verifyOtp } from '../utils/otp';
-import { EMAIL_VERIFICATION_SUBJECT } from '../config/constants';
-import { sendEmail } from '../utils/emailService';
+import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import User from "../models/User";
+import { generateToken } from "../utils/jwt";
+import { sendOtp, verifyOtp } from "../utils/otp";
+import { EMAIL_VERIFICATION_SUBJECT } from "../config/constants";
+import { sendEmail } from "../utils/emailService";
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
 export const registerUser = async (req: Request, res: Response) => {
-  const { email, password, username, mobileNumber, role, city, latitude, longitude } = req.body;
+  const {
+    email,
+    password,
+    username,
+    mobileNumber,
+    role,
+    city,
+    latitude,
+    longitude,
+  } = req.body;
 
   try {
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ message: 'User with this email already exists.' });
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists." });
     }
-
-    if (role === 'seller' && mobileNumber) {
+    
+    if (role === "seller" && mobileNumber ) {
       const existingMobileUser = await User.findOne({ mobileNumber });
       if (existingMobileUser) {
-        return res.status(400).json({ message: 'User with this mobile number already exists.' });
+        return res
+          .status(400)
+          .json({ message: "User with this mobile number already exists." });
       }
     }
 
@@ -31,35 +44,38 @@ export const registerUser = async (req: Request, res: Response) => {
     user = new User({
       email,
       password: hashedPassword,
-      username: role === 'buyer' ? username : undefined,
-      mobileNumber: role === 'seller' ? mobileNumber : undefined,
+      username: role === "buyer" ? username : undefined,
+      mobileNumber: role === "seller" ? mobileNumber : undefined,
       role,
-      city,
-      latitude,
-      longitude,
+      location: {
+        type: "Point",
+        coordinates: [longitude, latitude], // [longitude, latitude]
+        city,
+      },
       isMobileVerified: false, // Default to false
-      isEmailVerified: false,  // New: Default to false on registration
+      isEmailVerified: false, // New: Default to false on registration
       isBlocked: false,
     });
 
     await user.save();
 
     // After successful registration, send email verification OTP
-    await sendOtp(user.email, user.mobileNumber, 'email');
+    await sendOtp(user.email, user.mobileNumber, "email");
 
     res.status(201).json({
-      message: 'User registered successfully. Please check your email for a verification OTP.',
+      message:
+        "User registered successfully. Please check your email for a verification OTP.",
       user: {
         _id: user._id,
         email: user.email,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isMobileVerified: user.isMobileVerified,
-      }
+      },
     });
   } catch (error: any) {
-    console.error('Error during user registration:', error.message);
-    res.status(500).json({ message: 'Server error: Could not register user.' });
+    console.error("Error during user registration:", error.message);
+    res.status(500).json({ message: "Server error: Could not register user." });
   }
 };
 
@@ -70,25 +86,29 @@ export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials.' });
+      return res.status(400).json({ message: "Invalid credentials." });
     }
 
     if (user.isBlocked) {
-      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+      return res
+        .status(403)
+        .json({
+          message: "Your account has been blocked. Please contact support.",
+        });
     }
 
     const isMatch = await bcrypt.compare(password, user.password as string);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials.' });
+      return res.status(400).json({ message: "Invalid credentials." });
     }
 
-    const token = generateToken(user._id.toString(),user.role);
+    const token = generateToken(user._id.toString(), user.role);
 
     res.json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: {
         _id: user._id,
@@ -96,17 +116,17 @@ export const loginUser = async (req: Request, res: Response) => {
         username: user.username,
         mobileNumber: user.mobileNumber,
         role: user.role,
-        city: user.city,
-        latitude: user.latitude,
-        longitude: user.longitude,
+        city: user.location?.city,
+        latitude: user.location?.coordinates?.[1],
+        longitude: user.location?.coordinates?.[0],
         isMobileVerified: user.isMobileVerified,
         isEmailVerified: user.isEmailVerified,
         profilePictureUrl: user.profilePictureUrl,
       },
     });
   } catch (error: any) {
-    console.error('Error during user login:', error.message);
-    res.status(500).json({ message: 'Server error: Could not log in user.' });
+    console.error("Error during user login:", error.message);
+    res.status(500).json({ message: "Server error: Could not log in user." });
   }
 };
 
@@ -119,25 +139,35 @@ export const requestOtp = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: "User not found." });
     }
 
-    if (type === 'email' && user.isEmailVerified) {
-      return res.status(400).json({ message: 'Email is already verified.' });
+    if (type === "email" && user.isEmailVerified) {
+      return res.status(400).json({ message: "Email is already verified." });
     }
-    if (type === 'mobile' && user.isMobileVerified) {
-      return res.status(400).json({ message: 'Mobile number is already verified.' });
+    if (type === "mobile" && user.isMobileVerified) {
+      return res
+        .status(400)
+        .json({ message: "Mobile number is already verified." });
     }
-    if (type === 'mobile' && !user.mobileNumber) {
-        return res.status(400).json({ message: 'Mobile number not provided for this user.' });
+    if (type === "mobile" && !user.mobileNumber) {
+      return res
+        .status(400)
+        .json({ message: "Mobile number not provided for this user." });
     }
 
     await sendOtp(user.email, user.mobileNumber, type);
 
-    res.status(200).json({ message: `OTP sent to your ${type === 'email' ? 'email address' : 'mobile number'}.` });
+    res
+      .status(200)
+      .json({
+        message: `OTP sent to your ${
+          type === "email" ? "email address" : "mobile number"
+        }.`,
+      });
   } catch (error: any) {
-    console.error('Error requesting OTP:', error.message);
-    res.status(500).json({ message: 'Server error: Could not request OTP.' });
+    console.error("Error requesting OTP:", error.message);
+    res.status(500).json({ message: "Server error: Could not request OTP." });
   }
 };
 
@@ -151,13 +181,19 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     const isValid = await verifyOtp(email, otp, type);
 
     if (!isValid) {
-      return res.status(400).json({ message: 'Invalid or expired OTP.' });
+      return res.status(400).json({ message: "Invalid or expired OTP." });
     }
 
-    res.status(200).json({ message: `${type === 'email' ? 'Email' : 'Mobile number'} verified successfully!` });
+    res
+      .status(200)
+      .json({
+        message: `${
+          type === "email" ? "Email" : "Mobile number"
+        } verified successfully!`,
+      });
   } catch (error: any) {
-    console.error('Error verifying OTP:', error.message);
-    res.status(500).json({ message: 'Server error: Could not verify OTP.' });
+    console.error("Error verifying OTP:", error.message);
+    res.status(500).json({ message: "Server error: Could not verify OTP." });
   }
 };
 
@@ -170,26 +206,35 @@ export const resendOtp = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: "User not found." });
     }
 
-    if (type === 'email' && user.isEmailVerified) {
-      return res.status(400).json({ message: 'Email is already verified.' });
+    if (type === "email" && user.isEmailVerified) {
+      return res.status(400).json({ message: "Email is already verified." });
     }
-    if (type === 'mobile' && user.isMobileVerified) {
-      return res.status(400).json({ message: 'Mobile number is already verified.' });
+    if (type === "mobile" && user.isMobileVerified) {
+      return res
+        .status(400)
+        .json({ message: "Mobile number is already verified." });
     }
-    if (type === 'mobile' && !user.mobileNumber) {
-      return res.status(400).json({ message: 'Mobile number not provided for this user.' });
-  }
-
+    if (type === "mobile" && !user.mobileNumber) {
+      return res
+        .status(400)
+        .json({ message: "Mobile number not provided for this user." });
+    }
 
     await sendOtp(user.email, user.mobileNumber, type);
 
-    res.status(200).json({ message: `New OTP sent to your ${type === 'email' ? 'email address' : 'mobile number'}.` });
+    res
+      .status(200)
+      .json({
+        message: `New OTP sent to your ${
+          type === "email" ? "email address" : "mobile number"
+        }.`,
+      });
   } catch (error: any) {
-    console.error('Error resending OTP:', error.message);
-    res.status(500).json({ message: 'Server error: Could not resend OTP.' });
+    console.error("Error resending OTP:", error.message);
+    res.status(500).json({ message: "Server error: Could not resend OTP." });
   }
 };
 
@@ -202,16 +247,16 @@ export const deleteOtp = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: "User not found." });
     }
 
     user.otp = undefined;
     user.otpExpiry = undefined;
     await user.save();
 
-    res.status(200).json({ message: 'OTP deleted successfully.' });
+    res.status(200).json({ message: "OTP deleted successfully." });
   } catch (error: any) {
-    console.error('Error deleting OTP:', error.message);
-    res.status(500).json({ message: 'Server error: Could not delete OTP.' });
+    console.error("Error deleting OTP:", error.message);
+    res.status(500).json({ message: "Server error: Could not delete OTP." });
   }
 };

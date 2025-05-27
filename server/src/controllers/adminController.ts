@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import User from '../models/User.model';
-import Listing from '../models/Listing.model';
+import User from '../models/User';
+import Listing from '../models/Listing';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import Notification from '../models/Notification'; // This import is used by createAndEmitNotification

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import User, { IUser } from '../models/User.model';
+import User, { IUser } from '../models/User';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 
@@ -99,7 +99,11 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     }
 
     if (city !== undefined && latitude !== undefined && longitude !== undefined) {
-      user.location = { city, latitude, longitude };
+      user.location = { 
+        type: 'Point', 
+        coordinates: [longitude, latitude], 
+        city 
+      };
     } else if (city !== undefined) {
         user.location = { ...user.location, city: city || undefined };
     }

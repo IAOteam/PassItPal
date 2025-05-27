@@ -1,6 +1,21 @@
-import User from '../models/User.model';
+import User from '../models/User';
 import { OTP_EXPIRY_MINUTES } from '../config/constants';
-import { sendEmail } from './emailService'; // Will be created next
+import { sendEmail } from './emailService'; 
+import dotenv from 'dotenv';
+import twilio from 'twilio';
+dotenv.config(); 
+
+// Initialize Twilio client
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER; // Twilio sending number
+
+if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+  console.error("Twilio credentials are not fully set in environment variables!");
+  //  throw an error or handle this more better in production : Remember to do idiot
+}
+
+const twilioClient = twilio(twilioAccountSid, twilioAuthToken);
 
 /**
  * Generates a 6-digit OTP.
@@ -41,9 +56,18 @@ export const sendOtp = async (email: string, mobileNumber: string | undefined, t
     if (!mobileNumber) {
       throw new Error('Mobile number not provided for mobile OTP.');
     }
-    // TODO: Integrate with an SMS gateway like Twilio here
-    // Example: await twilioService.sendSms(mobileNumber, `Your PassItPal OTP is: ${otp}`);
-    console.log(`OTP ${otp} sent to ${mobileNumber} for mobile verification (SMS gateway placeholder).`);
+  try {
+        await twilioClient.messages.create({
+            body: `Your PassItPal OTP is: ${otp}`,
+            from: twilioPhoneNumber, // Twilio phone number
+            to: mobileNumber // Recipient's phone number
+        });
+      // Example: await twilioService.sendSms(mobileNumber, `Your PassItPal OTP is: ${otp}`);
+      console.log(`OTP ${otp} sent to ${mobileNumber} for mobile verification (SMS gateway placeholder).`);
+  } catch (twilioError: any) {
+        console.error(`Error sending SMS via Twilio to ${mobileNumber}:`, twilioError.message);
+        throw new Error(`Failed to send mobile OTP via Twilio: ${twilioError.message}`);
+    }
   }
 };
 

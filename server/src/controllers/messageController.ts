@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Conversation, { IConversation } from '../models/Conversation';
 import Message, { IMessage } from '../models/Message';
-import User from '../models/User.model'; // To populate sender/receiver details
+import User from '../models/User'; // To populate sender/receiver details
 
 // @route   POST /api/messages/conversations
 // @desc    Start or get a conversation between two users
@@ -115,5 +115,58 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid conversation ID.' });
     }
     res.status(500).send('Server error: Could not fetch messages.');
+  }
+};
+
+//@route   POST /api/messages/:conversationId
+// @desc    Send a new message within a conversation
+// @access  Private
+export const sendMessage = async (req: Request, res: Response) => {
+  const { conversationId } = req.params;
+  const { text } = req.body;
+  const senderId = req.user?._id; // Current logged-in user
+
+  if (!senderId) {
+    return res.status(401).json({ message: 'Not authorized: Sender ID missing.' });
+  }
+
+  try {
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found.' });
+    }
+
+    // Ensure the sender is a participant in this conversation
+    if (!conversation.participants.includes(senderId)) {
+      return res.status(403).json({ message: 'Not authorized to send messages in this conversation.' });
+    }
+
+    // Create a new message
+    const newMessage = new Message({
+      conversation: conversationId,
+      sender: senderId,
+      text: text,
+      readBy: [senderId] // Mark as read by the sender immediately
+    });
+
+    await newMessage.save();
+
+    // Update the last message in the conversation
+    conversation.lastMessage = newMessage._id;
+    conversation.updatedAt = new Date(); // Update conversation's timestamp
+    await conversation.save();
+
+    // Populate sender details for the response
+    const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username profilePictureUrl');
+
+
+    res.status(201).json({ message: 'Message sent successfully!', sentMessage: populatedMessage });
+  } catch (error: any) {
+    console.error('Error sending message:', error.message);
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ message: 'Invalid conversation ID or message ID.' });
+    }
+    res.status(500).send('Server error: Could not send message.');
   }
 };

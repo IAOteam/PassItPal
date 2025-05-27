@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Listing, { IListing } from '../models/Listing.model';
+import Listing, { IListing } from '../models/Listing';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { createAndEmitNotification } from './notificationController';

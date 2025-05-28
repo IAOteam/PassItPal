@@ -7,7 +7,8 @@ import {
   getListings,
   getListingById,
   updateListing,
-  deleteListing
+  deleteListing,
+  getMyListings
 } from '../controllers/listingController';
 
 const router = Router();
@@ -16,14 +17,30 @@ const router = Router();
 router.get(
   '/',
   [
-    query('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Search by location name
+    query('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // Search by location name
     query('latitude').optional().isFloat().withMessage('Latitude must be a number.'),
     query('longitude').optional().isFloat().withMessage('Longitude must be a number.'),
-    query('radiusKm').optional().isFloat({ min: 0.1 }).withMessage('Radius must be a positive number.')
+    query('radiusKm').optional().isFloat({ min: 0.1 }).withMessage('Radius must be a positive number.'),
+    query('cultPassType').optional().isString().trim().escape().withMessage('Cult Pass Type must be a string.'),
+    query('minPrice').optional().isFloat({ min: 0 }).withMessage('Min price must be a non-negative number.'),
+    query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Max price must be a non-negative number.'),
+    query('minCredits').optional().isInt({ min: 0 }).withMessage('Min credits must be a non-negative integer.'), // Assuming credits are integers
+    query('maxCredits').optional().isInt({ min: 0 }).withMessage('Max credits must be a non-negative integer.')  // Assuming credits are integers
   ],
   validate,
   getListings
 );
+
+// @route   GET /api/listings/my-listings
+// @desc    Get all listings created by the logged-in user
+// @access  Private (Seller only)
+router.get(
+  '/my-listings', // NEW route path
+  protect, // Ensure only logged-in users can access
+  authorizeRoles('seller'), // Only sellers can have listings to manage
+  getMyListings //  controller function
+);
+
 router.get(
   '/:id',
   [
@@ -43,8 +60,9 @@ router.post(
     body('expiryDate').isISO8601().toDate().withMessage('Valid expiry date is required (YYYY-MM-DD).'),
     body('askingPrice').isFloat({ min: 0 }).withMessage('Asking price must be a positive number.'),
     body('originalPrice').isFloat({ min: 0 }).withMessage('Original price must be a positive number.'),
-    body('availableCredits').optional().isString().trim().escape(),
-    body('locationName').notEmpty().isString().trim().escape().withMessage('Location name is required.'), // New: Required location name
+    // body('availableCredits').optional().isString().trim().escape(),
+    body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
+    body('locationName').notEmpty().isString().trim().escape().withMessage('Location name is required.'), //  Required location name
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.')
   ],
   validate,
@@ -60,7 +78,8 @@ router.put(
     body('expiryDate').optional().isISO8601().toDate().withMessage('Valid expiry date is required (YYYY-MM-DD).'),
     body('askingPrice').optional().isFloat({ min: 0 }).withMessage('Asking price must be a positive number.'),
     body('originalPrice').optional().isFloat({ min: 0 }).withMessage('Original price must be a positive number.'),
-    body('availableCredits').optional().isString().trim().escape(),
+    // body('availableCredits').optional().isString().trim().escape(),
+    body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
     body('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Optional location name
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.'),
     body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean.') // Allow seller to update availability

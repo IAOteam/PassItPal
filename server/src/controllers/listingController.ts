@@ -4,7 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { createAndEmitNotification } from './notificationController';
 import { Types } from 'mongoose';
-import { geocodeAddress } from '../utils/geocodingService'; // New: Import geocoding service
+import { geocodeAddress } from '../utils/geocodingService'; 
 
 dotenv.config();
 
@@ -23,8 +23,8 @@ export const createListing = async (req: Request, res: Response) => {
     expiryDate,
     askingPrice,
     originalPrice,
-    availableCredits,
-    locationName, // New: Taking locationName instead of city, latitude, longitude directly
+    availableCredits,// Note: Consider making this a Number type in  schema and here .
+    locationName, //  Taking locationName instead of city, latitude, longitude directly
     adImageBase64
   } = req.body;
 
@@ -37,7 +37,7 @@ export const createListing = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Seller mobile number must be verified to create listings.' });
     }
 
-    // New: Geocode locationName
+    // Geocode locationName
     const geocodeResult = await geocodeAddress(locationName);
     if (!geocodeResult) {
       return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
@@ -60,7 +60,7 @@ export const createListing = async (req: Request, res: Response) => {
       expiryDate: new Date(expiryDate),
       askingPrice,
       originalPrice,
-      availableCredits,
+      availableCredits:availableCredits ? parseFloat(availableCredits) : undefined, // Assuming it should be a number
       city: formattedAddress, // Use the formatted address from geocoding
       latitude,
       longitude,
@@ -89,20 +89,30 @@ export const createListing = async (req: Request, res: Response) => {
 // @desc    Get all active Cult Fit pass listings (optionally by location or name)
 // @access  Public
 export const getListings = async (req: Request, res: Response) => {
-  const { locationName, latitude, longitude, radiusKm } = req.query; // locationName is new
+  const { 
+    locationName, 
+    latitude, 
+    longitude, 
+    radiusKm ,
+    cultPassType,
+    minPrice,
+    maxPrice,
+    minCredits,
+    maxCredits
+  } = req.query; // locationName is new
 
   try {
     let query: any = { isAvailable: true };
     let searchLat: number | undefined;
     let searchLon: number | undefined;
 
-    // New: If locationName is provided, geocode it
+    // If locationName is provided, geocode it
     if (locationName && typeof locationName === 'string') {
       const geocodeResult = await geocodeAddress(locationName);
       if (geocodeResult) {
         searchLat = geocodeResult.latitude;
         searchLon = geocodeResult.longitude;
-        // Optionally, if you want to filter by city name directly, you can add:
+        //  to filter by city name directly,  add:
         // query.city = new RegExp(geocodeResult.formattedAddress.split(',')[0].trim(), 'i');
       } else {
         // If locationName couldn't be geocoded, we might proceed without location filter
@@ -110,7 +120,7 @@ export const getListings = async (req: Request, res: Response) => {
         console.warn(`Could not geocode locationName: ${locationName}`);
       }
     } else if (latitude && longitude) {
-      // Fallback to direct lat/lon if provided (e.g., from browser location)
+      // Fallback to direct lat/lon if provided ( from browser location)
       searchLat = parseFloat(latitude as string);
       searchLon = parseFloat(longitude as string);
     }
@@ -126,7 +136,30 @@ export const getListings = async (req: Request, res: Response) => {
           }
         };
         // If using location search, remove city filter unless specifically needed
-        delete query.city;
+        // delete query.city;
+      }
+    }
+    if (cultPassType && typeof cultPassType === 'string') {
+      query.cultPassType = cultPassType;
+    }
+
+    if (minPrice || maxPrice) {
+      query.askingPrice = {};
+      if (minPrice) {
+        query.askingPrice.$gte = parseFloat(minPrice as string);
+      }
+      if (maxPrice) {
+        query.askingPrice.$lte = parseFloat(maxPrice as string);
+      }
+    }
+
+    if (minCredits || maxCredits) {
+      query.availableCredits = {};
+      if (minCredits) {
+        query.availableCredits.$gte = parseFloat(minCredits as string);
+      }
+      if (maxCredits) {
+        query.availableCredits.$lte = parseFloat(maxCredits as string);
       }
     }
 
@@ -158,6 +191,28 @@ export const getListingById = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error: Could not fetch listing.' });
   }
 };
+// @route   GET /api/listings/my-listings
+// @desc    Get all listings created by the logged-in user
+// @access  Private (Seller only)
+export const getMyListings = async (req: Request, res: Response) => {
+  try {
+    // Ensure a user is logged in and their ID is available from the protect middleware
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: 'Not authorized, user not logged in.' });
+    }
+
+    // Find listings where the seller field matches the logged-in user's ID
+    const listings = await Listing.find({ seller: req.user._id })
+      .populate('seller', 'username email mobileNumber role profilePictureUrl city') // Populate seller details
+      .sort({ createdAt: -1 }); // Sort by newest first
+
+    res.json(listings);
+  } catch (error: any) {
+    console.error('Error fetching my listings:', error.message);
+    res.status(500).send('Server error: Could not fetch your listings.');
+  }
+};
+
 
 // @route   PUT /api/listings/:id
 // @desc    Update a Cult Fit pass listing (only by seller)
@@ -169,8 +224,8 @@ export const updateListing = async (req: Request, res: Response) => {
     expiryDate,
     askingPrice,
     originalPrice,
-    availableCredits,
-    locationName, // New: Allow updating via locationName
+    availableCredits,// Note: Consider making this a Number type in schema and here
+    locationName, //  Allow updating via locationName
     adImageBase64,
     isAvailable, // Allow seller to mark as sold/available
     isPromoted // Admin-only, but useful to keep in sync for clarity (controller logic will restrict)
@@ -201,7 +256,9 @@ export const updateListing = async (req: Request, res: Response) => {
       expiryDate: expiryDate ? new Date(expiryDate) : undefined,
       askingPrice,
       originalPrice,
-      availableCredits,
+      // Parse availableCredits to a Number if it's stored as such in the schema
+      availableCredits: availableCredits ? parseFloat(availableCredits) : undefined, // Assuming it should be a number
+      
       adImageUrl: newAdImageUrl,
       isAvailable, // Allow seller to update availability
       updatedAt: new Date()

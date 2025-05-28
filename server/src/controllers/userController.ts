@@ -14,6 +14,8 @@ cloudinary.config({
 // @route   GET /api/users/profile/:id
 // @desc    Get user profile by ID (public, for viewing other users' profiles)
 // @access  Public
+
+
 export const getUserProfileById = async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.params.id).select('-password');

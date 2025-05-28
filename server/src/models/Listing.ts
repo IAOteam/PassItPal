@@ -7,7 +7,7 @@ export interface IListing extends Document {
   expiryDate: Date;
   askingPrice: number;
   originalPrice: number;
-  availableCredits?: string;
+  availableCredits?: number;
   city: string;
   latitude: number;
   longitude: number;
@@ -24,7 +24,7 @@ const ListingSchema: Schema = new Schema({
   expiryDate: { type: Date, required: true },
   askingPrice: { type: Number, required: true },
   originalPrice: { type: Number, required: true },
-  availableCredits: { type: String }, // e.g., "5 sessions", "unlimited"
+  availableCredits: { type: Number }, // e.g., "5 sessions", "unlimited"
   city: { type: String, required: true },
   latitude: { type: Number, required: true },
   longitude: { type: Number, required: true },

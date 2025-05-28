@@ -140,3 +140,53 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     res.status(500).send('Server error: Could not update profile.');
   }
 };
+
+// @route   GET /api/users/all
+// @desc    Get all users (Admin only)
+// @access  Private (Admin)
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Only return essential user info for admin view, exclude password, OTPs
+    const users = await User.find().select('-password -otp -otpExpiry');
+    res.json(users);
+  } catch (error: any) {
+    console.error('Error fetching all users:', error.message);
+    res.status(500).send('Server error: Could not fetch users.');
+  }
+};
+
+// @route   PUT /api/users/block/:id
+// @desc    Block/Unblock a user (Admin only)
+// @access  Private (Admin)
+export const blockUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { isBlocked } = req.body; // Expecting true or false
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Admins cannot block other admins or themselves
+    if (user.role === 'admin' && user._id.toString() !== req.user?._id.toString()) {
+        return res.status(403).json({ message: 'Cannot block another admin.' });
+    }
+    if (user._id.toString() === req.user?._id.toString()) {
+        return res.status(403).json({ message: 'Cannot block/unblock your own admin account.' });
+    }
+
+    user.isBlocked = isBlocked;
+    await user.save();
+
+    res.json({ message: `User ${isBlocked ? 'blocked' : 'unblocked'} successfully.`, user: { id: user._id, username: user.username, email: user.email, isBlocked: user.isBlocked } });
+
+  } catch (error: any) {
+    console.error(`Error ${isBlocked ? 'blocking' : 'unblocking'} user:`, error.message);
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ message: 'Invalid user ID.' });
+    }
+    res.status(500).send(`Server error: Could not ${isBlocked ? 'block' : 'unblock'} user.`);
+  }
+};

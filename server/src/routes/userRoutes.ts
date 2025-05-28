@@ -1,11 +1,34 @@
 import { Router } from 'express';
-import { getMyProfile, updateMyProfile, getUserProfileById } from '../controllers/userController';
-import { protect } from '../middleware/authMiddleware';
+import { getMyProfile, updateMyProfile, getUserProfileById,getAllUsers, blockUser } from '../controllers/userController';
+import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validationMiddleware';
 
 const router = Router();
-
+// @route   GET /api/users/all
+// @desc    Get all users (Admin only)
+// @access  Private (Admin)
+router.get(
+  '/all',
+  protect,
+  authorizeRoles('admin'),
+  getAllUsers
+  
+);
+// @route   PUT /api/users/block/:id
+// @desc    Block/Unblock a user (Admin only)
+// @access  Private (Admin)
+router.put(
+  '/block/:id',
+  protect,
+  authorizeRoles('admin'),
+  [
+    param('id').isMongoId().withMessage('Invalid user ID format.'),
+    body('isBlocked').isBoolean().withMessage('isBlocked must be a boolean.')
+  ],
+  validate,
+  blockUser
+);
 // Public route to view any user's basic profile
 router.get(
   '/profile/:id',

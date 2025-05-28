@@ -71,7 +71,7 @@ router.post(
 router.put(
   '/:id',
   protect,
-  authorizeRoles('seller'),
+  authorizeRoles('seller', 'admin'),
   [
     param('id').isMongoId().withMessage('Invalid listing ID format.'),
     body('cultPassType').optional().notEmpty().withMessage('Cult Pass Type cannot be empty.'),
@@ -90,7 +90,7 @@ router.put(
 router.delete(
   '/:id',
   protect,
-  authorizeRoles('seller'),
+  authorizeRoles('seller', 'admin'),
   [
     param('id').isMongoId().withMessage('Invalid listing ID format.')
   ],

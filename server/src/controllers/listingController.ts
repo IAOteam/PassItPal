@@ -102,7 +102,11 @@ export const getListings = async (req: Request, res: Response) => {
   } = req.query; // locationName is new
 
   try {
-    let query: any = { isAvailable: true };
+    // Allow admin to view inactive listings
+    let query: any = {};
+    if (req.user?.role !== 'admin' || req.query.includeInactive !== 'true') {
+        query.isAvailable = true;
+    }
     let searchLat: number | undefined;
     let searchLon: number | undefined;
 
@@ -238,7 +242,12 @@ export const updateListing = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Listing not found.' });
     }
 
-    if (!req.user || listing.seller.toString() !== req.user._id.toString()) {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized: User not logged in.' });
+    }
+
+    // Allow seller to update their own listing, OR allow admin to update any listing
+    if (listing.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to update this listing.' });
     }
 
@@ -323,7 +332,12 @@ export const deleteListing = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Listing not found.' });
     }
 
-    if (!req.user || listing.seller.toString() !== req.user._id.toString()) {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized: User not logged in.' });
+    }
+
+    // Allow seller to delete their own listing, OR allow admin to delete any listing
+    if (listing.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this listing.' });
     }
 

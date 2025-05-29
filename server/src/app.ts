@@ -20,7 +20,7 @@ import Conversation, { IConversation } from './models/Conversation';
 import User from './models/User';
 import { createAndEmitNotification } from './controllers/notificationController';
 import errorHandler from './middleware/errorHandler';
-
+import orderRoutes from './routes/orderRoutes';
 dotenv.config();
 
 const app = express();
@@ -45,6 +45,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Socket.IO setup
 export const io = new Server(httpServer, {

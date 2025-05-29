@@ -64,7 +64,7 @@ router.post(
   '/verify-otp',
   [
     body('email').isEmail().withMessage('Please enter a valid email address.'),
-    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits long.'),
+    body('otp').isString().isLength({ min: 6, max: 6 }).withMessage('OTP must be a 6-digit string.'),
     body('type').isIn(['email', 'mobile']).withMessage('OTP type must be "email" or "mobile".'),
   ],
   validate,

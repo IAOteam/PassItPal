@@ -41,17 +41,30 @@ export const registerUser = async (req: Request, res: Response) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    interface Location {
+      city: string;
+      type?: 'Point';
+      coordinates?: [number, number];
+    }
+    
+    const location: Location = { city };
+    
+    if (latitude != null && longitude != null) {
+      location.type = 'Point';
+      location.coordinates = [longitude, latitude];
+    }
+    else{
+      location.type = 'Point';
+      location.coordinates = [0, 0]; 
+    }
+
     user = new User({
       email,
       password: hashedPassword,
       username: role === "buyer" ? username : undefined,
       mobileNumber: role === "seller" ? mobileNumber : undefined,
       role,
-      location: {
-        type: "Point",
-        coordinates: [longitude, latitude], // [longitude, latitude]
-        city,
-      },
+      location,
       isMobileVerified: false, // Default to false
       isEmailVerified: false, // New: Default to false on registration
       isBlocked: false,

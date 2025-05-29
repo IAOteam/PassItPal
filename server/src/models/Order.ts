@@ -1,10 +1,11 @@
 // src/models/Order.ts
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import { IListing } from './Listing'; 
 
 export interface IOrder extends Document {
   buyer: Types.ObjectId; // Reference to the User who is buying/making an offer
-  seller: Types.ObjectId; // Reference to the User who listed the pass
-  listing: Types.ObjectId; // Reference to the Listing being bought/offered on
+  seller: Types.ObjectId ; // Reference to the User who listed the pass
+  listing: Types.ObjectId | IListing // Reference to the Listing being bought/offered on
   offerPrice: number; // The price the buyer is offering (could be same as askingPrice)
   status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled'; // Current status of the transaction
   messageToSeller?: string; // Optional message from buyer to seller

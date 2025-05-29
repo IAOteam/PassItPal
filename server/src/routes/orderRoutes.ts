@@ -5,10 +5,10 @@ import { validate } from '../middleware/validationMiddleware';
 import { protect, authorizeRoles } from '../middleware/authMiddleware';
 import {
   initiateOrder,
-  // getMyOrders, // Future: for buyer to see their orders
-  // getListingOrders, // Future: for seller to see orders on their listings
-  // updateOrderStatus // Future: for seller to accept/reject/complete orders
-} from '../controllers/orderController'; // We'll create this controller next
+  getMyOrders, //  for buyer to see their orders
+  getListingOrders, // for seller to see orders on their listings
+  updateOrderStatus // for seller to accept/reject/complete orders
+} from '../controllers/orderController'; 
 
 const router = Router();
 
@@ -28,4 +28,42 @@ router.post(
   initiateOrder
 );
 
+
+// @route   GET /api/orders/seller
+// @desc    Get all orders for listings owned by the logged-in seller
+// @access  Private (Seller only)
+router.get(
+  '/seller',
+  protect,
+  authorizeRoles('seller'), // Only sellers can view orders on their listings
+  getListingOrders
+);
+
+
+// @route   GET /api/orders/me
+// @desc    Get all orders initiated by the logged-in buyer
+// @access  Private (Buyer only)
+router.get(
+  '/me',
+  protect,
+  authorizeRoles('buyer'), // Only buyers can view their own orders
+  getMyOrders
+);
+
+// src/routes/orderRoutes.ts (add this route)
+
+// @route   PUT /api/orders/:orderId/status
+// @desc    Update the status of an order (e.g., accept, reject, complete)
+// @access  Private (Seller only)
+router.put(
+  '/:orderId/status',
+  protect,
+  authorizeRoles('seller'), // Only sellers can update order status
+  [
+    param('orderId').isMongoId().withMessage('Invalid order ID format.'),
+    body('status').isIn(['accepted', 'rejected', 'completed']).withMessage('Invalid order status provided.')
+  ],
+  validate,
+  updateOrderStatus
+);
 export default router;

@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document, Types } from 'mongoose'; // Ensure Types is imported
+import { IUser } from './User';
 
 export interface IListing extends Document {
   _id: Types.ObjectId; // Explicitly type _id as Mongoose ObjectId
-  seller: Types.ObjectId;
+  seller: Types.ObjectId ;
   cultPassType: string;
+  
   expiryDate: Date;
   askingPrice: number;
   originalPrice: number;
@@ -12,7 +14,7 @@ export interface IListing extends Document {
   latitude: number;
   longitude: number;
   adImageUrl?: string;
-  isAvailable: boolean;
+  isAvailable: boolean ;
   isPromoted: boolean; // Added for admin controls
   createdAt: Date;
   updatedAt: Date;

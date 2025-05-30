@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 relative">
-      {/* Home/Brand Button */}
+      
       <button
         onClick={() => navigate("/")}
         className="absolute top-6 left-6 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline"
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
         PassItPal
       </button>
 
-      {/* Left panel: Form */}
+      
       <div className="flex flex-col justify-center w-full max-w-2xl px-10 py-16 lg:px-20 mx-auto">
         <div className="mb-12">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
@@ -53,7 +53,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <form className="grid grid-cols-1 gap-6 max-w-md"  onSubmit={handleSubmit} noValidate>
-          {/* Email */}
+      
           <div>
             <label htmlFor="email" className="formLabel">
               Email
@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Password */}
+      
           <div>
             <label htmlFor="password" className="formLabel">
               Password
@@ -91,7 +91,7 @@ const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Submit */}
+      
           <div className="pt-2">
             <button
               type="submit"
@@ -102,7 +102,7 @@ const LoginPage: React.FC = () => {
           </div>
         </form>
 
-        {/* Redirect to register */}
+      
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{" "}
           <button
@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Right panel: Optional illustration */}
+      
       <div className="hidden lg:flex items-center justify-center w-full bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-800 dark:to-gray-900">
         <div className="max-w-sm text-center px-10">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">

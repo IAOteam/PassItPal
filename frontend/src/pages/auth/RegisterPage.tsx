@@ -43,7 +43,7 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
-  {/* Left panel: Form */}
+  
   <div className="flex flex-col justify-center w-full max-w-2xl px-10 py-16 lg:px-20 mx-auto">
     <div className="mb-12">
       <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
@@ -60,9 +60,9 @@ const RegisterPage: React.FC = () => {
   PassItPal
 </button>
 
-    {/* Form grid */}
+
     <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit} noValidate>
-      {/* Username */}
+      
       <div className="col-span-full md:col-span-1">
         <label htmlFor="username" className="formLabel">Username</label>
         <input
@@ -78,7 +78,7 @@ const RegisterPage: React.FC = () => {
         )}
       </div>
 
-      {/* Email */}
+      
       <div className="col-span-full md:col-span-1">
         <label htmlFor="email" className="formLabel">Email</label>
         <input
@@ -111,7 +111,7 @@ const RegisterPage: React.FC = () => {
         )}
         </div>
 
-      {/* Password */}
+      
       <div className="col-span-full md:col-span-1">
         <label htmlFor="password" className="formLabel">Password</label>
         <input
@@ -128,7 +128,7 @@ const RegisterPage: React.FC = () => {
         )}
       </div>
 
-      {/* City */}
+      
       <div className="col-span-full md:col-span-1">
         <label htmlFor="city" className="formLabel">City</label>
         <input
@@ -144,7 +144,7 @@ const RegisterPage: React.FC = () => {
         )}
       </div>
 
-      {/* Role */}
+      
       <div className="col-span-full md:col-span-1">
         <label className="formLabel">Role</label>
         <div className="flex gap-4 pt-2">
@@ -164,7 +164,7 @@ const RegisterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Submit */}
+      
       <div className="col-span-full pt-4">
         <button
           type="submit"
@@ -175,7 +175,7 @@ const RegisterPage: React.FC = () => {
       </div>
     </form>
 
-    {/* Redirect to login */}
+    
     <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
       Already registered?{" "}
       <button
@@ -188,9 +188,9 @@ const RegisterPage: React.FC = () => {
     </p>
   </div>
 
-  {/* Right panel: Optional illustration */}
+  
   <div className="hidden lg:flex items-center justify-center w-full bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-800 dark:to-gray-900">
-    {/* Replace with logo or illustration */}
+    
     <div className="max-w-sm text-center px-10">
       <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
         Welcome aboard 🚀

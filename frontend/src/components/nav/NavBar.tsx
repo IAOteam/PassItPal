@@ -3,7 +3,6 @@ import {
   NavBody,
   NavItems,
   MobileNav,
-  NavbarLogo,
   NavbarButton,
   MobileNavHeader,
   MobileNavToggle,
@@ -30,7 +29,7 @@ export function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="relative w-full">
+    <div className="sticky top-0 left-0 w-full z-[100]">
       <Navbar>
         {/* Desktop Navigation */}
         <NavBody>
@@ -48,7 +47,9 @@ export function NavBar() {
         {/* Mobile Navigation */}
         <MobileNav>
           <MobileNavHeader>
-            <NavbarLogo />
+            <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
+            PassItPal
+        </div>
             <MobileNavToggle
               isOpen={isMobileMenuOpen}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

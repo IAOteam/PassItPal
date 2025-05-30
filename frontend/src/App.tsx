@@ -1,9 +1,9 @@
 import { NavBar } from "./components/nav/NavBar"
-import HeroSection from "./components/pages/landing/HeroSection"
+import HeroSection from "./pages/landing/HeroSection"
 
 function App() {
   return (
-    <div className="pagePadding">
+    <div className="pagePadding relative">
     
     <NavBar/>
     

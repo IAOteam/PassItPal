@@ -7,7 +7,9 @@
     "start": "node dist/app.js",
     "dev": "nodemon --exec ts-node src/app.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "data:import": "ts-node src/seeder.ts",   
+    "data:destroy": "ts-node src/seeder.ts -d" 
   },
   "keywords": [],
   "author": "Your Name",

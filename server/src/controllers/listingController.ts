@@ -65,6 +65,10 @@ export const createListing = async (req: Request, res: Response) => {
       city: formattedAddress, // Use the formatted address from geocoding
       latitude,
       longitude,
+      location: { // to Populate the GeoJSON 'location' field
+        type: 'Point',
+        coordinates: [longitude, latitude] // GeoJSON is [longitude, latitude]
+      },
       adImageUrl
     });
 
@@ -314,6 +318,10 @@ export const updateListing = async (req: Request, res: Response) => {
         updatedFields.latitude = geocodeResult.latitude;
         updatedFields.longitude = geocodeResult.longitude;
         updatedFields.city = geocodeResult.formattedAddress;
+         updatedFields.location = { //  Update the GeoJSON 'location' field
+          type: 'Point',
+          coordinates: [geocodeResult.longitude, geocodeResult.latitude] // GeoJSON is [longitude, latitude]
+        };
       } else {
         return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
       }

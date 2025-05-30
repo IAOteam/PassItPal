@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Mock Geocoding Service
-// In a real application, you would integrate with a service like Google Maps Geocoding API
-// Example: https://developers.google.com/maps/documentation/geocoding/overview
+// In a real application,  integrate with a service like Google Maps Geocoding API
+//  https://developers.google.com/maps/documentation/geocoding/overview
 
 interface GeocodingResult {
   latitude: number;
@@ -22,7 +22,7 @@ interface GeocodingResult {
  */
 export const geocodeAddress = async (locationName: string): Promise<GeocodingResult | null> => {
   console.log(`Mocking geocoding for: ${locationName}`);
-  // In a real scenario, you'd make an API call here, e.g.:
+  // In production, you'd make an API call here, e.g.:
   /*
   try {
     const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {

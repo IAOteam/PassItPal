@@ -252,3 +252,54 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error: Could not update order status.' });
   }
 };
+// @route   PUT /api/orders/:orderId/cancel
+// @desc    Allow buyer to cancel their pending order
+// @access  Private (Buyer only)
+export const cancelOrder = async (req: Request, res: Response) => {
+  const { orderId } = req.params;
+  const buyerId = req.user?._id; // Buyer's ID from the token
+
+  try {
+    if (!buyerId || req.user?.role !== 'buyer') {
+      return res.status(403).json({ message: 'Only buyers are authorized to cancel their orders.' });
+    }
+
+    // Find the order and populate listing (optional, but good for consistency)
+    const order = await Order.findById(orderId).populate('listing') as IOrder & { _id: Types.ObjectId; listing: IListing };
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    // Ensure the logged-in user is the actual buyer of this order
+    if (order.buyer.toString() !== buyerId.toString()) {
+      return res.status(403).json({ message: 'Not authorized to cancel this order.' });
+    }
+
+    // Check if the order can be cancelled (only if pending)
+    if (order.status !== 'pending') {
+      return res.status(400).json({ message: `Order cannot be cancelled as it is currently ${order.status}.` });
+    }
+
+    order.status = 'cancelled';
+    order.updatedAt = new Date();
+    await order.save();
+
+    // Notify the seller about the cancelled order
+    await createAndEmitNotification(
+      order.seller.toString(),
+      'order_cancelled',
+      `An order for "<span class="math-inline">\{order\.listing\.cultPassType\}" \(Offer\: ₹</span>{order.offerPrice}) has been cancelled by the buyer.`,
+      `/order/${order._id.toString()}` // Link to the order details
+    );
+
+    res.status(200).json({ message: 'Order cancelled successfully.', order });
+
+  } catch (error: any) {
+    console.error('Error cancelling order:', error.message);
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ message: 'Invalid order ID.' });
+    }
+    res.status(500).json({ message: 'Server error: Could not cancel order.' });
+  }
+};

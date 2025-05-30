@@ -7,7 +7,8 @@ import {
   initiateOrder,
   getMyOrders, //  for buyer to see their orders
   getListingOrders, // for seller to see orders on their listings
-  updateOrderStatus // for seller to accept/reject/complete orders
+  updateOrderStatus, // for seller to accept/reject/complete orders
+  cancelOrder
 } from '../controllers/orderController'; 
 
 const router = Router();
@@ -50,7 +51,6 @@ router.get(
   getMyOrders
 );
 
-// src/routes/orderRoutes.ts (add this route)
 
 // @route   PUT /api/orders/:orderId/status
 // @desc    Update the status of an order (e.g., accept, reject, complete)
@@ -66,4 +66,5 @@ router.put(
   validate,
   updateOrderStatus
 );
+router.put('/:orderId/cancel',protect, authorizeRoles('buyer'), cancelOrder);
 export default router;

@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { createAndEmitNotification } from './notificationController';
 import { Types } from 'mongoose';
+import Order from '../models/Order';
 import { geocodeAddress } from '../utils/geocodingService'; 
 
 dotenv.config();
@@ -98,8 +99,12 @@ export const getListings = async (req: Request, res: Response) => {
     minPrice,
     maxPrice,
     minCredits,
-    maxCredits
-  } = req.query; // locationName is new
+    maxCredits,
+    page = '1', // Default to page 1
+    limit = '10', // Default to 10 listings per page
+    sortBy = 'createdAt', // Default sort field
+    sortOrder = '-1' // Default sort order (1 for ascending, -1 for descending)
+  } = req.query; 
 
   try {
     // Allow admin to view inactive listings
@@ -167,8 +172,37 @@ export const getListings = async (req: Request, res: Response) => {
       }
     }
 
-    const listings = await Listing.find(query).populate('seller', 'username email mobileNumber role profilePictureUrl city');
-    res.json(listings);
+    // --- PAGINATION LOGIC ---
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count of documents matching the query (before pagination)
+    const totalCount = await Listing.countDocuments(query);
+
+    // --- SORTING LOGIC ---
+    const sortOptions: { [key: string]: 1 | -1 } = {};
+    if (sortBy) {
+      sortOptions[sortBy as string] = sortOrder === '1' ? 1 : -1;
+    } else {
+      // Default sort if not specified
+      sortOptions.createdAt = -1; // Newest first
+    }
+
+    const listings = await Listing.find(query)
+      .populate('seller', 'username email mobileNumber role profilePictureUrl city')
+      .sort(sortOptions) // Apply sorting
+      .skip(skip) // Apply pagination skip
+      .limit(limitNum); // Apply pagination limit
+
+    res.status(200).json({
+      message: 'Listings fetched successfully',
+      totalCount,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalCount / limitNum),
+      limit: limitNum,
+      listings
+    });
   } catch (error: any) {
     console.error('Error fetching listings:', error.message);
     res.status(500).json({ message: 'Server error: Could not fetch listings.' });
@@ -325,8 +359,10 @@ export const updateListing = async (req: Request, res: Response) => {
 // @desc    Delete a Cult Fit pass listing (only by seller)
 // @access  Private (Seller only)
 export const deleteListing = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?._id;
   try {
-    const listing = await Listing.findById(req.params.id) as IListing;
+    const listing = await Listing.findById(id) as IListing;
 
     if (!listing) {
       return res.status(404).json({ message: 'Listing not found.' });
@@ -337,11 +373,22 @@ export const deleteListing = async (req: Request, res: Response) => {
     }
 
     // Allow seller to delete their own listing, OR allow admin to delete any listing
-    if (listing.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (listing.seller.toString() !== req.user?._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this listing.' });
     }
 
-    await Listing.deleteOne({ _id: req.params.id });
+    const activeOrders = await Order.findOne({
+      listing: id,
+      status: { $in: ['pending', 'accepted'] } // Check for pending or accepted orders
+    });
+
+    if (activeOrders) {
+      return res.status(409).json({ // 409 Conflict status code is appropriate here
+        message: 'Cannot delete listing: There are pending or accepted orders associated with this listing. Please resolve them first.'
+      });
+    }
+
+    await Listing.deleteOne({ _id: id });
 
     if (req.user) {
       await createAndEmitNotification(

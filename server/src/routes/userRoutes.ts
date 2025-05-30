@@ -1,10 +1,22 @@
 import { Router } from 'express';
-import { getMyProfile, updateMyProfile, getUserProfileById,getAllUsers, blockUser } from '../controllers/userController';
+import { getMyProfile, updateMyProfile, getUserProfileById,getAllUsers, blockUser ,getMe, 
+  updateMe } from '../controllers/userController';
 import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validationMiddleware';
 
+
 const router = Router();
+// @route   GET /api/users/me
+// @desc    Get current authenticated user's profile
+// @access  Private
+router.get('/me', protect, getMe);
+
+// @route   PUT /api/users/me
+// @desc    Update current authenticated user's profile
+// @access  Private
+router.put('/me', protect, updateMe); 
+
 // @route   GET /api/users/all
 // @desc    Get all users (Admin only)
 // @access  Private (Admin)

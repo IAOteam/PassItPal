@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User, { IUser } from '../models/User';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
+import { Types } from 'mongoose';
 
 dotenv.config();
 
@@ -14,8 +15,6 @@ cloudinary.config({
 // @route   GET /api/users/profile/:id
 // @desc    Get user profile by ID (public, for viewing other users' profiles)
 // @access  Public
-
-
 export const getUserProfileById = async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -188,5 +187,89 @@ export const blockUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid user ID.' });
     }
     res.status(500).send(`Server error: Could not ${isBlocked ? 'block' : 'unblock'} user.`);
+  }
+};
+
+// @route   GET /api/users/me
+// @desc    Get current authenticated user's profile
+// @access  Private
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    // req.user is populated by the auth middleware
+    const user = await User.findById(req.user?._id).select('-password -otp -otpExpiry'); // Exclude sensitive fields
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.status(200).json({
+      message: 'User profile fetched successfully.',
+      user: user
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching user profile:', error.message);
+    res.status(500).json({ message: 'Server error: Could not fetch user profile.' });
+  }
+};
+
+// @route   PUT /api/users/me
+// @desc    Update current authenticated user's profile
+// @access  Private
+export const updateMe = async (req: Request, res: Response) => {
+  const userId = req.user?._id; // User's ID from the token
+  const { username, mobileNumber, profilePictureUrl, city } = req.body; // Fields allowed for update
+
+  try {
+    if (!userId) {
+      return res.status(401).json({ message: 'Not authenticated.' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Update fields if they are provided in the request body
+    if (username) {
+      user.username = username;
+    }
+    if (mobileNumber) {
+      user.mobileNumber = mobileNumber;
+    }
+    if (profilePictureUrl) {
+      user.profilePictureUrl = profilePictureUrl;
+    }
+    // Update city within the location object
+    if (city) {
+      //  re-geocode the city to update coordinates if needed,
+      // we'll just update the city name. then map api later
+      // If you decide to re-geocode, ensure you have the geocodeAddress function available here.
+      user.location.city = city;
+    }
+
+    // Prevent direct modification of sensitive fields or roles through this endpoint
+    // Example: if (req.body.role) { delete req.body.role; } etc.
+
+    user.updatedAt = new Date(); // Manually update updatedAt if not handled by schema options
+
+    await user.save();
+
+    // Return updated user profile, excluding sensitive fields
+    const updatedUser = await User.findById(userId).select('-password -otp -otpExpiry');
+
+    res.status(200).json({
+      message: 'User profile updated successfully.',
+      user: updatedUser
+    });
+
+  } catch (error: any) {
+    console.error('Error updating user profile:', error.message);
+    // Handle unique constraint errors (e.g., mobileNumber already exists)
+    if (error.code === 11000) {
+        return res.status(400).json({ message: 'Mobile number already registered.' });
+    }
+    res.status(500).json({ message: 'Server error: Could not update user profile.' });
   }
 };

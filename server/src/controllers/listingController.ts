@@ -33,7 +33,9 @@ export const createListing = async (req: Request, res: Response) => {
     if (!req.user || req.user.role !== 'seller') {
       return res.status(403).json({ message: 'Only sellers can create listings.' });
     }
-
+    if (!req.user.isEmailVerified) {
+        return res.status(403).json({ message: 'Seller email must be verified to create listings.' });
+    }
     if (!req.user.isMobileVerified) {
       return res.status(403).json({ message: 'Seller mobile number must be verified to create listings.' });
     }

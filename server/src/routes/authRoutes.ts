@@ -1,8 +1,19 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator'; // param is not strictly needed here but keeping if future routes use it
 import { validate } from '../middleware/validationMiddleware';
-import { registerUser, loginUser, requestOtp, verifyOtpController, resendOtp, deleteOtp } from '../controllers/authController'; // Renamed verifyOtp to verifyOtpController to avoid conflict
-
+import { 
+  registerUser, 
+  loginUser, 
+  requestOtp, 
+  verifyOtpController, 
+  resendOtp, 
+  deleteOtp,
+  forgotPasswordRequestOtp,
+  verifyPasswordResetOtpAndGenerateToken,
+  resetPassword,
+  changePassword 
+} from '../controllers/authController'; // Renamed verifyOtp to verifyOtpController to avoid conflict
+import { protect } from '../middleware/authMiddleware';
 const router = Router();
 
 // Register User
@@ -81,6 +92,12 @@ router.post(
   validate,
   resendOtp
 );
+router.post('/forgot-password-request-otp', forgotPasswordRequestOtp);
+
+router.post('/verify-password-reset-otp', verifyPasswordResetOtpAndGenerateToken);
+router.put('/reset-password', resetPassword);
+
+router.put('/change-password', protect, changePassword);
 
 // Delete OTP (if needed, e.g., for cleanup or invalid attempt)
 router.delete(
@@ -91,5 +108,6 @@ router.delete(
   validate,
   deleteOtp
 );
+
 
 export default router;

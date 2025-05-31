@@ -70,8 +70,10 @@ export const registerUser = async (req: Request, res: Response) => {
     user = new User({
       email,
       password: hashedPassword,
-      username: role === "buyer" ? username : undefined,
-      mobileNumber: role === "seller" ? mobileNumber : undefined,
+      // username: role === "buyer" ? username : undefined,
+      // mobileNumber: role === "seller" ? mobileNumber : undefined,
+      username,
+      mobileNumber,
       role,
       location,
       isMobileVerified: false, // Default to false
@@ -90,6 +92,7 @@ export const registerUser = async (req: Request, res: Response) => {
       user: {
         _id: user._id,
         email: user.email,
+        username: user.username,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isMobileVerified: user.isMobileVerified,

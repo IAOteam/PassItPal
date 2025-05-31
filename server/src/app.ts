@@ -32,7 +32,7 @@ connectDB();
 app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
 
 app.use(express.json({ limit: '50mb' }));
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 
 app.get('/', (req: Request, res: Response) => {
   res.send('PassitPal Backend API is running!');
@@ -50,8 +50,9 @@ app.use('/api/orders', orderRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true
   }
 });
 

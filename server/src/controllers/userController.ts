@@ -67,8 +67,8 @@ export const updateMyProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    if (username !== undefined && user.role === 'buyer') {
-      if (username !== user.username) {
+    if (username !== undefined ) {//&& user.role === 'buyer' removed
+      if (username !== user.username) {//check uniqueness if username actually changed
         const existingUsername = await User.findOne({ username });
         if (existingUsername && existingUsername._id.toString() !== user._id.toString()) { // _id is now correctly typed
           return res.status(400).json({ message: 'Username already taken.' });
@@ -88,8 +88,8 @@ export const updateMyProfile = async (req: Request, res: Response) => {
       }
     }
 
-    if (mobileNumber !== undefined && user.role === 'seller') {
-      if (mobileNumber !== user.mobileNumber) {
+    if (mobileNumber !== undefined ) { //&& user.role === 'seller' removed
+      if (mobileNumber !== user.mobileNumber) {// Only check uniqueness if mobileNumber actually changed
         const existingMobile = await User.findOne({ mobileNumber });
         if (existingMobile && existingMobile._id.toString() !== user._id.toString()) {
           return res.status(400).json({ message: 'Mobile number already in use.' });
@@ -99,14 +99,47 @@ export const updateMyProfile = async (req: Request, res: Response) => {
       user.isMobileVerified = false;
     }
 
-    if (city !== undefined && latitude !== undefined && longitude !== undefined) {
-      user.location = { 
-        type: 'Point', 
-        coordinates: [longitude, latitude], 
-        city 
+    // if (city !== undefined && latitude !== undefined && longitude !== undefined) {
+    //   user.location = { 
+    //     type: 'Point', 
+    //     coordinates: [longitude, latitude], 
+    //     city 
+    //   };
+    // } else if (city !== undefined) {
+    //     user.location = { ...user.location, city: city || undefined };
+    // }
+
+    if (city !== undefined) { // Check if 'city' field was provided in the request body
+    if (!user.location) {
+      // If location object doesn't exist, initialize it with default type and coordinates
+      user.location = {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+        city: (user.location && 'city' in user.location ? (user.location as any).city : ''), // Use existing city or default to empty string
       };
-    } else if (city !== undefined) {
-        user.location = { ...user.location, city: city || undefined };
+    }
+      // Assign the city value directly, even if it's an empty string
+      user.location.city = city;
+    }
+
+    // Handle latitude and longitude separately if they are provided,
+    // and you intend to update coordinates based on them.
+    // If your frontend doesn't send these, this block won't be hit, which is fine.
+    if (latitude !== undefined && longitude !== undefined) {
+      if (!user.location) {
+       if (!user.location) {
+    // Initialize user.location if it doesn't exist, ensuring 'city' is present
+      user.location = {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+        city: (user.location && 'city' in user.location ? (user.location as any).city : ''), // Use existing city or default to empty string
+      };
+      }else {
+      // If location already exists, just update the coordinates
+      if (user.location && 'coordinates' in user.location) {
+        (user.location as { coordinates: [number, number]; city?: string; type: string }).coordinates = [longitude, latitude];
+      }
+      }
     }
 
     if (profilePictureBase64) {
@@ -133,7 +166,7 @@ export const updateMyProfile = async (req: Request, res: Response) => {
         isMobileVerified: user.isMobileVerified
       }
     });
-
+  }
   } catch (error: any) {
     console.error('Error updating profile:', error.message);
     res.status(500).send('Server error: Could not update profile.');

@@ -92,7 +92,7 @@ const UserSchema: Schema = new Schema({
   otpVerifiedAt: { type: Date,select: false, }, 
   profilePictureUrl: { 
     type: String ,
-    default: 'https://res.cloudinary.com/{your-cloud-name/image/upload/v1/default_profile_picture.png' // Provide a default or leave undefined
+    default:  'https://www.google.com/imgres?q=pass%20it&imgurl=https%3A%2F%2Fwww.childfundrugby.org%2Fwp-content%2Fuploads%2F2025%2F04%2FQ2_02962-520x520.jpeg&imgrefurl=https%3A%2F%2Fwww.childfundrugby.org%2Fpass-it-back%2F&docid=4FQTWlsbQU7oWM&tbnid=GWTv05wUeykQiM&vet=12ahUKEwjKzvK4vs2NAxW54DgGHXDPGP4QM3oECEoQAA..i&w=520&h=520&hcb=2&ved=2ahUKEwjKzvK4vs2NAxW54DgGHXDPGP4QM3oECEoQAA'// Provide a default or leave undefined
     
   },
   passwordResetToken: {

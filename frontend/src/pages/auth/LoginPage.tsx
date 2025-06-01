@@ -52,7 +52,7 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        <form className="grid grid-cols-1 gap-6 max-w-md"  onSubmit={handleSubmit} noValidate>
+        <form className="grid grid-cols-1 gap-6 w-full lg:w-md mx-auto"   onSubmit={handleSubmit} noValidate>
       
           <div>
             <label htmlFor="email" className="formLabel">

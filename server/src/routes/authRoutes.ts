@@ -11,7 +11,9 @@ import {
   forgotPasswordRequestOtp,
   verifyPasswordResetOtpAndGenerateToken,
   resetPassword,
-  changePassword 
+  changePassword ,
+  refreshAccessToken, 
+  logoutUser
 } from '../controllers/authController'; // Renamed verifyOtp to verifyOtpController to avoid conflict
 import { protect } from '../middleware/authMiddleware';
 const router = Router();
@@ -29,7 +31,7 @@ router.post(
       .isIn(['buyer', 'seller']).withMessage('Role must be either "buyer" or "seller".'),
     body('mobileNumber')
       .optional() // Optional for buyer
-      .isMobilePhone('any').withMessage('Please enter a valid mobile number.')
+      .isMobilePhone('any', { strictMode: false }).withMessage('Please enter a valid mobile number.')
       .if(body('role').equals('seller')).notEmpty().withMessage('Seller must provide a mobile number.'),
     body('username')
       .optional() // Optional for seller
@@ -58,6 +60,10 @@ router.post(
   validate,
   loginUser
 );
+
+router.post('/refresh-token', refreshAccessToken);
+
+router.post('/logout', protect, logoutUser);
 
 // Request OTP (for email or mobile number verification)
 router.post(
@@ -92,12 +98,38 @@ router.post(
   validate,
   resendOtp
 );
-router.post('/forgot-password-request-otp', forgotPasswordRequestOtp);
+router.post('/forgot-password-request-otp',
+  [
+    body('email').isEmail().withMessage('Please enter a valid email address.')
+  ],
+  validate,
+  forgotPasswordRequestOtp
+);
 
-router.post('/verify-password-reset-otp', verifyPasswordResetOtpAndGenerateToken);
-router.put('/reset-password', resetPassword);
+router.post('/verify-password-reset-otp',
+  [
+    body('email').isEmail().withMessage('Please enter a valid email address.'),
+    body('otp').isString().isLength({ min: 6, max: 6 }).withMessage('OTP must be a 6-digit string.')
+  ],
+  validate,
+  verifyPasswordResetOtpAndGenerateToken);
+router.put('/reset-password', 
+  [
+    body('email').isEmail().withMessage('Please enter a valid email address.'),
+    body('resetToken').notEmpty().withMessage('Reset token is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+  ],
+  validate,
+  resetPassword);
 
-router.put('/change-password', protect, changePassword);
+router.put('/change-password', 
+  protect, 
+  [
+    body('currentPassword').notEmpty().withMessage('Current password is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+  ],
+  validate,
+  changePassword);
 
 // Delete OTP (if needed, e.g., for cleanup or invalid attempt)
 router.delete(

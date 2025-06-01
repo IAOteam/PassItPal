@@ -22,6 +22,7 @@ export interface IUser extends Document {
   profilePictureUrl?: string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  refreshToken?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,7 +93,7 @@ const UserSchema: Schema = new Schema({
   otpVerifiedAt: { type: Date,select: false, }, 
   profilePictureUrl: { 
     type: String ,
-    default:  'https://www.google.com/imgres?q=pass%20it&imgurl=https%3A%2F%2Fwww.childfundrugby.org%2Fwp-content%2Fuploads%2F2025%2F04%2FQ2_02962-520x520.jpeg&imgrefurl=https%3A%2F%2Fwww.childfundrugby.org%2Fpass-it-back%2F&docid=4FQTWlsbQU7oWM&tbnid=GWTv05wUeykQiM&vet=12ahUKEwjKzvK4vs2NAxW54DgGHXDPGP4QM3oECEoQAA..i&w=520&h=520&hcb=2&ved=2ahUKEwjKzvK4vs2NAxW54DgGHXDPGP4QM3oECEoQAA'// Provide a default or leave undefined
+    default:  'https://res.cloudinary.com/dz9qcmowr/image/upload/v1716360099/profile_pictures/default_avatar_y03x5q.png'// Provide a default or leave undefined
     
   },
   passwordResetToken: {
@@ -102,6 +103,10 @@ const UserSchema: Schema = new Schema({
   passwordResetExpires: {
       type: Date,
       select: false,
+  },
+  refreshToken: { 
+    type: String,
+    select: false, // Do not return by default
   },
   
 },

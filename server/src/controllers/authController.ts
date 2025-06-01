@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User";
-import { generateToken } from "../utils/jwt";
+import { generateToken ,generateRefreshToken, verifyRefreshToken} from "../utils/jwt";
 import { sendOtp, verifyOtp } from "../utils/otp";
 
 // declare module 'express-serve-static-core' {
@@ -99,7 +99,7 @@ export const registerUser = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Error during user registration:", error.message);
+    // console.error("Error during user registration:", error.message);
     res.status(500).json({ message: "Server error: Could not register user." });
   }
 };
@@ -137,11 +137,23 @@ export const loginUser = async (req: Request, res: Response) => {
             needsEmailVerification: true // Frontend can use this flag
         });
     }
-    const token = generateToken(user._id.toString(), user.role);
+    const accessToken = generateToken(user._id.toString(), user.role);
+    const refreshToken = generateRefreshToken(user._id.toString());
 
+     // refreshToken to user and persist
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // refreshToken as HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
     res.json({
       message: "Login successful",
-      token,
+      token: accessToken,
       user: {
         _id: user._id,
         email: user.email,
@@ -157,8 +169,73 @@ export const loginUser = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Error during user login:", error.message);
+    // console.error("Error during user login:", error.message);
     res.status(500).json({ message: "Server error: Could not log in user." });
+  }
+};
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  const incomingRefreshToken = req.cookies.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({ message: 'Refresh token not found.' });
+  }
+
+  try {
+    const decoded = verifyRefreshToken(incomingRefreshToken);
+    if (!decoded || !decoded.id) {
+      return res.status(403).json({ message: 'Invalid or expired refresh token.' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(403).json({ message: 'User not found for this token.' });
+    }
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked.' });
+    }
+    if (user.refreshToken !== incomingRefreshToken) {
+      return res.status(403).json({ message: 'Refresh token mismatch or invalidated.' });
+    }
+    const newAccessToken = generateToken(user._id.toString(), user.role);
+
+    res.json({
+      message: 'Access token refreshed successfully.',
+      token: newAccessToken,
+    });
+
+  } catch (error: any) {
+    // console.error('Error refreshing access token:', error.message);
+    return res.status(500).json({ message: 'Server error: Could not refresh access token.' });
+  }
+};
+
+export const logoutUser = async (req: Request, res: Response) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'User not authenticated.' });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    if (user) {
+      user.refreshToken = undefined;
+      await user.save();
+    }
+
+    res.cookie('refreshToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: new Date(0),
+    });
+
+    res.status(200).json({ message: 'Logged out successfully.' });
+
+  } catch (error: any) {
+    // console.error('Error during user logout:', error.message);
+    res.status(500).json({ message: 'Server error: Could not log out user.' });
   }
 };
 
@@ -198,7 +275,7 @@ export const requestOtp = async (req: Request, res: Response) => {
         }.`,
       });
   } catch (error: any) {
-    console.error("Error requesting OTP:", error.message);
+    // console.error("Error requesting OTP:", error.message);
     res.status(500).json({ message: "Server error: Could not request OTP." });
   }
 };
@@ -216,6 +293,17 @@ export const verifyOtpController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid or expired OTP." });
     }
 
+    // If verifyOtp internally updates user status, no need to find and save user here again
+    // just for isEmailVerified or isMobileVerified flags.
+    // If it doesn't, you would:
+    // const user = await User.findOne({ email });
+    // if (user) {
+    //   if (type === 'email') user.isEmailVerified = true;
+    //   if (type === 'mobile') user.isMobileVerified = true;
+    //   user.otp = undefined; user.otpExpiry = undefined; // Clear OTP after verification
+    //   await user.save();
+    // }
+
     res
       .status(200)
       .json({
@@ -224,7 +312,7 @@ export const verifyOtpController = async (req: Request, res: Response) => {
         } verified successfully!`,
       });
   } catch (error: any) {
-    console.error("Error verifying OTP:", error.message);
+    // console.error("Error verifying OTP:", error.message);
     res.status(500).json({ message: "Server error: Could not verify OTP." });
   }
 };
@@ -265,7 +353,7 @@ export const resendOtp = async (req: Request, res: Response) => {
         }.`,
       });
   } catch (error: any) {
-    console.error("Error resending OTP:", error.message);
+    // console.error("Error resending OTP:", error.message);
     res.status(500).json({ message: "Server error: Could not resend OTP." });
   }
 };
@@ -288,7 +376,7 @@ export const deleteOtp = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "OTP deleted successfully." });
   } catch (error: any) {
-    console.error("Error deleting OTP:", error.message);
+    // console.error("Error deleting OTP:", error.message);
     res.status(500).json({ message: "Server error: Could not delete OTP." });
   }
 };
@@ -317,7 +405,7 @@ export const forgotPasswordRequestOtp = async (req: Request, res: Response) => {
 
         res.status(200).json({ message: 'If a user with that email exists, an OTP has been sent to your email.' });
     } catch (error: any) {
-        console.error('Error requesting password reset OTP:', error.message);
+        // console.error('Error requesting password reset OTP:', error.message);
         res.status(500).json({ message: error.message || 'Server error: Could not send password reset OTP.' });
     }
 };
@@ -362,7 +450,7 @@ export const verifyPasswordResetOtpAndGenerateToken = async (req: Request, res: 
         });
 
     } catch (error: any) {
-        console.error('Error verifying password reset OTP:', error.message);
+        // console.error('Error verifying password reset OTP:', error.message);
         res.status(500).json({ message: error.message || 'Server error: Could not verify OTP.' });
     }
 };
@@ -391,13 +479,13 @@ export const resetPassword = async (req: Request, res: Response) => {
 
         // 1. Check if a reset token exists on the user document
         if (!user.passwordResetToken || !user.passwordResetExpires) {
-            console.log(`Reset Password: No reset token found for user: ${user.email}`);
+            // console.log(`Reset Password: No reset token found for user: ${user.email}`);
             return res.status(400).json({ message: 'Password reset token is missing or invalid.' });
         }
 
         // 2. Check if the reset token has expired
         if (user.passwordResetExpires < new Date()) {
-            console.log(`Reset Password: Reset token expired for user: ${user.email}`);
+            // console.log(`Reset Password: Reset token expired for user: ${user.email}`);
             // Clear expired token fields
             user.passwordResetToken = undefined;
             user.passwordResetExpires = undefined;
@@ -409,7 +497,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         const isMatch = await bcrypt.compare(resetToken, user.passwordResetToken);
 
         if (!isMatch) {
-            console.log(`Reset Password: Provided token does not match stored token for user: ${user.email}`);
+            // console.log(`Reset Password: Provided token does not match stored token for user: ${user.email}`);
             return res.status(400).json({ message: 'Invalid password reset token.' });
         }
 
@@ -420,13 +508,15 @@ export const resetPassword = async (req: Request, res: Response) => {
         // 5. Clear the password reset token fields immediately after successful use
         user.passwordResetToken = undefined;
         user.passwordResetExpires = undefined;
-
+        user.otp = undefined; // Also clear OTP fields if used for this flow
+        user.otpExpiry = undefined;
+        user.otpPurpose = undefined;
         await user.save();
 
         res.status(200).json({ message: 'Password has been reset successfully. You can now log in with your new password.' });
 
     } catch (error: any) {
-        console.error('Error resetting password:', error.message);
+        // console.error('Error resetting password:', error.message);
         res.status(500).json({ message: error.message || 'Server error: Could not reset password.' });
     }
 };
@@ -477,9 +567,7 @@ export const changePassword = async (req: Request, res: Response) => {
         res.status(200).json({ message: 'Password changed successfully.' });
 
     } catch (error: any) {
-        console.error('Error changing password:', error.message);
+        // console.error('Error changing password:', error.message);
         res.status(500).json({ message: error.message || 'Server error: Could not change password.' });
     }
 };
-
-

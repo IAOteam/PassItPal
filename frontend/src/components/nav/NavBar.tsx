@@ -9,6 +9,7 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 export function NavBar() {
   const navItems = [
@@ -27,29 +28,39 @@ export function NavBar() {
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleBookCall = () => {
+    
+    alert("Book a call functionality coming soon!");
+  };
 
   return (
     <div className="sticky top-0 left-0 w-full z-[100]">
       <Navbar>
-        {/* Desktop Navigation */}
+        
         <NavBody>
-        <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
+          <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
             PassItPal
-        </div>
+          </div>
 
           <NavItems items={navItems} />
           <div className="flex items-center gap-4">
-            <NavbarButton variant="secondary">Login</NavbarButton>
-            <NavbarButton variant="primary">Book a call</NavbarButton>
+            <NavbarButton variant="secondary" onClick={handleLogin}>Login</NavbarButton>
+            <NavbarButton variant="primary" onClick={handleBookCall}>Book a call</NavbarButton>
           </div>
         </NavBody>
 
-        {/* Mobile Navigation */}
+        
         <MobileNav>
           <MobileNavHeader>
             <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
-            PassItPal
-        </div>
+              PassItPal
+            </div>
             <MobileNavToggle
               isOpen={isMobileMenuOpen}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -72,14 +83,14 @@ export function NavBar() {
             ))}
             <div className="flex w-full flex-col gap-4">
               <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleLogin}
                 variant="primary"
                 className="w-full"
               >
                 Login
               </NavbarButton>
               <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleBookCall}
                 variant="primary"
                 className="w-full"
               >
@@ -89,9 +100,6 @@ export function NavBar() {
           </MobileNavMenu>
         </MobileNav>
       </Navbar>
-      
-
-      {/* Navbar */}
     </div>
   );
 }

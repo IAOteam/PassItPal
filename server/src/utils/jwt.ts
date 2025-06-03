@@ -1,12 +1,14 @@
 // server/src/utils/jwt.ts
+import dotenv from 'dotenv';
+dotenv.config();
 import jwt, { SignOptions } from 'jsonwebtoken';
 
-import dotenv from 'dotenv';
+
 import { Types } from 'mongoose';
 
-dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET! as string
+// const JWT_SECRET = 'THIS_IS_MY_VERY_CONSISTENT_TEST_SECRET_123!';
+const JWT_SECRET = process.env.JWT_SECRET//! as string
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? "1h"; // e.g., 15m for 15 minutes
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET! as string

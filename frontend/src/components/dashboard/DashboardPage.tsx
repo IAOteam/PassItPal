@@ -1,9 +1,10 @@
 // src/pages/dashboard/DashboardPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+
 import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent'; 
 import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent'; 
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 
 const DashboardPage: React.FC = () => {

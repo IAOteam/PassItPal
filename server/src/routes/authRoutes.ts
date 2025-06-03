@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import passport from 'passport';
 import { body, param } from 'express-validator'; // param is not strictly needed here but keeping if future routes use it
 import { validate } from '../middleware/validationMiddleware';
 import { 
@@ -13,7 +14,8 @@ import {
   resetPassword,
   changePassword ,
   refreshAccessToken, 
-  logoutUser
+  logoutUser,
+  googleOAuthCallbackController
 } from '../controllers/authController'; // Renamed verifyOtp to verifyOtpController to avoid conflict
 import { protect } from '../middleware/authMiddleware';
 const router = Router();
@@ -64,6 +66,25 @@ router.post(
 router.post('/refresh-token', refreshAccessToken);
 
 router.post('/logout', protect, logoutUser);
+
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'], // Must match scopes configured in passport-setup.ts and Google Console
+    session: false, // We are using JWTs, not sessions managed by Passport itself for this
+  })
+);
+
+// Google OAuth callback route
+// Google will redirect the user to this URL after they authenticate with Google.
+router.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_auth_failed_passport`, // Redirect to frontend login on failure by Passport strategy
+    session: false, // We are using JWTs
+  }),
+  googleOAuthCallbackController // Our custom controller to handle post-successful-Passport-auth
+);
 
 // Request OTP (for email or mobile number verification)
 router.post(

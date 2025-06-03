@@ -1,11 +1,11 @@
 // src/pages/profile/ProfilePage.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext'; // To display current user info
 import { Button } from '@/components/ui/button'; 
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label'; 
 
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';// To display current user info
 
 // import { Textarea } from '@/components/ui/textarea'; // for a bio field later
 // import { Checkbox } from '@/components/ui/checkbox';

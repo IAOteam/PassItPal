@@ -1,11 +1,12 @@
 // src/pages/auth/LoginPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
+import { useAuth } from '@/hooks/useAuth';
+// import { FcGoogle } from "react-icons/fc";
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,11 +36,43 @@ const LoginPage: React.FC = () => {
       console.error("Login attempt failed:", err);
     }
   };
+  const handleGoogleLogin = () => {
+    // Construct the full URL to your backend's Google auth initiation route
+    const googleAuthUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api'}/auth/google`;
+    // Redirect the current window to this URL
+    window.location.href = googleAuthUrl;
+  };
+
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-80px)]"> {/* Adjusted min-height */}
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-neutral-900">
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Log in to PassItPal</h2>
+        <Button
+          variant="outline" 
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleGoogleLogin}
+          type="button"
+        >
+          {/* <FcGoogle className="h-5 w-5" /> */}
+          <img 
+            src="/google-logo.svg" 
+            alt="Google logo " 
+            className="h-5 w-5 mr-2" 
+          /> 
+          Continue with Google
+        </Button>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-muted-foreground dark:bg-neutral-900">
+              Or login with Email
+            </span>
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300">
@@ -69,7 +102,7 @@ const LoginPage: React.FC = () => {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Logging in...' : 'Login with Email'}
           </Button>
         </form>
         <p className="text-sm text-center text-gray-600 dark:text-gray-400">

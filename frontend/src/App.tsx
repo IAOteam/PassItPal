@@ -3,7 +3,7 @@ import { NavBar } from "./components/nav/NavBar";
 import HeroSection from "./components/pages/landing/HeroSection";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Router components
 import { AuthProvider } from "./context/AuthContext"; // 
-
+import ListingsPage from './pages/auth/ListingsPage'; 
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import RegisterPage from "./pages/auth/RegisterPage.tsx";
 import OTPVerificationPage from "./pages/auth/OTPVerificationPage.tsx";
@@ -15,6 +15,7 @@ import ProfilePage from "./components/pages/profile/ProfilePage.tsx";
 import CreateListingPage from "@/components/pages/seller/CreateListingPage.tsx";
 import ProtectedRoute from "./components/ProtectedRoute"; 
 import DashboardPage from "./components/dashboard/DashboardPage.tsx";
+import GoogleAuthCallbackPage from './pages/auth/GoogleAuthCallbackPage';
 
 function App() {
   return (
@@ -32,7 +33,9 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             {/* Reset password will typically take a token from the URL, but we'll use query params for simplicity initially */}
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/auth/google/success" element={<GoogleAuthCallbackPage />} /> 
             
+            <Route path="/listings" element={<ListingsPage />}/>
             
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />

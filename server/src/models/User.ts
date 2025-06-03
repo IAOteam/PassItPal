@@ -2,8 +2,9 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 import validator from 'validator';
 export interface IUser extends Document {
   _id: Types.ObjectId;
+  googleId?: string;
   email: string;
-  password?: string; // Optional because external login might not have a password
+  password?: string; // Optional because Google login might not have a local password
   username?: string; // Buyer-specific
   mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
@@ -13,7 +14,7 @@ export interface IUser extends Document {
     city: string;
   };
   isMobileVerified: boolean;
-  isEmailVerified: boolean; // New: Track email verification
+  isEmailVerified: boolean; // Google-verified emails will set this to true
   isBlocked: boolean;
   otp?: string;
   otpExpiry?: Date;
@@ -28,6 +29,11 @@ export interface IUser extends Document {
 }
 
 const UserSchema: Schema = new Schema({
+  googleId: { 
+    type: String,
+    unique: true,
+    sparse: true, // Allows null/undefined values without violating unique constraint
+  },
   email: { 
       type: String,
       required: [true, 'Email is required'],
@@ -53,8 +59,8 @@ const UserSchema: Schema = new Schema({
       sparse: true, // Allows null values to not violate unique constraint
       trim: true,
       validate: {
-        validator: function(v: string) {
-          return /\d{10}/.test(v); // Basic 10-digit number check
+        validator: function(v: string | null | undefined) {
+          return v? /\d{10}/.test(v): true; // Basic 10-digit number check
         },
         message: (props: any) => `${props.value} is not a valid 10-digit mobile number!`
       }
@@ -93,7 +99,7 @@ const UserSchema: Schema = new Schema({
   otpVerifiedAt: { type: Date,select: false, }, 
   profilePictureUrl: { 
     type: String ,
-    default:  'https://res.cloudinary.com/dz9qcmowr/image/upload/v1716360099/profile_pictures/default_avatar_y03x5q.png'// Provide a default or leave undefined
+    default:  'https://asset.cloudinary.com/dz9qcmowr/b7e9503bc9704d834f366c513c5d51bf'// Provide a default or leave undefined
     
   },
   passwordResetToken: {

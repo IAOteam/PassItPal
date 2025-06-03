@@ -1,11 +1,12 @@
 // src/pages/seller/CreateListingPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea'; // For description
 import { useNavigate } from 'react-router-dom'; // To redirect after creation
+import { useAuth } from '@/hooks/useAuth';
 
 const CreateListingPage: React.FC = () => {
   const { createListing, loading, error, clearError } = useAuth();
@@ -56,12 +57,12 @@ const CreateListingPage: React.FC = () => {
 
     try {
       const message = await createListing({
-        title,
-        description,
-        price: parseFloat(price), // Convert to number for backend
-        category,
-        condition,
-        // Add other fields from state here
+        cultPassType: title, // Map your UI fields to backend fields as appropriate
+        expiryDate: description, // Replace with actual expiry date state variable
+        askingPrice: parseFloat(price),
+        originalPrice: parseFloat(price), // Replace with actual original price state variable
+        locationName: category, // Replace with actual location state variable
+        // Add availableCredits, adImageBase64, etc., as needed
       });
       setLocalMessage(message);
       setIsLocalError(false);

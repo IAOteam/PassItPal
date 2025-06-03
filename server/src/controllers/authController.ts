@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import User from "../models/User";
+import User , {IUser} from "../models/User";
 import { generateToken ,generateRefreshToken, verifyRefreshToken} from "../utils/jwt";
 import { sendOtp, verifyOtp } from "../utils/otp";
 
@@ -570,4 +570,70 @@ export const changePassword = async (req: Request, res: Response) => {
         // console.error('Error changing password:', error.message);
         res.status(500).json({ message: error.message || 'Server error: Could not change password.' });
     }
+};
+
+export const googleOAuthCallbackController = async (req: Request, res: Response) => {
+  if (!req.user) {
+    // This should ideally not happen if Passport authentication was successful
+    // and our verify callback in passport-setup.ts called done(null, user)
+    console.error('[Google Callback] User not found in req.user after Google auth.');
+    // Redirect to a frontend failure page or login page with an error query param
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_auth_failed`);
+  }
+
+  try {
+    const userFromDb = req.user as IUser; // req.user is populated by Passport verify callback
+
+    // Generate our application's tokens (access and refresh)
+    const accessToken = generateToken(userFromDb._id.toString(), userFromDb.role);
+    const refreshToken = generateRefreshToken(userFromDb._id.toString());
+
+    // Save the refresh token to the user document in the database
+    // (Ensure the User model instance is fully fetched if req.user is just a plain object,
+    // but Passport's done(null, user) usually passes the Mongoose document)
+    const userToUpdate = await User.findById(userFromDb._id);
+    if (!userToUpdate) {
+        console.error('[Google Callback] User from Passport could not be re-fetched from DB.');
+        return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=user_not_found_db`);
+    }
+    userToUpdate.refreshToken = refreshToken;
+    await userToUpdate.save();
+
+    // Send our application's refresh token as an HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, align with refresh token expiry
+    });
+
+    // Prepare user data to send to frontend (exclude sensitive fields if any beyond default select behavior)
+    const frontendUserData = {
+        _id: userToUpdate._id,
+        email: userToUpdate.email,
+        username: userToUpdate.username,
+        role: userToUpdate.role,
+        isEmailVerified: userToUpdate.isEmailVerified,
+        isMobileVerified: userToUpdate.isMobileVerified,
+        city: userToUpdate.location?.city,
+        profilePictureUrl: userToUpdate.profilePictureUrl,
+    };
+
+    // Redirect user back to the frontend, passing the access token and user data as query parameters
+    // The frontend will then handle these parameters, store the token, and update its auth state.
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const queryParams = new URLSearchParams({
+        token: accessToken,
+        user: JSON.stringify(frontendUserData)
+    }).toString();
+
+    console.log(`[Google Callback] Redirecting to: ${clientUrl}/auth/google/success?${queryParams}`);
+    res.redirect(`${clientUrl}/auth/google/success?${queryParams}`);
+
+  } catch (error: any) {
+    console.error('[Google Callback] Error processing Google OAuth callback:', error);
+    // Redirect to a frontend failure page
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(`${clientUrl}/login?error=google_callback_processing_error`);
+  }
 };

@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
+import passport from 'passport';
 
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
@@ -22,6 +23,7 @@ import { createAndEmitNotification } from './controllers/notificationController'
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 dotenv.config();
+import './config/passport-setup'; 
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,7 +34,13 @@ connectDB();
 app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
 
 app.use(express.json({ limit: '50mb' }));
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  credentials: true 
+}));
+
+app.use(passport.initialize());
 
 app.get('/', (req: Request, res: Response) => {
   res.send('PassitPal Backend API is running!');
@@ -64,6 +72,7 @@ io.use(async (socket: Socket, next) => {
     return next(new Error('Authentication error: No token provided'));
   }
   try {
+    // const decoded: any = jwt.verify(token, 'THIS_IS_MY_VERY_CONSISTENT_TEST_SECRET_123!');
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {

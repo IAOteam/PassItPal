@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
+import useAuthStore from "@/hooks/zustand/useAuthStore";
+import { LoginUser } from "@/api";
 
 const LoginPage: React.FC = () => {
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const login = useAuthStore((state) => state.login);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -22,12 +23,27 @@ const LoginPage: React.FC = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
-    if (Object.keys(newErrors).length === 0) {
-      console.log("Form submitted", form);
+    if (Object.keys(newErrors).length > 0) return;
+
+    setLoading(true);
+    try {
+      const res = await LoginUser(form.email, form.password);
+      if (!res.success) {
+        alert("Login failed");
+        return;
+      }
+
+      login(res.user, res.token);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,12 +109,9 @@ const LoginPage: React.FC = () => {
 
       
           <div className="pt-2">
-            <button
-              type="submit"
-              className="w-full py-3 px-6 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition font-semibold"
-            >
-              Login
-            </button>
+          <button type="submit" className="w-full py-3 px-6 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition font-semibold">
+          {loading ? "Logging in..." : "Login"}
+        </button>
           </div>
         </form>
 

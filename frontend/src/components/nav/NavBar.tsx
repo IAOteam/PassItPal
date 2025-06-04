@@ -10,52 +10,81 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Dropdown, Avatar, Menu } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import useAuthStore from "@/hooks/zustand/useAuthStore"; 
 
 export function NavBar() {
   const navItems = [
-    {
-      name: "Features",
-      link: "#features",
-    },
-    {
-      name: "Pricing",
-      link: "#pricing",
-    },
-    {
-      name: "Contact",
-      link: "#contact",
-    },
+    { name: "Features", link: "#features" },
+    { name: "Pricing", link: "#pricing" },
+    { name: "Contact", link: "#contact" },
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const { user, logout } = useAuthStore();
+
+  const handleLogin = () => navigate("/login");
+
+  const handleLogout = () => {
+    logout();
     navigate("/login");
   };
 
   const handleBookCall = () => {
-    
     alert("Book a call functionality coming soon!");
   };
 
+  const userInitial = user?.username?.charAt(0).toUpperCase() || "";
+
+  const userMenu = (
+    <Menu
+      items={[
+        {
+          key: "dashboard",
+          label: <span onClick={() => navigate("/dashboard")}>Dashboard</span>,
+        },
+        {
+          key: "logout",
+          label: <span onClick={handleLogout}>Logout</span>,
+        },
+      ]}
+    />
+  );
+  
   return (
     <div className="sticky top-0 left-0 w-full z-[100]">
       <Navbar>
-        
         <NavBody>
           <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
             PassItPal
           </div>
 
           <NavItems items={navItems} />
+
           <div className="flex items-center gap-4">
-            <NavbarButton variant="secondary" onClick={handleLogin}>Login</NavbarButton>
-            <NavbarButton variant="primary" onClick={handleBookCall}>Book a call</NavbarButton>
+            {!user ? (
+              <NavbarButton variant="secondary" onClick={handleLogin}>
+                Login
+              </NavbarButton>
+            ) : (
+              <Dropdown overlay={userMenu} placement="bottomRight" arrow>
+                <Avatar
+                  style={{ backgroundColor: "#1677ff", cursor: "pointer" }}
+                  icon={!userInitial && <UserOutlined />}
+                >
+                  {userInitial}
+                </Avatar>
+              </Dropdown>
+            )}
+            <NavbarButton variant="primary" onClick={handleBookCall}>
+              Book a call
+            </NavbarButton>
           </div>
         </NavBody>
 
-        
         <MobileNav>
           <MobileNavHeader>
             <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
@@ -82,13 +111,24 @@ export function NavBar() {
               </a>
             ))}
             <div className="flex w-full flex-col gap-4">
-              <NavbarButton
-                onClick={handleLogin}
-                variant="primary"
-                className="w-full"
-              >
-                Login
-              </NavbarButton>
+              {!user ? (
+                <NavbarButton
+                  onClick={handleLogin}
+                  variant="primary"
+                  className="w-full"
+                >
+                  Login
+                </NavbarButton>
+              ) : (
+                
+                <NavbarButton
+                  onClick={handleLogout}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Logout
+                </NavbarButton>
+              )}
               <NavbarButton
                 onClick={handleBookCall}
                 variant="primary"
@@ -103,4 +143,3 @@ export function NavBar() {
     </div>
   );
 }
-

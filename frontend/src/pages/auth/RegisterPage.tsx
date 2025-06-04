@@ -1,3 +1,5 @@
+import { RegisterUser } from "@/api";
+import useAuthStore from "@/hooks/zustand/useAuthStore";
 import React, { useState } from "react";
 
 
@@ -5,12 +7,13 @@ import { useNavigate } from "react-router";
 
 const RegisterPage: React.FC = () => {
   const [form, setForm] = useState({
+    
     username: "",
     email: "",
     password: "",
     city: "",
     phone: "",
-    role: "buyer",
+    role: "buyer" as "buyer" | "seller",
   });
 
   const [errors, setErrors] = useState<Partial<typeof form>>({});
@@ -32,19 +35,35 @@ const RegisterPage: React.FC = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
-      console.log(form);
+      try {
+        
+        const response = await RegisterUser(form);
+  
+        
+        console.log(response);
+        useAuthStore.getState().login(response.user, response.token);
+        const setEmail = useAuthStore.getState().setEmail;
+        setEmail(form.email);
+  
+        
+        navigate(`/otp`); 
+      } catch (error) {
+        console.error('Registration failed', error);
+        
+      }
     }
   };
+  
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
   
-  <div className="flex flex-col justify-center w-full max-w-2xl px-10 py-16 lg:px-20 mx-auto">
+  <div className="flex flex-col justify-center w-full max-w-2xl px-10 pt-12 lg:px-20 mx-auto">
     <div className="mb-12">
       <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
         Create your account
@@ -73,9 +92,11 @@ const RegisterPage: React.FC = () => {
           className="formInput"
           placeholder="Harkirat Singh"
         />
-        {errors.username && (
-            <p className="text-sm text-red-500 mt-1">{errors.username}</p>
-        )}
+          <div className="min-h-[1rem] mt-1">
+    {errors.username && (
+      <p className="text-sm text-red-500">{errors.username}</p>
+    )}
+  </div>
       </div>
 
       
@@ -90,9 +111,12 @@ const RegisterPage: React.FC = () => {
           className="formInput" 
           placeholder="harkirat@gmail.com"
         />
+        <div className="min-h-[1rem] mt-1">
+
         {errors.email && (
-            <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+          <p className="text-sm text-red-500 mt-1">{errors.email}</p>
         )}
+        </div>
       </div>
 
 
@@ -106,9 +130,12 @@ const RegisterPage: React.FC = () => {
             className="formInput"
             placeholder="9876543210"
         />
+        <div className="min-h-[1rem] mt-1">
+
         {errors.phone && (
-            <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
+          <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
         )}
+        </div>
         </div>
 
       
@@ -123,9 +150,12 @@ const RegisterPage: React.FC = () => {
           className="formInput"
           placeholder="********"
         />
+        <div className="min-h-[1rem] mt-1">
+
         {errors.password && (
-            <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+          <p className="text-sm text-red-500 mt-1">{errors.password}</p>
         )}
+        </div>
       </div>
 
       
@@ -139,9 +169,12 @@ const RegisterPage: React.FC = () => {
           className="formInput"
           placeholder="New Delhi"
         />
+        <div className="min-h-[1rem] mt-1">
+
         {errors.city && (
-            <p className="text-sm text-red-500 mt-1">{errors.city}</p>
+          <p className="text-sm text-red-500 mt-1">{errors.city}</p>
         )}
+        </div>
       </div>
 
       
@@ -165,7 +198,7 @@ const RegisterPage: React.FC = () => {
       </div>
 
       
-      <div className="col-span-full pt-4">
+      <div className="col-span-full pt-1">
         <button
           type="submit"
           className="w-full py-3 px-6 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition font-semibold"
@@ -176,7 +209,7 @@ const RegisterPage: React.FC = () => {
     </form>
 
     
-    <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+    <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
       Already registered?{" "}
       <button
         type="button"

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type NotificationType = 'message' | 'listing_update' | 'admin_announcement' | 'promoted_listing' | 'transaction' | 'new_order'|'order_cancelled'; 
+export type NotificationType = 'message' | 'listing_update' | 'admin_announcement' | 'promoted_listing' | 'transaction' | 'new_order'|'order_cancelled' | 'admin_alert'; 
 
 export interface INotification extends Document {
   recipient: mongoose.Schema.Types.ObjectId;
@@ -17,7 +17,7 @@ const NotificationSchema: Schema = new Schema({
   sender: { type: Schema.Types.ObjectId, ref: 'User' },
   type: { 
     type: String, 
-    enum: ['message', 'listing_update', 'admin_announcement', 'promoted_listing', 'transaction', 'new_order','order_cancelled'], 
+    enum: ['message', 'listing_update', 'admin_announcement', 'promoted_listing', 'transaction', 'new_order','order_cancelled','admin_alert'], 
     required: true },
   message: { type: String, required: true },
   link: { type: String },

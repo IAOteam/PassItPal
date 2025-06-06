@@ -8,10 +8,10 @@ import { socket as globalSocketInstance } from '../lib/socketService';
 
 // Define the shape of the user object from the backend
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   username: string;
-  role: 'buyer' | 'seller';
+  role: 'buyer' | 'seller'| 'admin';
   isEmailVerified: boolean;
   isMobileVerified: boolean;
   city?: string; //  as user.location?.city could be undefined/null
@@ -19,6 +19,11 @@ export interface User {
   latitude?: number; //  it's from backend login response
   longitude?: number; // it's from backend login response
   profilePictureUrl?: string;
+
+  requestedRole?: 'buyer' | 'seller';                     
+  roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
+  roleRequestTimestamp?: Date;                             
+  roleReviewNotes?: string;  
   
 }
 // These should match what your backend emits/expects
@@ -49,6 +54,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  refetchUser: () => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (userData: {
     username ?: string; // Optional for sellers
@@ -90,6 +96,7 @@ export interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   clearError: () => void;
   sendSocketMessage: (data: { conversationId: string; text: string; recipientId: string }) => void;
+  switchUserRole: (newRole: 'buyer' | 'seller') => Promise<string>;
 }
 
 // Create the context with default values
@@ -102,9 +109,9 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // const socketRef = useRef<Socket | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [userState, setUserState] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(localStorage.getItem('token'));
-  const [socket, setSocketState] = useState<Socket | null>(null);
+  const [socketContextState, setSocketContextState] = useState<Socket | null>(null);
   const [loading, setLoading] = useState<boolean>(true); // Start as true to check local storage
   const [error, setError] = useState<string | null>(null);
 
@@ -117,221 +124,157 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  const setUser = useCallback((value: React.SetStateAction<User | null>) => {
+    setUserState(prevState => {
+      const newUserState = typeof value === 'function' ? (value as (prevState: User | null) => User | null)(prevState) : value;
+      if (newUserState) {
+        localStorage.setItem('user', JSON.stringify(newUserState));
+      } else {
+        localStorage.removeItem('user');
+      }
+      return newUserState;
+    });
+  }, []);
+
+ 
+
+  useEffect(() => {
+    const storedUserJson = localStorage.getItem('user');
+    // const initialToken = localStorage.getItem('token'); // Already set by useState init
+
+    if (/*initialToken */ token && storedUserJson) {
+      try {
+        const parsedUser: User = JSON.parse(storedUserJson);
+        setUserState(parsedUser); // Use internal setter
+      } catch (e) {
+        console.error("Failed to parse user from localStorage", e);
+        // localStorage.removeItem('user');
+        setUser(null);
+        setToken(null); // Use context's setToken to also clear localStorage
+      }
+    } else if (/*initialToken*/ token && !storedUserJson) {
+        // Token exists but user doesn't - might be an old session or incomplete login
+        console.warn("Token found but no user data in localStorage. Clearing token to force re-login.");
+        setToken(null);
+    }
+    setLoading(false);
+  }, [token, setUser, setToken]); // setToken is stable from useCallback
+
+
   // Effect to manage Socket.IO connection
+  useEffect(() => {
+    console.log(`[AuthContext Socket Effect] Running. Token: ${!!token}, User: ${!!userState}, Socket Connected: ${globalSocketInstance.connected}`);
 
-useEffect(() => {
-  // let instanceCreatedAtEffectRun: Socket | null = null; // To track the instance created in this specific run for cleanup
-  
-  if (token && user) {
-    console.log('[AuthContext] Token and User present. Managing global socket connection.');
-
-    // If a socket instance is already in the ref and is either connected or trying to connect,
-    // then this effect run should not create a new one.
-    if (!globalSocketInstance.connected ) {
-      console.log('[AuthContext] Global socket not connected. Setting auth and connecting.');
-        // Set or update the auth token before connecting
+    if (token && userState) {
+      // If the global socket is not connected, OR if its auth token is stale
+      if (!globalSocketInstance.connected || (globalSocketInstance.auth as {token?:string}).token !== token) {
+        console.log('[AuthContext Socket Effect] Conditions met to connect/reconnect.');
+        // If it's already trying to connect (but not yet connected), don't issue another .connect()
+        // The 'auth' property might not be updated until after a disconnect/connect cycle if token changed.
+        if (globalSocketInstance.connected && (globalSocketInstance.auth as {token?:string}).token !== token) {
+            console.log('[AuthContext Socket Effect] Token changed. Disconnecting global socket to reconnect with new token.');
+            globalSocketInstance.disconnect(); // Disconnect first if token changed
+        }
+        
+        // Update auth option before connecting if not connected or if token changed
         globalSocketInstance.auth = { token };
-        globalSocketInstance.connect(); // Manually connect
-} else if (
-  typeof globalSocketInstance.auth === 'object' &&
-  globalSocketInstance.auth !== null &&
-  'token' in globalSocketInstance.auth &&
-  (globalSocketInstance.auth as { token?: string }).token !== token
-) {
-  // If already connected but token has changed (e.g., after refresh token flow)
-  // We need to disconnect and reconnect with the new token.
-  console.log('[AuthContext] Token changed. Reconnecting socket with new token.');
-  globalSocketInstance.disconnect();
-  globalSocketInstance.auth = { token };
-  globalSocketInstance.connect();
-} else {
-        console.log('[AuthContext] Global socket already connected with current token.');
-        // Ensure the context's socket state is up-to-date
-        if (socket !== globalSocketInstance) {
-            setSocketState(globalSocketInstance);
+        
+        if (!globalSocketInstance.connected) { // Check again after potential disconnect
+            console.log('[AuthContext Socket Effect] Calling globalSocketInstance.connect()');
+            globalSocketInstance.connect();
+        }
+      } else {
+        console.log('[AuthContext Socket Effect] Global socket already connected with the current token.');
+        // Ensure context state reflects the global instance if it's connected
+        if (socketContextState !== globalSocketInstance) {
+            setSocketContextState(globalSocketInstance);
         }
       }
+
+      // Define listeners (these will be added once)
       const handleConnect = () => {
-        console.log('[AuthContext] Global socket connected:', globalSocketInstance.id);
-        setSocketState(globalSocketInstance); // Set the connected instance to context state
+        console.log('[AuthContext] Global socket connected event. ID:', globalSocketInstance.id);
+        setSocketContextState(globalSocketInstance);
       };
-
       const handleDisconnect = (reason: Socket.DisconnectReason) => {
-        console.log('[AuthContext] Global socket disconnected:', globalSocketInstance.id, 'Reason:', reason);
-        setSocketState(null);
+        console.log('[AuthContext] Global socket disconnected event. ID:', globalSocketInstance.id, 'Reason:', reason);
+        setSocketContextState(null);
       };
-       // Exit, let the existing/connecting instance proceed.
-     const handleConnectError = (error: Error) => {
-        console.error('[AuthContext] Global socket connect_error:', globalSocketInstance.id, error.message, error);
-        // globalSocketInstance.disconnect(); // It might attempt to reconnect on its own.
-        setSocketState(null); // Reflect that it's not connected in our state.
-        if (error.message.includes("Invalid token")) {
-            console.error("[AuthContext] Server rejected socket connection due to invalid token.");
-        }
+      const handleConnectError = (error: Error) => {
+        console.error('[AuthContext] Global socket connect_error event. ID:', globalSocketInstance.id, error.message);
+        setSocketContextState(null);
       };
+      const handleReceiveMessage = (message: MessagePayload) => console.log('[AuthContext] Received message:', message);
+      const handleNewNotification = (notification: NotificationPayload) => console.log('[AuthContext] Received notification:', notification);
 
-      const handleReceiveMessage = (message: MessagePayload) => {
-        console.log('[AuthContext] Received message:', message);
-        // Handle message logic
-      };
-      const handleNewNotification = (notification: NotificationPayload) => {
-        console.log('[AuthContext] Received notification:', notification);
-        // Handle notification logic
-      };
-
+      // Add listeners
       globalSocketInstance.on('connect', handleConnect);
       globalSocketInstance.on('disconnect', handleDisconnect);
       globalSocketInstance.on('connect_error', handleConnectError);
       globalSocketInstance.on('receiveMessage', handleReceiveMessage);
       globalSocketInstance.on('newNotification', handleNewNotification);
 
-      // Cleanup function for this effect
+      // Cleanup: remove these specific listeners when token/user changes or component unmounts
       return () => {
-        console.log('[AuthContext] useEffect cleanup for listeners. Global socket ID:', globalSocketInstance.id);
-        // Remove listeners to prevent memory leaks and multiple handlers
-        // if the effect runs again (e.g., user logs out and back in).
+        console.log('[AuthContext Socket Effect] Cleanup: Removing listeners from global socket.');
         globalSocketInstance.off('connect', handleConnect);
         globalSocketInstance.off('disconnect', handleDisconnect);
         globalSocketInstance.off('connect_error', handleConnectError);
         globalSocketInstance.off('receiveMessage', handleReceiveMessage);
         globalSocketInstance.off('newNotification', handleNewNotification);
-
-        // Do NOT disconnect the globalSocketInstance here if the user is still logged in
-        // and token/user haven't changed to null. The disconnection for logout
-        // will be handled by the 'else' block or the logout function.
-        // This cleanup is primarily for the listeners attached in *this run* of the effect.
+        // Do NOT disconnect the globalSocketInstance here generally,
+        // unless the intent is to close it when AuthProvider unmounts.
+        // The 'else' block below handles disconnection on logout/token loss.
       };
-
     } else {
       // No token or user, so if the global socket is connected, disconnect it.
       if (globalSocketInstance.connected) {
-        console.log('[AuthContext] No token/user. Disconnecting global socket.');
+        console.log('[AuthContext Socket Effect] No token/user. Disconnecting global socket.');
         globalSocketInstance.disconnect();
       }
-      if (socket !== null) { // 'socket' is the context state variable
-        setSocketState(null); // Ensure context state is also null
+      // Ensure context state is also null
+      if (socketContextState !== null) {
+        setSocketContextState(null);
       }
     }
-  }, [token, user, socket]); 
-// useEffect(() => {
-//  let effectSocketInstance: Socket | null = null;// To track the instance created in this specific run for cleanup
-//   const hasValidAuth = Boolean(token && user);
-//   if (!hasValidAuth) {
-//       if (socketRef.current) {
-//         console.log('[AuthSocket] No auth. Disconnecting existing socket.');
-//         socketRef.current.disconnect();
-//         socketRef.current = null;
-//       }
-//       if (socket !== null) setSocket(null);
-//       return;
-//     }
-//     if (socketRef.current?.connected) {
-//       console.log('[AuthSocket] Reusing existing connected socket:', socketRef.current.id);
-//       if (socket !== socketRef.current) {
-//         setSocket(socketRef.current);
-//       }
-//       return;
-//     }
+  }, [token, userState /*, socketContextState*/]); // Listen to socketContextState to re-sync if needed or re-attach listeners
+                                           // But this could cause loops if not careful. Try [token, userState] first.
+                                           // Most robust: [token, userState] and manage listeners carefully.
 
-//     if (socketRef.current) {
-//       console.log('[AuthSocket] Disconnecting stale socket:', socketRef.current.id);
-//       socketRef.current.disconnect();
-//       socketRef.current = null;
-//     }
-
-//     if (socket !== null) setSocket(null);
-
-//     const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api').replace('/api', '');
-
-//     console.log('[AuthSocket] Creating new socket instance...');
-//     effectSocketInstance = io(BACKEND_URL, {
-//       auth: { token },
-//     });
-//     socketRef.current = effectSocketInstance;
-
-//     effectSocketInstance.on('connect', () => {
-//       console.log('[AuthSocket] Connected:', effectSocketInstance!.id);
-//       if (socketRef.current === effectSocketInstance) {
-//         setSocket(effectSocketInstance);
-//       } else {
-//         console.warn('[AuthSocket] Stale socket connected. Disconnecting:', effectSocketInstance!.id);
-//         effectSocketInstance.disconnect();
-//       }
-//     });
-
-//      effectSocketInstance.on('disconnect', (reason: Socket.DisconnectReason) => {
-//       console.log('[AuthSocket] Disconnected:', effectSocketInstance!.id, 'Reason:', reason);
-//       if (socketRef.current === effectSocketInstance) {
-//         socketRef.current = null;
-//         setSocket(null);
-//       }
-//     });
-
-//     effectSocketInstance.on('connect_error', (error: Error) => {
-//       console.error('[AuthSocket] Connection error:', effectSocketInstance!.id, error.message);
-//       if (socketRef.current === effectSocketInstance) {
-//         socketRef.current.disconnect();
-//         socketRef.current = null;
-//         setSocket(null);
-//       }
-//     });
-
-//     effectSocketInstance.on('receiveMessage', (msg: MessagePayload) => {
-//       console.log('[AuthSocket] Message received:', msg);
-//     });
-
-//     effectSocketInstance.on('newNotification', (notification: NotificationPayload) => {
-//       console.log('[AuthSocket] Notification received:', notification);
-//     });
-
-//   return () => {
-//       if (effectSocketInstance) {
-//         console.log('[AuthSocket] Cleanup: disconnecting socket', effectSocketInstance.id);
-//         effectSocketInstance.disconnect();
-//         if (socketRef.current === effectSocketInstance) {
-//           socketRef.current = null;
-//           setSocket(null);
-//         }
-//       }
-//     };
-//   }, [token, user]);
-// If this still causes issues, we might need to manage the setSocket(null)
-
-
-  // Effect to load user and token from localStorage on initial load
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    // Token is already initialized from localStorage by useState
-    if (token && storedUser) {
-        try {
-            const parsedUser: User = JSON.parse(storedUser);
-            setUser(parsedUser);
-        } catch (e) {
-            console.error("Failed to parse user from localStorage", e);
-            localStorage.removeItem('user');
-            setToken(null); // Clear token if user parsing fails
-        }
-    } else if (token && !storedUser) {
-        // If token exists but no user, attempt to fetch profile
-        // This scenario should ideally be handled by a dedicated function or an initial app load check
-        // For now, clearing the token if user data is missing ensures a clean state for re-login.
-        console.warn("Token found but no user data, attempting to fetch profile or clearing token.");
-        // Example: fetchUserProfile(token).then(setUser).catch(() => setToken(null));
-        // For simplicity now, we're not auto-fetching profile here, relying on existing logic.
-        // If the app structure ensures user is always set when token is, this branch might not be hit often.
-    }
-    setLoading(false);
-  }, [token, setToken]); // Depend on token and setToken
 
   const clearError = () => setError(null);
 
-  const handleApiError = (err: unknown, defaultMessage: string) => {
+  const refetchUser = useCallback(async () => {
+    if (!token) {
+      console.log("[refetchUser] No token available, cannot refetch.");
+      return;
+    }
+    console.log("[refetchUser] Refetching user data from /api/users/me");
+    try {
+      const res = await api.get('/users/me');
+      if (res.data && res.data.user) {
+        setUser(res.data.user); // Update context and localStorage
+      }
+    } catch (err) {
+      console.error("Failed to refetch user data:", err);
+      // Optional: handle error, maybe logout if token is invalid
+      // handleApiError(err, "Could not refresh user session.");
+    }
+  }, [token, setUser]); // Depends on token and setUser
 
+
+  const handleApiError = (err: unknown, defaultMessage: string) => {
+    setLoading(false);
     if (err instanceof AxiosError) {
-      const errorMessage = err.response?.data?.message || defaultMessage;
+      const errorMessage = err.response?.data?.message || err.message || defaultMessage;
       setError(errorMessage);
-      console.error(`Error: ${err.message || defaultMessage}`, err);
-      return err.message || defaultMessage;
+      console.error(`API Error: ${errorMessage}`, err.response?.data || err);
+      return errorMessage;
+    } else if (err instanceof Error) {
+      const errorMessage = err.message || defaultMessage;
+      setError(errorMessage);
+      console.error(`Error: ${errorMessage}`, err);
+      return errorMessage;
     } else {
       setError(defaultMessage);
       console.error(`Unexpected Error: ${defaultMessage}`, err);
@@ -391,10 +334,10 @@ useEffect(() => {
       setToken(null); // This clears access token from state and localStorage
       localStorage.removeItem('user');
 
-      if (socket) { // Disconnect socket on logout
+      if (globalSocketInstance.connected) { // Disconnect socket on logout
         console.log("Frontend: Disconnecting socket on logout.");
-        socket.disconnect();
-        setSocketState(null);
+        globalSocketInstance.disconnect();
+        setSocketContextState(null);
       }
       // No need to manually clear refresh token cookie from client-side JS, it's HttpOnly
       console.log("Logged out from client-side.");
@@ -403,15 +346,42 @@ useEffect(() => {
       // window.location.href = '/login'; // Or use useNavigate if within Router context
     }
   };
+
+  const switchUserRole = async (newRole: 'buyer' | 'seller'): Promise<string> => {
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await api.post('/users/me/request-role-change', { newRole });
+    // The backend now sends back the updated request status.
+    // We should update the local user object to reflect this pending status immediately.
+    if (userState && res.data.requestedRole && res.data.roleRequestStatus) {
+      const updatedUserWithRoleRequest = {
+        ...userState,
+        requestedRole: res.data.requestedRole,
+        roleRequestStatus: res.data.roleRequestStatus,
+        // roleRequestTimestamp will be set by backend, could be included in response too
+      };
+      setUser(updatedUserWithRoleRequest); // Update user state in context
+      localStorage.setItem('user', JSON.stringify(updatedUserWithRoleRequest));
+    }
+    setLoading(false);
+    return res.data.message || 'Role changed successfully.';
+  } catch (err) {
+    setLoading(false);
+    // handleApiError should set the error state, which ProfilePage can then read
+    throw new Error(handleApiError(err, 'Failed to submit role change request.'));
+  }
+};
+
   const sendSocketMessage = useCallback((data: { conversationId: string; text: string; recipientId: string }) => {
-    if (socket) {
-      socket.emit('sendMessage', data);
+    if (socketContextState && socketContextState.connected) {
+      socketContextState.emit('sendMessage', data);
       console.log("Emitted sendMessage via socket:", data);
     } else {
       console.error("Socket not connected. Cannot send message.");
       // Optionally, you could queue the message or show an error to the user.
     }
-  }, [socket]);
+  }, [socketContextState]);
   
   const requestOtp = async (email: string, type: 'email' | 'mobile') => {
     setLoading(true);
@@ -449,8 +419,8 @@ useEffect(() => {
         return { resetToken: res.data.resetToken };
       }
       // If user was verified, update user state
-      if (user && res.data.message && res.data.message.toLowerCase().includes('verified successfully')) {
-          const updatedUser = { ...user };
+      if (userState && res.data.message && res.data.message.toLowerCase().includes('verified successfully')) {
+          const updatedUser = { ...userState };
           if (type === 'email') updatedUser.isEmailVerified = true;
           if (type === 'mobile') updatedUser.isMobileVerified = true;
           setUser(updatedUser);
@@ -521,15 +491,17 @@ useEffect(() => {
     setError(null);
     try {
       const res = await api.put('/users/profile', profileData);
-      const updatedUser = res.data.user;
+      const updatedUser = res.data.user as User;
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      setLoading(false);
-      return res.data.message;
+      // setLoading(false);
+      return res.data.message || 'Profile updated successfully!';
     } catch (err) {
-      setLoading(false);
+      // setLoading(false);
       throw new Error(handleApiError(err, 'Failed to update profile'));
-    }
+    }finally {
+    setLoading(false); 
+  }
   };
 
 const createListing = async (listingData: { 
@@ -554,28 +526,31 @@ const createListing = async (listingData: {
   };
 
 
+
   const authContextValue: AuthContextType = {
-    user,
+    user: userState,
     token, // Access token
-    socket,
-    isAuthenticated: !!user && !!token,
+    socket: socketContextState,
+    isAuthenticated: !!userState  && !!token,
     loading,
     error,
+    setUser,
     login,
     register,
     updateProfile,
-    createListing,
     logout,
+    switchUserRole,
+    sendSocketMessage,
+    createListing,
     requestOtp,
     verifyOtp,
     resendOtp,
     forgotPasswordRequestOtp,
     resetPassword,
     changePassword,
+    refetchUser,
     setToken, // Expose setToken
-    setUser,
     clearError,
-    sendSocketMessage,
   };
   return (
     <AuthContext.Provider value={authContextValue}>

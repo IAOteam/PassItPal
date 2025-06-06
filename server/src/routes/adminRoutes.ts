@@ -6,7 +6,11 @@ import {
   getAllListingsAdmin,
   toggleListingPromotion,
   deleteListingAdmin,
-  getPlatformStats
+  getPlatformStats,
+
+  listRoleChangeRequests,
+  approveRoleChangeRequest,
+  rejectRoleChangeRequest
 } from '../controllers/adminController';
 import { protect, authorizeRoles } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
@@ -55,5 +59,31 @@ router.delete(
 );
 
 router.get('/stats', getPlatformStats);
+
+// GET all pending role change requests
+router.get('/role-requests', listRoleChangeRequests); // Example: /api/admin/role-requests?status=pending (query param handled in controller if needed)
+
+// PUT to approve a role change request for a specific user
+router.put(
+  '/role-requests/:userId/approve',
+  [
+    param('userId').isMongoId().withMessage('Invalid user ID format.'),
+    // body('notes').optional().isString().trim().escape() // Optional notes for approval
+  ],
+  validate,
+  approveRoleChangeRequest
+);
+
+// PUT to reject a role change request for a specific user
+router.put(
+  '/role-requests/:userId/reject',
+  [
+    param('userId').isMongoId().withMessage('Invalid user ID format.'),
+    body('notes').notEmpty().withMessage('Rejection notes are required.').isString().trim().escape()
+  ],
+  validate,
+  rejectRoleChangeRequest
+);
+
 
 export default router;

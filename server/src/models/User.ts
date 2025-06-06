@@ -24,6 +24,11 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
+
+  requestedRole?: 'buyer' | 'seller';                     
+  roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
+  roleRequestTimestamp?: Date;                             
+  roleReviewNotes?: string;       
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,7 +87,7 @@ const UserSchema: Schema = new Schema({
       },
       coordinates: {
         type: [Number], // [longitude, latitude]
-        index: '2dsphere', // Create a geospatial index
+        // index: '2dsphere', // Create a geospatial index
       },
   },
   
@@ -114,6 +119,26 @@ const UserSchema: Schema = new Schema({
     type: String,
     select: false, // Do not return by default
   },
+  // Schema definitions for Role Change Request fields
+  requestedRole: {                                      
+    type: String,
+    enum: ['buyer', 'seller'],
+    required: false, // Only present when a request is made
+  },
+  roleRequestStatus: {                                  
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    required: false, // Only present when a request is made
+  },
+  roleRequestTimestamp: {                            
+    type: Date,
+    required: false,
+  },
+  roleReviewNotes: {                                    
+    type: String,
+    trim: true,
+    required: false,
+  },
   
 },
   {
@@ -123,6 +148,9 @@ const UserSchema: Schema = new Schema({
 
 // GeoJSON Point Schema for location based queries
 UserSchema.index({ location: '2dsphere' });
+// UserSchema.index({ googleId: 1 }, { sparse: true });
+// UserSchema.index({ email: 1 });
+UserSchema.index({ roleRequestStatus: 1 }, { sparse: true }); // sparse: true because not all users will have this status
 
 const User = mongoose.model<IUser>('User', UserSchema);
 export default User;

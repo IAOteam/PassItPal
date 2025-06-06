@@ -4,6 +4,7 @@ import crypto from "crypto";
 import User , {IUser} from "../models/User";
 import { generateToken ,generateRefreshToken, verifyRefreshToken} from "../utils/jwt";
 import { sendOtp, verifyOtp } from "../utils/otp";
+import { normalizeIndianMobileNumber } from "../utils/stringUtils";
 
 // declare module 'express-serve-static-core' {
 //   interface Request {
@@ -37,26 +38,35 @@ export const registerUser = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "User with this email already exists." });
     }
-    
-    if (role === "seller" && mobileNumber ) {
-      const existingMobileUser = await User.findOne({ mobileNumber });
-      if (existingMobileUser) {
-        return res
-          .status(400)
-          .json({ message: "User with this mobile number already exists." });
-      }
+    let normalizedMobile: string | null = null;
+    if (mobileNumber) { // If mobile number is provided
+        normalizedMobile = normalizeIndianMobileNumber(mobileNumber);
+        if (!normalizedMobile && mobileNumber.trim() !== "") {
+            return res.status(400).json({ message: 'Invalid mobile number format for registration. Please provide a 10-digit Indian mobile number.' });
+        }
+        // Check uniqueness of normalized number
+        
+        if (normalizedMobile) { // Check uniqueness only if normalizedMobile is valid
+            const existingMobileUser = await User.findOne({ mobileNumber: normalizedMobile });
+            if (existingMobileUser) {
+                return res.status(400).json({ message: "User with this mobile number already exists." });
+            }
+        }
+    }
+    if (role === 'seller' && !normalizedMobile) {
+        return res.status(400).json({ message: "Seller must provide a valid mobile number."});
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    interface Location {
-      city: string;
-      type?: 'Point';
-      coordinates?: [number, number];
-    }
+    // interface Location {
+    //   city: string;
+    //   type?: 'Point';
+    //   coordinates?: [number, number];
+    // }
     
-    const location: Location = { city };
+    const location: { city: string; type?: 'Point'; coordinates?: [number, number] } = { city };
     
     if (latitude != null && longitude != null) {
       location.type = 'Point';
@@ -64,7 +74,7 @@ export const registerUser = async (req: Request, res: Response) => {
     }
     else{
       location.type = 'Point';
-      location.coordinates = [0, 0]; 
+      // location.coordinates = [0, 0]; 
     }
 
     user = new User({
@@ -73,7 +83,7 @@ export const registerUser = async (req: Request, res: Response) => {
       // username: role === "buyer" ? username : undefined,
       // mobileNumber: role === "seller" ? mobileNumber : undefined,
       username,
-      mobileNumber,
+      mobileNumber: normalizedMobile|| undefined,
       role,
       location,
       isMobileVerified: false, // Default to false
@@ -99,7 +109,11 @@ export const registerUser = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    // console.error("Error during user registration:", error.message);
+    console.error("Error during user registration:", error.message);
+    if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map((val: any) => val.message);
+        return res.status(400).json({ message: messages.join(', ') });
+    }
     res.status(500).json({ message: "Server error: Could not register user." });
   }
 };
@@ -138,14 +152,14 @@ export const loginUser = async (req: Request, res: Response) => {
         });
     }
     const accessToken = generateToken(user._id.toString(), user.role);
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const refreshTokenVal = generateRefreshToken(user._id.toString());
 
      // refreshToken to user and persist
-    user.refreshToken = refreshToken;
+    user.refreshToken = refreshTokenVal;
     await user.save();
 
     // refreshToken as HttpOnly cookie
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie('refreshToken', refreshTokenVal, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -160,12 +174,14 @@ export const loginUser = async (req: Request, res: Response) => {
         username: user.username,
         mobileNumber: user.mobileNumber,
         role: user.role,
-        city: user.location?.city,
+        city: user.location?.city || "",
         latitude: user.location?.coordinates?.[1],
         longitude: user.location?.coordinates?.[0],
         isMobileVerified: user.isMobileVerified,
         isEmailVerified: user.isEmailVerified,
         profilePictureUrl: user.profilePictureUrl,
+        requestedRole: user.requestedRole, 
+        roleRequestStatus: user.roleRequestStatus
       },
     });
   } catch (error: any) {
@@ -174,28 +190,41 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 export const refreshAccessToken = async (req: Request, res: Response) => {
+  console.log('[Refresh Token Endpoint] req.cookies:', req.cookies);
   const incomingRefreshToken = req.cookies.refreshToken;
 
   if (!incomingRefreshToken) {
-    return res.status(401).json({ message: 'Refresh token not found.' });
+    return res.status(401).json({ message: 'Refresh token not found in cookies.' });
   }
 
   try {
     const decoded = verifyRefreshToken(incomingRefreshToken);
     if (!decoded || !decoded.id) {
-      return res.status(403).json({ message: 'Invalid or expired refresh token.' });
+      return res.status(403).json({ message: 'Invalid or expired refresh token (decode failed).' });
     }
 
-    const user = await User.findById(decoded.id);
+    // CRITICAL FIX: Explicitly select refreshToken as it has select:false in schema
+    const user = await User.findById(decoded.id).select('+refreshToken');
+
     if (!user) {
       return res.status(403).json({ message: 'User not found for this token.' });
     }
     if (user.isBlocked) {
       return res.status(403).json({ message: 'Your account has been blocked.' });
     }
+    
+    console.log(`[Refresh Token Endpoint] Incoming RF Token: ${incomingRefreshToken}`);
+    console.log(`[Refresh Token Endpoint] Stored RF Token on User: ${user.refreshToken}`);
+
     if (user.refreshToken !== incomingRefreshToken) {
-      return res.status(403).json({ message: 'Refresh token mismatch or invalidated.' });
+      console.warn(`[Refresh Token Endpoint] Mismatch for user ${user.email}. Denying refresh. Possible token reuse or session invalidation.`);
+      // Security measure: If a potentially compromised or old refresh token is used,
+      // invalidate all refresh tokens for this user by clearing the stored one.
+      // user.refreshToken = undefined; 
+      // await user.save();
+      return res.status(403).json({ message: 'Refresh token mismatch or invalidated. Please log in again.' });
     }
+
     const newAccessToken = generateToken(user._id.toString(), user.role);
 
     res.json({
@@ -204,7 +233,10 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    // console.error('Error refreshing access token:', error.message);
+    console.error('[Refresh Token Endpoint] Error:', error.message);
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return res.status(403).json({ message: `Invalid or expired refresh token (${error.message}). Please log in again.` });
+    }
     return res.status(500).json({ message: 'Server error: Could not refresh access token.' });
   }
 };
@@ -217,7 +249,7 @@ export const logoutUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('+refreshToken');;
 
     if (user) {
       user.refreshToken = undefined;
@@ -227,14 +259,15 @@ export const logoutUser = async (req: Request, res: Response) => {
     res.cookie('refreshToken', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       expires: new Date(0),
+      path: '/',
     });
 
     res.status(200).json({ message: 'Logged out successfully.' });
 
   } catch (error: any) {
-    // console.error('Error during user logout:', error.message);
+    console.error('Error during user logout:', error.message);
     res.status(500).json({ message: 'Server error: Could not log out user.' });
   }
 };
@@ -285,9 +318,9 @@ export const requestOtp = async (req: Request, res: Response) => {
 // @access  Public
 export const verifyOtpController = async (req: Request, res: Response) => {
   const { email, otp, type } = req.body; // 'type' can be 'email' or 'mobile'
-
+  const purpose = req.body.purpose || "verification";
   try {
-    const isValid = await verifyOtp(email, otp, type,"verification");
+    const isValid = await verifyOtp(email, otp, type,purpose as 'verification' | 'password_reset');
 
     if (!isValid) {
       return res.status(400).json({ message: "Invalid or expired OTP." });
@@ -303,6 +336,20 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     //   user.otp = undefined; user.otpExpiry = undefined; // Clear OTP after verification
     //   await user.save();
     // }
+    const user = await User.findOne({ email }); // Re-fetch to update if verifyOtp doesn't save for all cases
+    if (user) {
+        let updated = false;
+        if (purpose === 'verification') {
+            if (type === 'email' && !user.isEmailVerified) { user.isEmailVerified = true; updated = true; }
+            if (type === 'mobile' && user.mobileNumber && !user.isMobileVerified) { user.isMobileVerified = true; updated = true; }
+        }
+        // verifyOtp now clears OTP fields. If it didn't, you'd clear them here.
+        if (updated) await user.save();
+    }
+    if (purpose === 'password_reset' && isValid) { // verifyOtp for password_reset only validates, doesn't issue token
+        // The verifyPasswordResetOtpAndGenerateToken function handles token generation
+        return res.status(200).json({ message: "OTP for password reset is valid. Proceed to reset password with token."})
+    }
 
     res
       .status(200)
@@ -312,7 +359,7 @@ export const verifyOtpController = async (req: Request, res: Response) => {
         } verified successfully!`,
       });
   } catch (error: any) {
-    // console.error("Error verifying OTP:", error.message);
+    console.error("Error verifying OTP:", error.message);
     res.status(500).json({ message: "Server error: Could not verify OTP." });
   }
 };
@@ -573,67 +620,35 @@ export const changePassword = async (req: Request, res: Response) => {
 };
 
 export const googleOAuthCallbackController = async (req: Request, res: Response) => {
+  console.log(`[Google Callback Controller] Entered at: ${new Date().toISOString()}`);
   if (!req.user) {
-    // This should ideally not happen if Passport authentication was successful
-    // and our verify callback in passport-setup.ts called done(null, user)
     console.error('[Google Callback] User not found in req.user after Google auth.');
-    // Redirect to a frontend failure page or login page with an error query param
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_auth_failed`);
   }
-
   try {
-    const userFromDb = req.user as IUser; // req.user is populated by Passport verify callback
-
-    // Generate our application's tokens (access and refresh)
-    const accessToken = generateToken(userFromDb._id.toString(), userFromDb.role);
-    const refreshToken = generateRefreshToken(userFromDb._id.toString());
-
-    // Save the refresh token to the user document in the database
-    // (Ensure the User model instance is fully fetched if req.user is just a plain object,
-    // but Passport's done(null, user) usually passes the Mongoose document)
-    const userToUpdate = await User.findById(userFromDb._id);
+    const userFromPassport = req.user as IUser; // User from passport verify callback
+    // Re-fetch user to ensure we have the latest full document, especially if passport-setup modified it
+    const userToUpdate = await User.findById(userFromPassport._id).select("+refreshToken");
     if (!userToUpdate) {
         console.error('[Google Callback] User from Passport could not be re-fetched from DB.');
         return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=user_not_found_db`);
     }
-    userToUpdate.refreshToken = refreshToken;
+
+    const accessToken = generateToken(userToUpdate._id.toString(), userToUpdate.role);
+    const refreshTokenVal = generateRefreshToken(userToUpdate._id.toString());
+    userToUpdate.refreshToken = refreshTokenVal;
     await userToUpdate.save();
 
-    // Send our application's refresh token as an HttpOnly cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, align with refresh token expiry
-    });
-
-    // Prepare user data to send to frontend (exclude sensitive fields if any beyond default select behavior)
+    res.cookie('refreshToken', refreshTokenVal, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' });
     const frontendUserData = {
-        _id: userToUpdate._id,
-        email: userToUpdate.email,
-        username: userToUpdate.username,
-        role: userToUpdate.role,
-        isEmailVerified: userToUpdate.isEmailVerified,
-        isMobileVerified: userToUpdate.isMobileVerified,
-        city: userToUpdate.location?.city,
-        profilePictureUrl: userToUpdate.profilePictureUrl,
+        _id: userToUpdate._id.toString(), email: userToUpdate.email, username: userToUpdate.username, role: userToUpdate.role,
+        isEmailVerified: userToUpdate.isEmailVerified, isMobileVerified: userToUpdate.isMobileVerified,
+        city: userToUpdate.location?.city || "", profilePictureUrl: userToUpdate.profilePictureUrl,
+        requestedRole: userToUpdate.requestedRole, roleRequestStatus: userToUpdate.roleRequestStatus, // Include these
     };
-
-    // Redirect user back to the frontend, passing the access token and user data as query parameters
-    // The frontend will then handle these parameters, store the token, and update its auth state.
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const queryParams = new URLSearchParams({
-        token: accessToken,
-        user: JSON.stringify(frontendUserData)
-    }).toString();
-
-    console.log(`[Google Callback] Redirecting to: ${clientUrl}/auth/google/success?${queryParams}`);
+    const queryParams = new URLSearchParams({ token: accessToken, user: JSON.stringify(frontendUserData) }).toString();
+    console.log(`[Google Callback] Redirecting to: ${clientUrl}/auth/google/success with token and user data.`);
     res.redirect(`${clientUrl}/auth/google/success?${queryParams}`);
-
-  } catch (error: any) {
-    console.error('[Google Callback] Error processing Google OAuth callback:', error);
-    // Redirect to a frontend failure page
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    res.redirect(`${clientUrl}/login?error=google_callback_processing_error`);
-  }
+  } catch (error: any) { console.error('[Google Callback] Error processing Google OAuth callback:', error); res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_callback_processing_error`); }
 };

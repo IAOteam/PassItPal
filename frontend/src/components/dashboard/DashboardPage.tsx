@@ -5,6 +5,7 @@ import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent'
 import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent'; 
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import ManageRoleRequests from '@/components/admin/ManageRoleRequests';
 
 
 const DashboardPage: React.FC = () => {
@@ -21,7 +22,7 @@ useEffect(() => {
         // Clear the message from history state so it doesn't reappear on refresh
         window.history.replaceState({}, document.title, window.location.pathname);
     }else {
-        console.log("DashboardPage useEffect: No message found in location.state or it's not a string."); // DEBUG LOG 3    
+        console.log("DashboardPage useEffect: No message found in location.state or it's not a string.");   
     }
 }, [location]);
 useEffect(() => {
@@ -44,8 +45,8 @@ return <div>Not authenticated.</div>;
 }
 
 return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
-        <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Dashboard</h2>
+    <div className="p-4"> 
+        <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white text-center">Dashboard</h2>
         <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg">
             {displayMessage && (
                 <div className="p-3 text-sm rounded border bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300 mb-4">
@@ -53,11 +54,35 @@ return (
                 </div>
             )}
 
-            {user.role === 'buyer' ? (
-            <BuyerDashboardContent />
-            ) : user.role === 'seller' ? (
-            <SellerDashboardContent />
-            ) : (
+            {user.role === 'buyer' && (
+        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
+          <BuyerDashboardContent />
+        </div>
+      )} 
+       {user.role === 'seller' && (
+        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
+          <SellerDashboardContent />
+        </div>
+      )} 
+      {user.role === 'admin' && (
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
+            <h3 className="text-xl font-semibold mb-4">Admin Overview</h3>
+            <p>Welcome, Admin {user.username}!</p>
+            {/* Other admin summary stats can go here */}
+          </div>
+          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
+            <ManageRoleRequests />
+          </div>
+        </div>
+      )}
+      {user.role !== 'buyer' && user.role !== 'seller' && user.role !== 'admin' && (
+          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg mx-auto">
+            <p>Welcome to your dashboard, {user.username}!</p>
+          </div>
+        )}
+      </div>
+      {/* : (
         <>
             <p className="text-gray-700 dark:text-gray-300">Welcome to your dashboard. {user.username}!!</p>
 
@@ -69,19 +94,19 @@ return (
                 <span className="font-semibold">Role:</span> {user.role}
                 </p>
                 <p className="text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">City:</span> {user.city || 'N/A'} {/* Display city if available */}
+                <span className="font-semibold">City:</span> {user.city || 'N/A'} 
                 </p>
                 <p className="text-gray-700 dark:text-gray-300">
                 <span className="font-semibold">Email Verified:</span> {user.isEmailVerified ? 'Yes' : 'No'}
                 </p>
-            {/* Add more user details as needed */}
+            
             </div>
             <p className="mt-8 text-gray-600 dark:text-gray-400">
                 This is a protected page. You can only see this because you are logged in.
             </p>
-        </> )}
-        </div>
-</div>
+        </> ) */}
+    </div>
+
 );
 };
 export default DashboardPage;

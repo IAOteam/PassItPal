@@ -24,7 +24,7 @@ const OTPVerificationPage: React.FC = () => {
 
   // Redirect if already authenticated, or if no email/purpose provided and it's essential
   useEffect(() => {
-    if (isAuthenticated && purpose === 'verification') {
+    if (isAuthenticated && purpose === 'verification'&& type === 'email') {
       navigate('/dashboard'); // If user is logged in and purpose was verification, redirect to dashboard
     }
     // If no email is provided, redirect to login as OTP verification needs an email
@@ -33,7 +33,7 @@ const OTPVerificationPage: React.FC = () => {
       // No need for alert here, as the component will not render the form.
       // Alternatively, here could render a message prompting them to go to the correct page
     }
-  }, [isAuthenticated, navigate, email, purpose]);
+  }, [isAuthenticated, navigate, email,  purpose, type]);
 
   // Clear error message when component mounts or unmounts
   useEffect(() => {
@@ -119,7 +119,7 @@ const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
       if (result === null) {
         // This case should ideally not happen if verifyOtp throws on failure
         // It might signify an unexpected scenario, e.g., verification succeeded but yielded no meaningful data.
-        alert('OTP verification succeeded but no clear outcome. Please try logging in or resetting password again.');
+        alert('OTP verification had an unexpected outcome. Please try again.');
         return;
       }
 
@@ -130,7 +130,14 @@ const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
       } else if (typeof result === 'string') {
         alert(result); // Show success message (e.g., "OTP verified.")
         if (purpose === 'verification') { // Assuming purpose state is reliable here
-          navigate('/login');
+           if (type === 'mobile') {
+            // If we just verified a mobile number (from profile page), navigate back to profile.
+            // Pass a success message to be displayed.
+            navigate('/profile', { state: { message: result } });
+          } else {
+            // Default for email verification during registration, navigate to login.
+            navigate('/login');
+          }
         }
       } else {
         // Fallback if result is not a string and not a resetToken object

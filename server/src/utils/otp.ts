@@ -12,8 +12,14 @@ const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER; // Twilio sending number
 
+// --- DEBUG LOGGING for Twilio credentials ---
+console.log(`[Twilio Setup] Account SID loaded: ${!!twilioAccountSid}`);
+console.log(`[Twilio Setup] Auth Token loaded: ${!!twilioAuthToken}`);
+console.log(`[Twilio Setup] Phone Number loaded: ${!!twilioPhoneNumber}`);
+
+
 if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-  // console.error("Twilio credentials are not fully set in environment variables!");
+  console.error("[Twilio Setup] CRITICAL ERROR: Twilio credentials are not fully set in environment variables! SMS sending will fail.");
   //  throw an error or handle this more better in production : Remember to do idiot
 }
 
@@ -35,43 +41,81 @@ export const generateOtp = (): string => {
  * @returns {Promise<void>}
  */
 export const sendOtp = async (email: string, mobileNumber: string | undefined, type: 'email' | 'mobile',purpose: 'verification' | 'password_reset'): Promise<void> => {
+console.log(`[sendOtp] START - Sending OTP for user: ${email}, type: ${type}, purpose: ${purpose}`);
+  
   const otp = generateOtp();
   const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000); // OTP expiry time
+console.log(`[sendOtp] Generated OTP: ${otp}, Expiry: ${otpExpiry.toISOString()}`);
 
   const user = await User.findOne({ email });
 
   if (!user) {
+        console.error(`[sendOtp] ERROR: User not found for email: ${email}`);
+
     throw new Error('User not found.');
   }
+    console.log(`[sendOtp] User found: ${user._id}`);
+
 
   user.otp = otp;
   user.otpExpiry = otpExpiry;
   user.otpPurpose = purpose;
+    console.log(`[sendOtp] Attempting to save OTP to user document...`);
+
   await user.save();
+  console.log(`[sendOtp] OTP saved to user document successfully.`);
 
   if (type === 'email') {
+     try {
+                console.log(`[sendOtp] Preparing to send email to ${email}...`);
+
     const emailSubject = 'Your PassItPal OTP for Email Verification';
     const emailText = `Your OTP for email verification is: ${otp}. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`;
     const emailHtml = `<p>Your OTP for email verification is: <strong>${otp}</strong>.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`;
     await sendEmail(email, emailSubject, emailText, emailHtml);
+          console.log(`[sendOtp] Email sent successfully to ${email}.`);
+
     // console.log(`OTP ${otp} sent to ${email} for email verification.`);
+     } catch (emailError: any) {
+      
+      console.error(`[sendOtp] CRITICAL ERROR sending email:`, emailError.message, emailError.stack);
+      // Re-throw the error so the calling function knows it failed
+      throw new Error('Failed to send email OTP.');
+    }
   } else if (type === 'mobile') {
+    
     if (!mobileNumber) {
+            console.error(`[sendOtp] ERROR: Mobile number not provided for mobile OTP.`);
+
       throw new Error('Mobile number not provided for mobile OTP.');
     }
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+        console.error(`[sendOtp] ERROR: Cannot send SMS because Twilio credentials are not configured.`);
+        throw new Error('SMS service is not configured on the server.');
+    }
   try {
-        await twilioClient.messages.create({
+      console.log(`[sendOtp] Preparing to send SMS via Twilio to ${mobileNumber}...`);
+    const numberToSendTo = `+91${mobileNumber}`;
+      console.log(`[sendOtp] Preparing to send SMS via Twilio from: ${twilioPhoneNumber} to formatted number: ${numberToSendTo}...`);
+      
+        const message = await twilioClient.messages.create({
             body: `Your PassItPal OTP is: ${otp} , It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
             from: twilioPhoneNumber, // Twilio phone number
-            to: mobileNumber // Recipient's phone number
+            to: numberToSendTo // Recipient's phone number
         });
+              console.log(`[sendOtp] SMS sent successfully via Twilio. Message SID: ${message.sid}`);
+
       //  await twilioService.sendSms(mobileNumber, `Your PassItPal OTP is: ${otp}`);
       // console.log(`OTP ${otp} sent to ${mobileNumber} for mobile verification (SMS gateway placeholder).`);
   } catch (twilioError: any) {
+          console.error(`[sendOtp] CRITICAL ERROR sending SMS via Twilio to ${mobileNumber}:`, twilioError.message, twilioError.stack);
+
         // console.error(`Error sending SMS via Twilio to ${mobileNumber}:`, twilioError.message);
         throw new Error(`Failed to send mobile OTP via Twilio: ${twilioError.message}`);
     }
   }
+    console.log(`[sendOtp] END - Process complete for user: ${email}`);
+
 };
 
 /**

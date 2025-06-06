@@ -1,13 +1,13 @@
 import express,{ Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import helmet from 'helmet'; // New: For security headers
+import helmet from 'helmet'; //  For security headers
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import passport from 'passport';
-
+import cookieParser from 'cookie-parser';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import listingRoutes from './routes/listingRoutes';
@@ -18,7 +18,7 @@ import adminRoutes from './routes/adminRoutes';
 
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
-import User from './models/User';
+import User , {IUser} from './models/User';
 import { createAndEmitNotification } from './controllers/notificationController';
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
@@ -31,9 +31,10 @@ const httpServer = createServer(app);
 connectDB();
 
 // Security Middleware
-app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
+app.use(helmet()); // Add Helmet to set various HTTP headers for security
 
 app.use(express.json({ limit: '50mb' }));
+app.use(cookieParser());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -89,7 +90,7 @@ io.use(async (socket: Socket, next) => {
 });
 
 io.on('connection', (socket: Socket) => {
-  const user = socket.data.user;
+  const user = socket.data.user as IUser;
   console.log(`Socket connected: ${socket.id} for user: ${user.email}`);
 
   connectedUsers.set(user._id.toString(), socket.id);
@@ -161,7 +162,7 @@ httpServer.listen(PORT, () => {
   console.log(`Socket.IO listening on port ${PORT}`);
 });
 
-// New: 404 Not Found Middleware - MUST be placed AFTER all routes
+//  404 Not Found Middleware - MUST be placed AFTER all routes
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({ message: `Not Found - ${req.originalUrl}` });
 });

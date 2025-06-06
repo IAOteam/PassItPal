@@ -38,7 +38,7 @@ export function NavBar() {
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false); // Close mobile menu on logout
-    navigate('/login');
+    navigate('/');
   };
 
   return (

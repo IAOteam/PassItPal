@@ -93,7 +93,7 @@ api.interceptors.response.use(
         // A better way is for AuthContext to handle this based on an event or a failed refresh attempt.
         if (window.location.pathname !== '/login') {
            // alert('Your session has expired. Please log in again.'); // Optional: inform user
-           window.location.href = '/login'; // Redirect to login
+           window.location.href = '/'; // Redirect to login
         }
         return Promise.reject(refreshError);
       }

@@ -113,6 +113,12 @@ passport.use(
           profilePictureUrl: (profile.photos && profile.photos.length > 0) ? profile.photos[0].value : undefined,
           // 'role' will default to 'buyer' as per your User model, or you can set it explicitly
           // 'password' field will be empty as this is Google OAuth user
+          role: 'buyer', // Explicitly set default role if needed, otherwise relies on schema default
+          location: {
+            type: 'Point',
+            coordinates: [0, 0], // Default coordinates (e.g., [longitude, latitude])
+            city: '' // Default city or leave empty if schema allows
+          }
         });
         console.time("SaveNewUserGoogle");
         await newUser.save();

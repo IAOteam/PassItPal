@@ -1,4 +1,4 @@
-import type { User } from '@/types';
+import type { User, ListingsResponse } from '@/types';
 
 interface RegisterFormData {
   username: string;
@@ -91,4 +91,15 @@ const LoginUser = async (email: string, password: string): Promise<{ success: bo
   };
 };
 
-export { RegisterUser, ValidateOtp, LoginUser };
+
+
+
+const getListings = async (): Promise<ListingsResponse> => {
+  const response = await fetch(`${backendUrl}/api/listings`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch listings');
+  }
+  return await response.json();
+};
+
+export { RegisterUser, ValidateOtp, LoginUser, getListings };

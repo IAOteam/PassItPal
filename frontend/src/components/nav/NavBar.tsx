@@ -9,14 +9,14 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Dropdown, Avatar, Menu } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import useAuthStore from "@/hooks/zustand/useAuthStore"; 
 
 export function NavBar() {
   const navItems = [
-    { name: "Features", link: "#features" },
+    { name: "Passes", link: "/pass-listing" },
     { name: "Pricing", link: "#pricing" },
     { name: "Contact", link: "#contact" },
   ];
@@ -58,10 +58,11 @@ export function NavBar() {
     <div className="sticky top-0 left-0 w-full z-[100]">
       <Navbar>
         <NavBody>
+          <Link to="/">
           <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
             PassItPal
           </div>
-
+          </Link>
           <NavItems items={navItems} />
 
           <div className="flex items-center gap-4">

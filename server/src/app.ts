@@ -144,11 +144,16 @@ io.on('connection', (socket: Socket) => {
 });
 
 
-const PORT = process.env.PORT || 5001;
+const PORT = parseInt(process.env.PORT || '5001', 10);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "127.0.0.1",() => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO listening on port ${PORT}`);
+});
+
+// add a route to test the server
+app.get('/test', (req: Request, res: Response) => {
+  res.send('Server is running');
 });
 
 // New: 404 Not Found Middleware - MUST be placed AFTER all routes

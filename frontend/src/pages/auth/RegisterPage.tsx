@@ -1,240 +1,160 @@
-import { RegisterUser } from "@/api";
-import useAuthStore from "@/hooks/zustand/useAuthStore";
-import React, { useState } from "react";
+// src/pages/auth/RegisterPage.tsx
+import React, { useState, useEffect } from 'react';
 
-
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
+// import { FcGoogle } from 'react-icons/fc';
 
 const RegisterPage: React.FC = () => {
-  const [form, setForm] = useState({
-    
-    username: "",
-    email: "",
-    password: "",
-    city: "",
-    phone: "",
-    role: "buyer" as "buyer" | "seller",
-  });
-
-  const [errors, setErrors] = useState<Partial<typeof form>>({});
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [role, setRole] = useState<'buyer' | 'seller'>('buyer'); // Default role
+  const { register, isAuthenticated, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const [city, setCity] = useState(''); 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard'); // Redirect logged-in users away from register page
+    }
+  }, [isAuthenticated, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  // Clear error message when component mounts or unmounts
+  useEffect(() => {
+    clearError();
+    return () => clearError(); // Cleanup on unmount
+  }, [clearError]);
+
+  const handleGoogleLogin = () => {
+    // Construct the full URL to your backend's Google auth initiation route
+    const googleAuthUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api'}/auth/google`;
+    // Redirect the current window to this URL
+    window.location.href = googleAuthUrl;
   };
-
-  const validate = () => {
-    const newErrors: Partial<typeof form> = {};
-    if (!form.username.trim()) newErrors.username = "Username is required";
-    if (!form.email.includes("@")) newErrors.email = "Valid email is required";
-    if (form.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    if (!form.city.trim()) newErrors.city = "City is required";
-    if (!form.phone.trim() || !/^\d{10,}$/.test(form.phone))
-        newErrors.phone = "Enter a valid phone number";
-    return newErrors;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors = validate();
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length === 0) {
-      try {
-        
-        const response = await RegisterUser(form);
-  
-        
-        console.log(response);
-        useAuthStore.getState().login(response.user, response.token);
-        const setEmail = useAuthStore.getState().setEmail;
-        setEmail(form.email);
-  
-        
-        navigate(`/otp`); 
-      } catch (error) {
-        console.error('Registration failed', error);
-        
-      }
+    try {
+      // Call the register function from AuthContext
+      const message = await register({ username, email, password, mobileNumber, role ,city});
+      alert(message); // Show success message (e.g., "User registered. OTP sent...")
+
+      // After successful registration (and OTP sent), navigate to OTP verification page
+      // Pass email and purpose as state to OTP verification page
+      navigate('/verify-otp', { state: { email, purpose: 'verification', type: 'email' } });
+    } catch (err) {
+      // Error message is handled and set by useAuth context
+      console.error("Registration failed:", err);
     }
   };
-  
 
-  return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
-  
-  <div className="flex flex-col justify-center w-full max-w-2xl px-10 pt-12 lg:px-20 mx-auto">
-    <div className="mb-12">
-      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-        Create your account
-      </h1>
-      <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
-        Start your journey with us – it only takes a minute.
-      </p>
+ return (
+    <div className="flex min-h-screen bg-gray-50 dark:bg-neutral-950">
+      
+      {/* Left side: The Form */}
+      <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 sm:px-12 lg:px-20 mx-auto">
+        <div className="mx-auto w-full max-w-md">
+          <Link to="/" className="text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">
+             &larr; Back to Home
+          </Link>
+          <div className="mt-6">
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Create your account
+            </h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
+              Start your journey with us – it only takes a minute.
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-4">
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              <img src="/google-logo.svg" alt="Google" className="h-5 w-5" />
+              Continue with Google
+            </Button>
+            
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t dark:border-neutral-700" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-50 px-2 text-muted-foreground dark:bg-neutral-950">
+                  Or Register with Email
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded-md dark:bg-red-900 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+              {/* Using grid for form layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" type="text" placeholder="Your name" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="mobileNumber">Mobile Number</Label>
+                  <Input id="mobileNumber" type="tel" placeholder="10-digit number" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" type="text" placeholder="e.g., Bengaluru" value={city} onChange={(e) => setCity(e.target.value)} required />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="role">I am a</Label>
+                  <select id="role" value={role} onChange={(e) => setRole(e.target.value as 'buyer' | 'seller')} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required>
+                    <option value="buyer">Buyer</option>
+                    <option value="seller">Seller</option>
+                  </select>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+            </form>
+          </div>
+        
+          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            Already have an account?{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Login here
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Right side: The Image/Message */}
+      <div className="hidden lg:flex items-center justify-center flex-1 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-neutral-800 dark:to-neutral-900">
+        <div className="max-w-sm text-center px-10">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+            Welcome Aboard 🚀
+          </h2>
+          <p className="mt-2 text-gray-700 dark:text-gray-300 text-sm">
+            Join a vibrant marketplace where buyers and sellers connect meaningfully.
+          </p>
+        </div>
+      </div>
     </div>
-    <button
-  onClick={() => navigate("/")}
-  className="absolute top-6 left-6 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline"
->
-  PassItPal
-</button>
-
-
-    <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit} noValidate>
-      
-      <div className="col-span-full md:col-span-1">
-        <label htmlFor="username" className="formLabel">Username</label>
-        <input
-          id="username"
-          name="username"
-          value={form.username}
-          onChange={handleChange}
-          className="formInput"
-          placeholder="Harkirat Singh"
-        />
-          <div className="min-h-[1rem] mt-1">
-    {errors.username && (
-      <p className="text-sm text-red-500">{errors.username}</p>
-    )}
-  </div>
-      </div>
-
-      
-      <div className="col-span-full md:col-span-1">
-        <label htmlFor="email" className="formLabel">Email</label>
-        <input
-          id="email"
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          className="formInput" 
-          placeholder="harkirat@gmail.com"
-        />
-        <div className="min-h-[1rem] mt-1">
-
-        {errors.email && (
-          <p className="text-sm text-red-500 mt-1">{errors.email}</p>
-        )}
-        </div>
-      </div>
-
-
-      <div className="col-span-full md:col-span-1">
-        <label htmlFor="phone" className="formLabel">Phone</label>
-        <input
-            id="phone"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            className="formInput"
-            placeholder="9876543210"
-        />
-        <div className="min-h-[1rem] mt-1">
-
-        {errors.phone && (
-          <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
-        )}
-        </div>
-        </div>
-
-      
-      <div className="col-span-full md:col-span-1">
-        <label htmlFor="password" className="formLabel">Password</label>
-        <input
-          id="password"
-          type="password"
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          className="formInput"
-          placeholder="********"
-        />
-        <div className="min-h-[1rem] mt-1">
-
-        {errors.password && (
-          <p className="text-sm text-red-500 mt-1">{errors.password}</p>
-        )}
-        </div>
-      </div>
-
-      
-      <div className="col-span-full md:col-span-1">
-        <label htmlFor="city" className="formLabel">City</label>
-        <input
-          id="city"
-          name="city"
-          value={form.city}
-          onChange={handleChange}
-          className="formInput"
-          placeholder="New Delhi"
-        />
-        <div className="min-h-[1rem] mt-1">
-
-        {errors.city && (
-          <p className="text-sm text-red-500 mt-1">{errors.city}</p>
-        )}
-        </div>
-      </div>
-
-      
-      <div className="col-span-full md:col-span-1">
-        <label className="formLabel">Role</label>
-        <div className="flex gap-4 pt-2">
-          {["buyer", "seller"].map((option) => (
-            <label key={option} className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              <input
-                type="radio"
-                name="role"
-                value={option}
-                checked={form.role === option}
-                onChange={handleChange}
-                className="accent-blue-600"
-              />
-              <span className="capitalize">{option}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      
-      <div className="col-span-full pt-1">
-        <button
-          type="submit"
-          className="w-full py-3 px-6 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition font-semibold"
-        >
-          Create Account
-        </button>
-      </div>
-    </form>
-
-    
-    <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-      Already registered?{" "}
-      <button
-        type="button"
-        onClick={() => navigate("/login")}
-        className="text-blue-600 hover:underline dark:text-blue-400"
-      >
-        Login here
-      </button>
-    </p>
-  </div>
-
-  
-  <div className="hidden lg:flex items-center justify-center w-full bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-800 dark:to-gray-900">
-    
-    <div className="max-w-sm text-center px-10">
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-        Welcome aboard 🚀
-      </h2>
-      <p className="mt-2 text-gray-700 dark:text-gray-300 text-sm">
-        Join a vibrant marketplace where buyers and sellers connect meaningfully.
-      </p>
-    </div>
-  </div>
-</div>
-
   );
 };
 

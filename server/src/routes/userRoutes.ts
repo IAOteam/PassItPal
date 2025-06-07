@@ -1,6 +1,14 @@
 import { Router } from 'express';
-import { getMyProfile, updateMyProfile, getUserProfileById,getAllUsers, blockUser ,getMe, 
-  updateMe } from '../controllers/userController';
+import { 
+  getMyProfile, 
+  updateMyProfile, 
+  getUserProfileById,
+  getAllUsers, 
+  blockUser ,
+  getMe, 
+  updateMe,
+  switchUserRole  
+} from '../controllers/userController';
 import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validationMiddleware';
@@ -15,7 +23,28 @@ router.get('/me', protect, getMe);
 // @route   PUT /api/users/me
 // @desc    Update current authenticated user's profile
 // @access  Private
-router.put('/me', protect, updateMe); 
+router.put('/me', 
+  protect,
+  [ // keeping existing validation rules for profile update
+    body('username').optional().isLength({ min: 3 }).trim().escape(),
+    body('mobileNumber').optional().isMobilePhone('any', { strictMode: false }), // made strictMode false for more flexibility
+    body('city').optional().notEmpty(),
+    // ... other validation rules for profile update in future 
+  ],
+  validate,
+  updateMe
+); 
+
+router.post(
+  '/me/request-role-change',
+  protect, // User must be logged in
+  [
+    body('newRole').isIn(['buyer', 'seller']).withMessage('Requested role must be either "buyer" or "seller".')
+  ],
+  validate, // Use validation middleware
+  switchUserRole
+);
+
 
 // @route   GET /api/users/all
 // @desc    Get all users (Admin only)

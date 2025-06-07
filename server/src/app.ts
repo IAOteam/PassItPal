@@ -1,12 +1,13 @@
 import express,{ Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import helmet from 'helmet'; // New: For security headers
+import helmet from 'helmet'; //  For security headers
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
-
+import passport from 'passport';
+import cookieParser from 'cookie-parser';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import listingRoutes from './routes/listingRoutes';
@@ -17,11 +18,12 @@ import adminRoutes from './routes/adminRoutes';
 
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
-import User from './models/User';
+import User , {IUser} from './models/User';
 import { createAndEmitNotification } from './controllers/notificationController';
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 dotenv.config();
+import './config/passport-setup'; 
 
 const app = express();
 const httpServer = createServer(app);
@@ -29,14 +31,25 @@ const httpServer = createServer(app);
 connectDB();
 
 // Security Middleware
-app.use(helmet()); // New: Add Helmet to set various HTTP headers for security
+app.use(helmet()); // Add Helmet to set various HTTP headers for security
 
 app.use(express.json({ limit: '50mb' }));
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  credentials: true 
+}));
+
+app.use(passport.initialize());
 
 app.get('/', (req: Request, res: Response) => {
   res.send('PassitPal Backend API is running!');
 });
+app.get('/test', (req: Request, res: Response) => {
+  res.send('Server is running and responsive');
+});
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -50,8 +63,9 @@ app.use('/api/orders', orderRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -63,6 +77,7 @@ io.use(async (socket: Socket, next) => {
     return next(new Error('Authentication error: No token provided'));
   }
   try {
+    // const decoded: any = jwt.verify(token, 'THIS_IS_MY_VERY_CONSISTENT_TEST_SECRET_123!');
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
@@ -79,7 +94,11 @@ io.use(async (socket: Socket, next) => {
 });
 
 io.on('connection', (socket: Socket) => {
-  const user = socket.data.user;
+  const user = socket.data.user as IUser;
+  if (!user || !user._id) {
+    socket.disconnect();
+    return;
+  }
   console.log(`Socket connected: ${socket.id} for user: ${user.email}`);
 
   connectedUsers.set(user._id.toString(), socket.id);
@@ -134,8 +153,10 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
-    connectedUsers.delete(user._id.toString());
+    if (user && user.email) {
+      console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
+      connectedUsers.delete(user._id.toString());
+    }
   });
 
   socket.on('error', (err) => {
@@ -151,12 +172,7 @@ httpServer.listen(PORT, "127.0.0.1",() => {
   console.log(`Socket.IO listening on port ${PORT}`);
 });
 
-// add a route to test the server
-app.get('/test', (req: Request, res: Response) => {
-  res.send('Server is running');
-});
-
-// New: 404 Not Found Middleware - MUST be placed AFTER all routes
+//  404 Not Found Middleware - MUST be placed AFTER all routes
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({ message: `Not Found - ${req.originalUrl}` });
 });

@@ -3,34 +3,27 @@ import {
   NavBody,
   // NavItems,
   MobileNav,
-  NavbarLogo,
-  NavbarButton,
+  // NavbarButton,
   MobileNavHeader,
   MobileNavToggle,
   MobileNavMenu,
+  NavItems,
 } from "@/components/ui/resizable-navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import { Link, useNavigate } from 'react-router-dom'; 
- 
-// import { Button } from './ui/button';
+import { Link, useNavigate } from "react-router-dom";
+import { Dropdown, Avatar, Menu } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import { Button } from "../ui/button";
+// import useAuthStore from "@/hooks/zustand/useAuthStore"; 
 
 export function NavBar() {
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
   const navItems = [
-    {
-      name: "Features",
-      link: "#features",
-    },
-    {
-      name: "Pricing",
-      link: "#pricing",
-    },
-    {
-      name: "Contact",
-      link: "#contact",
-    },
+    { name: "Browse Passes", link: "/listings" },
+    { name: "Become a Seller", link: "/profile" }, 
+    { name: "Contact", link: "#contact" },
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,158 +33,123 @@ export function NavBar() {
     setIsMobileMenuOpen(false); // Close mobile menu on logout
     navigate('/');
   };
+  // const navigate = useNavigate();
 
+  // const { user, logout } = useAuthStore();
+
+  // const handleLogin = () => navigate("/login");
+
+  // const handleLogout = () => {
+  //   logout();
+  //   navigate("/login");
+  // };
+
+  // const handleBookCall = () => {
+  //   alert("Book a call functionality coming soon!");
+  // };
+
+  const userInitial = user?.username?.charAt(0).toUpperCase() || "";
+
+  const userMenu = (
+    <Menu
+      items={[
+        {
+          key: "dashboard",
+          label: <span onClick={() => navigate("/dashboard")}>Dashboard</span>,
+        },
+        {
+          key: "profile",
+          label: <span onClick={() => navigate("/profile")}>My Profile</span>,
+        },
+        {
+          key: "logout",
+          label: <span onClick={handleLogout}>Logout</span>,
+          danger: true,
+        },
+      ]}
+    />
+  );
+  
   return (
-    <div className="relative w-full">
+    // Adopted sticky positioning from your friend's version
+    <div className="sticky top-0 left-0 w-full z-[100] pagePadding">
       <Navbar>
-        {/* Desktop Navigation */}
         <NavBody>
-        <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
-            PassItPal
-        </div>
+          {/* Main Logo/Brand Name */}
+          <Link to="/">
+            <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-4 py-2">
+              PassItPal
+            </div>
+          </Link>
 
-          {/* <NavItems items={navItems} /> */}
+          {/* Navigation Items */}
+          <NavItems items={navItems} />
 
+          {/* Auth Buttons / User Menu */}
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <>
-                {/* {user && user.username && (
-                    <span className="text-gray-700 dark:text-gray-300 text-sm">
-                        Welcome, {user.username}!
-                    </span>
-                )} */}
-                {/* Placeholder for a Dashboard/Profile button */}
-                <Link to="/dashboard">
-                    <NavbarButton variant="secondary" as="span">Dashboard</NavbarButton>
-                </Link>
-                <Link to="/profile">
-                    <NavbarButton variant="secondary" as="span">Profile</NavbarButton>
-                </Link>
-                <Link to="/seller/create-listing" className="hover:underline">
-                Create Listing
-                </Link>
-                
-                <NavbarButton variant="primary" onClick={handleLogout}>Logout</NavbarButton>
-              </>
+            {isAuthenticated && user ? (
+              // Authenticated View: Use the antd Dropdown
+              <Dropdown overlayClassName="mt-2" menu={{ items: userMenu.props.items }} placement="bottomRight" arrow>
+                <Avatar style={{ backgroundColor: "#1d4ed8", cursor: "pointer" }} icon={!userInitial && <UserOutlined />}>
+                  {userInitial}
+                </Avatar>
+              </Dropdown>
             ) : (
-              <div className="space-x-2">
-                <Link to="/login">
-                  <NavbarButton variant="secondary" as="span">Login</NavbarButton> {/* Use as="span" with Link */}
-                </Link>
-                <Link to="/register">
-                  <NavbarButton variant="primary" as="span">Register</NavbarButton> {/* Use as="span" with Link */}
-                </Link>
-                
-                {/* <NavbarButton variant="primary">Book a call</NavbarButton> */}
+              // Unauthenticated View
+              <div className="hidden md:flex items-center gap-2">
+                <Button variant="secondary" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button variant="default" onClick={() => navigate('/register')}>
+                  Register
+                </Button>
               </div>
             )}
           </div>
         </NavBody>
 
-
-        {/*--------- Mobile Navigation ----------*/}
+        {/* Mobile Navigation */}
         <MobileNav>
           <MobileNavHeader>
-            <NavbarLogo />
-            {/* <div className="relative inline-block font-bold text-xl tracking-wider z-10 py-2">
-                PassItPal
-            </div> */}
+            <Link to="/">
+                <div className="relative inline-block font-bold text-xl tracking-wider z-10 px-2 py-2">
+                    PassItPal
+                </div>
+            </Link>
             <MobileNavToggle
               isOpen={isMobileMenuOpen}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
           </MobileNavHeader>
 
-          <MobileNavMenu
-            isOpen={isMobileMenuOpen}
-            onClose={() => setIsMobileMenuOpen(false)}
-          >
+          <MobileNavMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
             {navItems.map((item, idx) => (
               <a
                 key={`mobile-link-${idx}`}
-                href={item.link}
-                onClick={() => setIsMobileMenuOpen(false)}
+                href={item.link} // For in-page links like #contact
+                onClick={(e) => {
+                    if(item.link.startsWith('/')) { e.preventDefault(); navigate(item.link); }
+                    setIsMobileMenuOpen(false);
+                }}
                 className="relative text-neutral-600 dark:text-neutral-300"
               >
                 <span className="block">{item.name}</span>
               </a>
             ))}
-            <div className="flex w-full flex-col gap-4 mt-4">
-              {isAuthenticated ? (
+            <div className="flex w-full flex-col gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+              {isAuthenticated && user ? (
                 <>
-                    {/* to: Display username for mobile too */}
-                    {user && user.username && (
-                        <span className="text-neutral-600 dark:text-neutral-300 text-sm p-2 w-full text-center">
-                            Welcome, {user.username}!
-                        </span>
-                    )}
-                    <Link to="/dashboard" className="w-full">
-                        <NavbarButton
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        variant="secondary"
-                        className="w-full"
-                        as="span"
-                        >
-                        Dashboard
-                        </NavbarButton>
-                    </Link>
-                      <Link to="/profile" className="w-full"> {/* <--- ADD THIS LINE */}
-                        <NavbarButton
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        variant="secondary"
-                        className="w-full"
-                        as="span"
-                        >
-                        Profile
-                        </NavbarButton>
-                    </Link>
-                    <Link to="/change-password" className="w-full">
-                        <NavbarButton
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        variant="secondary"
-                        className="w-full"
-                        as="span"
-                        >
-                        Change Password
-                        </NavbarButton>
-                    </Link>
-                    <NavbarButton
-                        onClick={handleLogout}
-                        variant="primary"
-                        className="w-full"
-                    >
-                        Logout
-                    </NavbarButton>
+                  <span className="text-neutral-600 dark:text-neutral-300 text-sm p-2 w-full text-center">
+                    Welcome, {user.username}!
+                  </span>
+                  <Button onClick={() => { navigate('/dashboard'); setIsMobileMenuOpen(false); }} variant="secondary" className="w-full">Dashboard</Button>
+                  <Button onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} variant="secondary" className="w-full">My Profile</Button>
+                  <Button onClick={handleLogout} variant="destructive" className="w-full">Logout</Button>
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="w-full">
-                    <NavbarButton
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      variant="secondary"
-                      className="w-full"
-                      as="span"
-                    >
-                      Login
-                    </NavbarButton>
-                  </Link>
-                  <Link to="/register" className="w-full">
-                    <NavbarButton
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      variant="primary"
-                      className="w-full"
-                      as="span"
-                    >
-                      Register
-                    </NavbarButton>
-                  </Link>
-                  {/* <NavbarButton
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    variant="primary"
-                    className="w-full"
-                  >
-                    Book a call
-                  </NavbarButton> */}
+                  <Button onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }} variant="secondary" className="w-full">Login</Button>
+                  <Button onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }} variant="default" className="w-full">Register</Button>
                 </>
               )}
             </div>

@@ -1,5 +1,5 @@
 
-import { NavBar } from "./components/nav/NavBar";
+// import { NavBar } from "./components/nav/NavBar";
 import HeroSection from "./components/pages/landing/HeroSection";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Router components
 import { AuthProvider } from "./context/AuthContext"; // 
@@ -17,40 +17,49 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./components/dashboard/DashboardPage.tsx";
 import GoogleAuthCallbackPage from './pages/auth/GoogleAuthCallbackPage';
 
+import Layout from './Layout'; 
+
 function App() {
   return (
-    <Router> {/* Wrap the entire application with Router */}
-      <AuthProvider> {/* AuthProvider still wraps everything below it */}
-        <div className="pagePadding">
-          <NavBar /> {/* NavBar should be outside Routes if it's always present */}
+    <Router>
+      <AuthProvider>
+        <Routes>
+          {/* Routes that use the shared Layout (NavBar, Footer) */}
+          <Route path="/" element={<Layout />}>
+            {/* Index route (what shows up at "/") */}
+            <Route index element={<HeroSection />} />
+            
+            {/* Public listing page */}
+            <Route path="/listings" element={<ListingsPage />} />
 
-          <Routes> {/* Defining  routes here */}
-            <Route path="/" element={<HeroSection />} /> {/*  landing page */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            {/* OTP verification can be dynamic based on purpose (email verification or password reset) */}
-            <Route path="/verify-otp" element={<OTPVerificationPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            {/* Reset password will typically take a token from the URL, but we'll use query params for simplicity initially */}
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/auth/google/success" element={<GoogleAuthCallbackPage />} /> 
-            
-            <Route path="/listings" element={<ListingsPage />}/>
-            
+            {/* Protected routes that also use the layout */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/change-password" element={<ChangePasswordPage />} /> {/* Assuming you have this */}
+              <Route path="/change-password" element={<ChangePasswordPage />} />
             </Route>
-
-            <Route element={<ProtectedRoute allowedRoles={['seller']} unauthorizedMessage="Only sellers can create listings." />}> {/* Protect for sellers only */}
+            
+            {/* Seller-only protected route */}
+            <Route element={<ProtectedRoute allowedRoles={['seller']} unauthorizedMessage="Only sellers can create listings." />}>
               <Route path="/seller/create-listing" element={<CreateListingPage />} />
             </Route>
+          </Route>
 
-            {/* Optionally, a 404 Not Found page */}
-            <Route path="*" element={<h1 className="text-center mt-20 text-3xl text-red-500">404 - Page Not Found</h1>} />
-            </Routes>
-        </div>
+          {/* Routes that DO NOT use the shared Layout (e.g., full-screen auth pages) */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-otp" element={<OTPVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/auth/google/success" element={<GoogleAuthCallbackPage />} />
+
+          {/* Catch-all 404 Not Found page */}
+          <Route path="*" element={
+            <div className="flex items-center justify-center h-screen">
+              <h1 className="text-center text-3xl text-red-500">404 - Page Not Found</h1>
+            </div>
+          } />
+        </Routes>
       </AuthProvider>
     </Router>
   );

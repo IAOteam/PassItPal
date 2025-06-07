@@ -46,6 +46,10 @@ app.use(passport.initialize());
 app.get('/', (req: Request, res: Response) => {
   res.send('PassitPal Backend API is running!');
 });
+app.get('/test', (req: Request, res: Response) => {
+  res.send('Server is running and responsive');
+});
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -60,7 +64,7 @@ app.use('/api/orders', orderRoutes);
 export const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST'],
     credentials: true
   }
 });
@@ -91,6 +95,10 @@ io.use(async (socket: Socket, next) => {
 
 io.on('connection', (socket: Socket) => {
   const user = socket.data.user as IUser;
+  if (!user || !user._id) {
+    socket.disconnect();
+    return;
+  }
   console.log(`Socket connected: ${socket.id} for user: ${user.email}`);
 
   connectedUsers.set(user._id.toString(), socket.id);
@@ -145,8 +153,10 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
-    connectedUsers.delete(user._id.toString());
+    if (user && user.email) {
+      console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
+      connectedUsers.delete(user._id.toString());
+    }
   });
 
   socket.on('error', (err) => {
@@ -155,9 +165,9 @@ io.on('connection', (socket: Socket) => {
 });
 
 
-const PORT = process.env.PORT || 5001;
+const PORT = parseInt(process.env.PORT || '5001', 10);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "127.0.0.1",() => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO listening on port ${PORT}`);
 });

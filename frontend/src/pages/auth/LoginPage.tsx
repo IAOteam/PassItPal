@@ -28,6 +28,9 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+        return;
+    }
     try {
       await login({ email, password });
       // Redirection handled by useEffect if login is successful
@@ -44,81 +47,112 @@ const LoginPage: React.FC = () => {
   };
 
 
-  return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-80px)]"> {/* Adjusted min-height */}
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-neutral-900">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Log in to PassItPal</h2>
-        <Button
-          variant="outline" 
-          className="w-full flex items-center justify-center gap-2"
-          onClick={handleGoogleLogin}
-          type="button"
-        >
-          {/* <FcGoogle className="h-5 w-5" /> */}
-          <img 
-            src="/google-logo.svg" 
-            alt="Google logo " 
-            className="h-5 w-5 mr-2" 
-          /> 
-          Continue with Google
-        </Button>
+   return (
+    <div className="flex min-h-screen bg-gray-50 dark:bg-neutral-950">
+      
+      {/* Left side: The Form */}
+      <div className="flex flex-col justify-center w-full max-w-2xl px-8 sm:px-12 lg:px-20 mx-auto">
+        <div className="mx-auto w-full max-w-md">
+          <Link to="/" className="text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">
+             &larr; Back to Home
+          </Link>
+          <div className="mt-6">
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Sign in to your account
+            </h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
+              Welcome back! Please enter your details.
+            </p>
+          </div>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground dark:bg-neutral-900">
-              Or login with Email
-            </span>
-          </div>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300">
-              {error}
+          <div className="mt-8 space-y-4">
+            {/* Google Login Button */}
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              <img src="/google-logo.svg" alt="Google" className="h-5 w-5" />
+              Continue with Google
+            </Button>
+
+            {/* Separator */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t dark:border-neutral-700" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-50 px-2 text-muted-foreground dark:bg-neutral-950">
+                  Or continue with
+                </span>
+              </div>
             </div>
-          )}
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            
+            {/* Email Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded-md dark:bg-red-900 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                        Forgot password?
+                    </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+              </Button>
+            </form>
           </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login with Email'}
-          </Button>
-        </form>
-        <p className="text-sm text-center text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
-          <Link to="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-        <p className="text-sm text-center text-gray-600 dark:text-gray-400">
-          <Link to="/forgot-password" className="font-medium text-primary hover:underline">
-            Forgot password?
-          </Link>
-        </p>
+        
+          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            Don't have an account?{" "}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Right side: The Image/Message (from your friend's version) */}
+      <div className="hidden lg:flex items-center justify-center flex-1 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-neutral-800 dark:to-neutral-900">
+        <div className="max-w-sm text-center px-10">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+            Welcome Back! 👋
+          </h2>
+          <p className="mt-2 text-gray-700 dark:text-gray-300 text-sm">
+            We're glad to have you. Let's find your next pass or a buyer for yours.
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default LoginPage

@@ -87,28 +87,38 @@ export const getConversationMessages = async (req: Request, res: Response) => {
 
     const { conversationId } = req.params;
 
-    const conversation = await Conversation.findById(conversationId);
+    const conversation = await Conversation.findById(conversationId)
+      .populate('participants', 'username profilePictureUrl _id'); // Ensure we populate _id
 
     if (!conversation) {
       return res.status(404).json({ message: 'Conversation not found.' });
     }
 
-    // Ensure the logged-in user is a participant in this conversation
-    if (!conversation.participants.includes(req.user._id)) {
+    // --- CRITICAL FIX: Correctly check if the user is a participant ---
+    // The old way `conversation.participants.includes(req.user._id)` fails because it compares object references.
+    // The correct way is to use .some() and .equals() to compare the ID values.
+    const isParticipant = conversation.participants.some(participant => 
+        (participant as any)._id.equals(req.user!._id)
+    );
+
+    if (!isParticipant) {
+      console.log(`[Auth Failure] User ${req.user._id} is not a participant in conversation ${conversationId}.`);
       return res.status(403).json({ message: 'Not authorized to view this conversation.' });
     }
 
     const messages = await Message.find({ conversation: conversationId })
-      .populate('sender', 'username profilePictureUrl') // Populate sender details
-      .sort('createdAt'); // Sort messages by creation date
+      .populate('sender', 'username profilePictureUrl')
+      .sort('createdAt');
 
-    // Mark messages as read by the current user
     await Message.updateMany(
-      { conversation: conversationId, readBy: { $ne: req.user._id } }, // Only unread messages for this user
-      { $addToSet: { readBy: req.user._id } } // Add user to readBy array
+      { conversation: conversationId, readBy: { $ne: req.user._id } },
+      { $addToSet: { readBy: req.user._id } }
     );
 
-    res.json(messages);
+    res.json({
+      conversation,
+      messages
+    });
   } catch (error: any) {
     console.error('Error fetching conversation messages:', error.message);
     if (error.kind === 'ObjectId') {

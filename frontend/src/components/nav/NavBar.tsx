@@ -1,74 +1,101 @@
 import {
   Navbar,
   NavBody,
-  // NavItems,
+  NavItems,
   MobileNav,
-  // NavbarButton,
+  NavbarButton,
   MobileNavHeader,
   MobileNavToggle,
   MobileNavMenu,
-  NavItems,
 } from "@/components/ui/resizable-navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Dropdown, Avatar, Menu } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { Dropdown, Avatar ,Badge, type MenuProps} from "antd";
+import { UserOutlined , BellOutlined} from "@ant-design/icons";
 import { Button } from "../ui/button";
+import { MessageSquare } from "lucide-react";
 // import useAuthStore from "@/hooks/zustand/useAuthStore"; 
 
+// Helper function to format time since notification was created
+const timeSince = (date: string) => {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + "y ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + "mo ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + "d ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + "h ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + "m ago";
+  return Math.floor(seconds) + "s ago";
+};
+
 export function NavBar() {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, notifications, unreadCount, markNotificationsAsRead  } = useAuth();
   const navigate = useNavigate();
   const navItems = [
     { name: "Browse Passes", link: "/listings" },
     { name: "Become a Seller", link: "/profile" }, 
-    { name: "Contact", link: "#contact" },
+    { name: "Create Listing", link: "/seller/create-listing", roles: ['seller'] },
   ];
+  
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false); // Close mobile menu on logout
     navigate('/');
   };
-  // const navigate = useNavigate();
-
-  // const { user, logout } = useAuthStore();
-
-  // const handleLogin = () => navigate("/login");
-
-  // const handleLogout = () => {
-  //   logout();
-  //   navigate("/login");
-  // };
-
-  // const handleBookCall = () => {
-  //   alert("Book a call functionality coming soon!");
-  // };
+  const handleNotificationDropdownToggle = (open: boolean) => {
+    setIsNotificationDropdownOpen(open);
+    // If the dropdown is being opened and there are unread notifications, mark them as read
+    if (open && unreadCount > 0) {
+      markNotificationsAsRead();
+    }
+  };
+  
 
   const userInitial = user?.username?.charAt(0).toUpperCase() || "";
 
-  const userMenu = (
-    <Menu
-      items={[
-        {
-          key: "dashboard",
-          label: <span onClick={() => navigate("/dashboard")}>Dashboard</span>,
-        },
-        {
-          key: "profile",
-          label: <span onClick={() => navigate("/profile")}>My Profile</span>,
-        },
-        {
-          key: "logout",
-          label: <span onClick={handleLogout}>Logout</span>,
-          danger: true,
-        },
-      ]}
-    />
-  );
+  const userMenuItems: MenuProps['items'] = [
+    { key: "dashboard", label: "Dashboard", onClick: () => navigate("/dashboard") },
+    { key: "profile", label: "My Profile", onClick: () => navigate("/profile") },
+    { type: 'divider' },
+    { key: "logout", label: "Logout", onClick: handleLogout, danger: true },
+  ];
+// The notification dropdown menu
+  const notificationMenuItems: MenuProps['items'] = [
+    {
+      key: 'header',
+      label: "Notifications",
+      type: 'group',
+      className: "font-semibold text-base"
+    },
+    { type: 'divider' },
+    ...(notifications.length > 0 ? (
+      notifications.slice(0, 7).map(notif => ({
+        key: notif._id,
+        label: (
+          <div className="flex items-start gap-3">
+            {!notif.read && <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></div>}
+            <div className="flex-grow">
+              <p className="text-sm text-gray-800 dark:text-gray-200">{notif.message}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{timeSince(notif.createdAt)}</p>
+            </div>
+          </div>
+        ),
+        onClick: () => notif.link && navigate(notif.link),
+        style: { height: 'auto', lineHeight: 'normal', padding: '8px 12px' }
+      }))
+    ) : (
+      [{ key: 'empty', label: "You have no new notifications.", disabled: true }]
+    ))
+  ];
   
   return (
     // Adopted sticky positioning from your friend's version
@@ -88,21 +115,42 @@ export function NavBar() {
           {/* Auth Buttons / User Menu */}
           <div className="flex items-center gap-4">
             {isAuthenticated && user ? (
-              // Authenticated View: Use the antd Dropdown
-              <Dropdown overlayClassName="mt-2" menu={{ items: userMenu.props.items }} placement="bottomRight" arrow>
-                <Avatar style={{ backgroundColor: "#1d4ed8", cursor: "pointer" }} icon={!userInitial && <UserOutlined />}>
-                  {userInitial}
-                </Avatar>
+            <div className="flex items-center gap-5">
+                  <Link to="/messages" title="Messages">
+                    <MessageSquare className="text-xl text-gray-600 dark:text-gray-300 hover:text-primary cursor-pointer" />
+                  </Link>
+              <Dropdown
+                  menu={{ items: notificationMenuItems }} 
+                  placement="bottomRight"
+                  arrow
+                  trigger={['click']}
+                  onOpenChange={handleNotificationDropdownToggle} // Use onOpenChange
+                >
+                  <span>
+                    
+                    <Badge count={unreadCount} size="small">
+                      <BellOutlined className="text-xl text-gray-600 dark:text-gray-300 hover:text-primary cursor-pointer" />
+                    </Badge>
+                  </span>
+                </Dropdown>
+              {/* // Authenticated View: Use the antd Dropdown */}
+              <Dropdown overlayClassName="mt-2" menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+                <span>
+                  <Avatar style={{ backgroundColor: "#1d4ed8", cursor: "pointer" }} icon={!userInitial && <UserOutlined />}>
+                    {userInitial}
+                  </Avatar>
+                </span>
               </Dropdown>
+            </div>
             ) : (
               // Unauthenticated View
               <div className="hidden md:flex items-center gap-2">
-                <Button variant="secondary" onClick={() => navigate('/login')}>
-                  Login
-                </Button>
-                <Button variant="default" onClick={() => navigate('/register')}>
-                  Register
-                </Button>
+                <Link to="/login">
+                  <NavbarButton variant="secondary" as="span">Login</NavbarButton> {/* Use as="span" with Link */}
+                </Link>
+                <Link to="/register">
+                  <NavbarButton variant="primary" as="span">Register</NavbarButton> {/* Use as="span" with Link */}
+                </Link>
               </div>
             )}
           </div>

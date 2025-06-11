@@ -7,123 +7,207 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea'; // For description
 import { useNavigate } from 'react-router-dom'; // To redirect after creation
 import { useAuth } from '@/hooks/useAuth';
+import { Upload, ImagePlus } from 'lucide-react';
+
+
+interface FormErrors {
+  cultPassType?: string;
+  originalPrice?: string;
+  askingPrice?: string;
+  expiryDate?: string;
+  locationName?: string;
+  form?: string; // For general form errors
+}
 
 const CreateListingPage: React.FC = () => {
-  const { createListing, loading, error, clearError } = useAuth();
+  const { user,createListing, loading, error: apiError, clearError } = useAuth();
   const navigate = useNavigate();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState(''); // Use string for input, convert to number for API
-  const [category, setCategory] = useState('');
-  const [condition, setCondition] = useState('');
+  const [cultPassType, setCultPassType] = useState('');
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [askingPrice, setAskingPrice] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [availableCredits, setAvailableCredits] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [adImageBase64, setAdImageBase64] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   // Add more state variables as per your Listing model fields
   // e.g., const [images, setImages] = useState<File[]>([]); for file uploads
 
-  const [localMessage, setLocalMessage] = useState<string | null>(null);
-  const [isLocalError, setIsLocalError] = useState<boolean>(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  useEffect(() => {
+    // Redirect if user is not a seller
+    if (user && user.role !== 'seller') {
+      navigate('/dashboard', { state: { message: "You must be a seller to create a listing." } });
+    }
+    clearError();
+    // Pre-fill location if user has one
+    if (user?.city) {
+      setLocationName(user.city);
+    }
+  }, [user, navigate, clearError]);
 
   useEffect(() => {
-    if (error) {
-      setLocalMessage(error);
-      setIsLocalError(true);
-    } else {
-      // Optionally clear local message if auth error clears and it was an error displayed by this useEffect
-      // This prevents clearing form validation messages prematurely
-      if (isLocalError && localMessage === error) {
-         setLocalMessage(null);
-         setIsLocalError(false);
-      }
+    if(apiError) {
+      setErrors({ form: apiError });
     }
-  }, [error, isLocalError, localMessage]); 
+  }, [apiError]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Set preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+      // Set base64 for API call
+      setAdImageBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    
+    if (!cultPassType.trim()) newErrors.cultPassType = "Pass name is required.";
+    if (!originalPrice) {
+      newErrors.originalPrice = "Original price is required.";
+    } else if (isNaN(Number(originalPrice)) || Number(originalPrice) <= 0) {
+      newErrors.originalPrice = "Please enter a valid positive number.";
+    }
+    
+    if (!askingPrice) {
+      newErrors.askingPrice = "Asking price is required.";
+    } else if (isNaN(Number(askingPrice)) || Number(askingPrice) <= 0) {
+      newErrors.askingPrice = "Please enter a valid positive number.";
+    } else if (Number(askingPrice) > Number(originalPrice)) {
+      newErrors.askingPrice = "Asking price cannot be higher than the original price.";
+    }
+
+    if (!expiryDate) {
+      newErrors.expiryDate = "Expiry date is required.";
+    } else if (new Date(expiryDate) <= new Date()) {
+      newErrors.expiryDate = "Expiry date must be in the future.";
+    }
+    
+    if (!locationName.trim()) newErrors.locationName = "Location is required.";
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Return true if no errors
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalMessage(null);
-    setIsLocalError(false);
+    setMessage(null);
+    setIsError(false);
     clearError();
 
+    
     // Basic validation
-    if (!title || !description || !price || !category || !condition) {
-      setLocalMessage('Please fill in all required fields.');
-      setIsLocalError(true);
-      return;
-    }
-    if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-      setLocalMessage('Price must be a positive number.');
-      setIsLocalError(true);
+    if (!cultPassType || !originalPrice || !askingPrice || !expiryDate || !locationName) {
+      setMessage('Please fill in all required fields.');
+      setIsError(true);
       return;
     }
 
+    const isValid = validateForm();
+    if (!isValid) {
+      return; // Stop submission if form is not valid
+    } 
+
     try {
-      const message = await createListing({
-        cultPassType: title, // Map your UI fields to backend fields as appropriate
-        expiryDate: description, // Replace with actual expiry date state variable
-        askingPrice: parseFloat(price),
-        originalPrice: parseFloat(price), // Replace with actual original price state variable
-        locationName: category, // Replace with actual location state variable
-        // Add availableCredits, adImageBase64, etc., as needed
+      const successMessage = await createListing({
+        cultPassType,
+        originalPrice: parseFloat(originalPrice),
+        askingPrice: parseFloat(askingPrice),
+        expiryDate,
+        locationName,
+        availableCredits: availableCredits ? parseInt(availableCredits, 10) : undefined,
+        adImageBase64: adImageBase64 || undefined,
       });
-      setLocalMessage(message);
-      setIsLocalError(false);
-      // Clear form after successful submission
-      setTitle('');
-      setDescription('');
-      setPrice('');
-      setCategory('');
-      setCondition('');
-      // Redirect user or show a success message
-      navigate('/dashboard', { state: { message: message } }); // Redirect to dashboard with message
-    } catch (err: unknown) {
-      setLocalMessage((err as Error).message || 'Failed to create listing.');
-      setIsLocalError(true);
+      
+      alert(successMessage); // Simple success feedback
+      navigate('/dashboard'); // Redirect to seller dashboard on success
+    } catch (err: any) {
+      setMessage(err.message || 'An unexpected error occurred.');
+      setIsError(true);
     }
   };
 
+  const handleNumericInput = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, ''); // Allow only digits
+    setter(numericValue);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
-      <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Create New Listing</h2>
-      <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg space-y-4">
-        {localMessage && (
-          <div className={`p-3 text-sm rounded border ${isLocalError ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900 dark:text-green-300'}`}>
-            {localMessage}
+    <div className="container mx-auto max-w-2xl py-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Create a New Listing</h1>
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
+        {message && (
+          <div className={`p-3 text-sm rounded border ${isError ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900 dark:text-green-300'}`}>
+            {message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        {/* Image Upload */}
+        <div>
+          <Label>Listing Image (Optional)</Label>
+          <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+            {imagePreview ? (
+              <img src={imagePreview} alt="Preview" className="mx-auto h-48 w-auto object-contain" />
+            ) : (
+              <div className="text-center">
+                <ImagePlus className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="mt-4 flex text-sm leading-6 text-green-600">
+                  <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-dark ">
+                    <span>Upload a file</span>
+                    <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/png, image/jpeg, image/webp" />
+                  </label>
+                  <p className="pl-1 text-gray-600">or drag and drop</p>
+                </div>
+                <p className="text-xs leading-5 text-gray-500">PNG, JPG, WEBP up to 10MB</p>
+              </div>
+            )}
           </div>
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-                id="description"
-                value={description}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-                required
-            />
-          </div>
-          <div>
-            <Label htmlFor="price">Price</Label>
-            <Input id="price" type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required />
-          </div>
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Input id="category" type="text" value={category} onChange={(e) => setCategory(e.target.value)} required />
-          </div>
-          <div>
-            <Label htmlFor="condition">Condition</Label>
-            <Input id="condition" type="text" value={condition} onChange={(e) => setCondition(e.target.value)} required />
-          </div>
-          {/* Add more input fields for other listing properties like images, etc. */}
-          {/* For images, you might need a file input and handle base64 conversion */}
+        </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Listing'}
-          </Button>
-        </form>
-      </div>
+        {/* Form Fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="md:col-span-2">
+            <Label htmlFor="cultPassType">Pass / Ticket Name</Label>
+            <Input id="cultPassType" value={cultPassType} onChange={(e) => setCultPassType(e.target.value)} placeholder="e.g., CultPass ELITE - 6 Months" />
+            {errors.cultPassType && <p className="text-sm text-red-500 mt-1">{errors.cultPassType}</p>}
+          </div>
+          <div>
+            <Label htmlFor="originalPrice">Original Price (₹)</Label>
+            <Input id="originalPrice" type="text" value={originalPrice} onChange={(e) => handleNumericInput(setOriginalPrice, e.target.value)} placeholder="e.g., 15000" />
+            {errors.originalPrice && <p className="text-sm text-red-500 mt-1">{errors.originalPrice}</p>}
+          </div>
+          <div>
+            <Label htmlFor="askingPrice">Your Asking Price (₹)</Label>
+            <Input id="askingPrice" type="text" value={askingPrice} onChange={(e) => handleNumericInput(setAskingPrice, e.target.value)} placeholder="e.g., 12000" />
+            {errors.askingPrice && <p className="text-sm text-red-500 mt-1">{errors.askingPrice}</p>}
+          </div>
+          <div>
+            <Label htmlFor="expiryDate">Expiry Date</Label>
+            <Input id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+            {errors.expiryDate && <p className="text-sm text-red-500 mt-1">{errors.expiryDate}</p>}
+          </div>
+          <div>
+            <Label htmlFor="availableCredits">Available Credits (Optional)</Label>
+            <Input id="availableCredits" type="text" value={availableCredits} onChange={(e) => handleNumericInput(setAvailableCredits, e.target.value)} placeholder="e.g., 50" />
+          </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="locationName">Location / City</Label>
+            <Input id="locationName" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="e.g., Bengaluru" />
+            {errors.locationName && <p className="text-sm text-red-500 mt-1">{errors.locationName}</p>}
+          </div>
+        </div>
+        <Button type="submit" className="border" disabled={loading}>
+          {loading ? 'Submitting Listing...' : 'Create Listing'}
+        </Button>
+      </form>
     </div>
   );
 };

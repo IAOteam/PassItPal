@@ -5,6 +5,7 @@ import User , {IUser} from "../models/User";
 import { generateToken ,generateRefreshToken, verifyRefreshToken} from "../utils/jwt";
 import { sendOtp, verifyOtp } from "../utils/otp";
 import { normalizeIndianMobileNumber } from "../utils/stringUtils";
+import { createFrontendUserObject } from "./userController";
 
 // declare module 'express-serve-static-core' {
 //   interface Request {
@@ -168,22 +169,9 @@ export const loginUser = async (req: Request, res: Response) => {
     res.json({
       message: "Login successful",
       token: accessToken,
-      user: {
-        _id: user._id,
-        email: user.email,
-        username: user.username,
-        mobileNumber: user.mobileNumber,
-        role: user.role,
-        city: user.location?.city || "",
-        latitude: user.location?.coordinates?.[1],
-        longitude: user.location?.coordinates?.[0],
-        isMobileVerified: user.isMobileVerified,
-        isEmailVerified: user.isEmailVerified,
-        profilePictureUrl: user.profilePictureUrl,
-        requestedRole: user.requestedRole, 
-        roleRequestStatus: user.roleRequestStatus
+      user: createFrontendUserObject(user)
       },
-    });
+    );
   } catch (error: any) {
     // console.error("Error during user login:", error.message);
     res.status(500).json({ message: "Server error: Could not log in user." });
@@ -643,7 +631,8 @@ export const googleOAuthCallbackController = async (req: Request, res: Response)
     const frontendUserData = {
         _id: userToUpdate._id.toString(), email: userToUpdate.email, username: userToUpdate.username, role: userToUpdate.role,
         isEmailVerified: userToUpdate.isEmailVerified, isMobileVerified: userToUpdate.isMobileVerified,
-        city: userToUpdate.location?.city || "", profilePictureUrl: userToUpdate.profilePictureUrl,
+        city: userToUpdate.location?.city || "",mobileNumber: userToUpdate.mobileNumber || "",
+        profilePictureUrl: userToUpdate.profilePictureUrl,
         requestedRole: userToUpdate.requestedRole, roleRequestStatus: userToUpdate.roleRequestStatus, // Include these
     };
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';

@@ -10,13 +10,13 @@ import OTPVerificationPage from "./pages/auth/OTPVerificationPage.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx"; // For requesting OTP
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx"; // For setting new password
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage.tsx"; // For authenticated users
-
+import ChatPage from './pages/auth/ChatPage';
 import ProfilePage from "./components/pages/profile/ProfilePage.tsx";
 import CreateListingPage from "@/components/pages/seller/CreateListingPage.tsx";
 import ProtectedRoute from "./components/ProtectedRoute"; 
 import DashboardPage from "./components/dashboard/DashboardPage.tsx";
 import GoogleAuthCallbackPage from './pages/auth/GoogleAuthCallbackPage';
-
+import ConversationsListPage from './pages/auth/ConversationsListPage';
 import Layout from './Layout'; 
 
 function App() {
@@ -37,6 +37,8 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
+              <Route path="/chat/:conversationId" element={<ChatPage />} />
+              <Route path="/messages" element={<ConversationsListPage />} /> 
             </Route>
             
             {/* Seller-only protected route */}

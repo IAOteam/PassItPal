@@ -396,25 +396,25 @@ export const resendOtp = async (req: Request, res: Response) => {
 // @route   DELETE /api/auth/delete-otp (Consider if really needed, mostly for dev/debug)
 // @desc    Delete OTP from user record
 // @access  Public
-export const deleteOtp = async (req: Request, res: Response) => {
-  const { email } = req.body;
+// export const deleteOtp = async (req: Request, res: Response) => {
+//   const { email } = req.body;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found." });
+//     }
 
-    user.otp = undefined;
-    user.otpExpiry = undefined;
-    await user.save();
+//     user.otp = undefined;
+//     user.otpExpiry = undefined;
+//     await user.save();
 
-    res.status(200).json({ message: "OTP deleted successfully." });
-  } catch (error: any) {
-    // console.error("Error deleting OTP:", error.message);
-    res.status(500).json({ message: "Server error: Could not delete OTP." });
-  }
-};
+//     res.status(200).json({ message: "OTP deleted successfully." });
+//   } catch (error: any) {
+//     // console.error("Error deleting OTP:", error.message);
+//     res.status(500).json({ message: "Server error: Could not delete OTP." });
+//   }
+// };
 
 // @route   POST /api/auth/forgot-password-request-otp
 // @desc    Request an OTP to reset password via email

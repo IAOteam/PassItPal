@@ -1,4 +1,4 @@
-// frontend/src/pages/ChatPage.tsx (New File)
+// frontend/src/pages/ChatPage.tsx 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';

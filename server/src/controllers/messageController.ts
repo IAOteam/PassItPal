@@ -27,22 +27,25 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
 
     // Find if a conversation already exists between these two users
     let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, recipientId] }
+      'participants.user': { $all: [senderId, recipientId] }
     });
 
     if (conversation) {
       // If conversation exists, populate it with messages and return
-      const messages = await Message.find({ conversation: conversation._id })
-        .populate('sender', 'username profilePictureUrl')
-        .sort('createdAt');
-      return res.json({ conversation, messages });
+      // const messages = await Message.find({ conversation: conversation._id })
+      //   .populate('sender', 'username profilePictureUrl')
+      //   .sort('createdAt');
+       return res.json({ conversation });
     } else {
       // Create a new conversation
       conversation = new Conversation({
-        participants: [senderId, recipientId]
+        participants: [
+          { user: senderId }, 
+          { user: recipientId }
+          ]
       });
       await conversation.save();
-      return res.status(201).json({ conversation, messages: [] });
+      return res.status(201).json({ conversation });
     }
   } catch (error: any) {
     console.error('Error getting/creating conversation:', error.message);
@@ -60,11 +63,14 @@ export const getMyConversations = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Not authorized, user not logged in.' });
     }
 
-    const conversations = await Conversation.find({ participants: req.user._id })
-      .populate('participants', 'username profilePictureUrl email') // Populate participants details
+    const conversations = await Conversation.find({ 'participants.user': req.user._id })
+      .populate('participants.user', 'username profilePictureUrl email') // Populate participants details
       .populate({
         path: 'lastMessage',
-        select: 'text sender createdAt' // Populate only necessary last message fields
+        populate: {
+            path: 'sender',
+            select: 'username'
+        }// Populate only necessary last message fields
       })
       .sort({ updatedAt: -1 }); // Sort by most recent activity
 
@@ -88,7 +94,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
     const { conversationId } = req.params;
 
     const conversation = await Conversation.findById(conversationId)
-      .populate('participants', 'username profilePictureUrl _id'); // Ensure we populate _id
+      .populate('participants.user', 'username profilePictureUrl _id'); // Ensure we populate _id
 
     if (!conversation) {
       return res.status(404).json({ message: 'Conversation not found.' });
@@ -98,7 +104,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
     // The old way `conversation.participants.includes(req.user._id)` fails because it compares object references.
     // The correct way is to use .some() and .equals() to compare the ID values.
     const isParticipant = conversation.participants.some(participant => 
-        (participant as any)._id.equals(req.user!._id)
+        participant.user._id.equals(req.user!._id)
     );
 
     if (!isParticipant) {
@@ -110,13 +116,16 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       .populate('sender', 'username profilePictureUrl')
       .sort('createdAt');
 
+    // Mark messages as read by the current user
     await Message.updateMany(
       { conversation: conversationId, readBy: { $ne: req.user._id } },
       { $addToSet: { readBy: req.user._id } }
     );
+    // Transform participants to a flat array for the frontend if desired, or send as is.
+    const plainParticipants = conversation.participants.map(p => p.user);
 
     res.json({
-      conversation,
+      conversation: { ...conversation.toObject(), participants: plainParticipants }, // Send a clean object with a flat participants array
       messages
     });
   } catch (error: any) {
@@ -146,11 +155,14 @@ export const sendMessage = async (req: Request, res: Response) => {
     if (!conversation) {
       return res.status(404).json({ message: 'Conversation not found.' });
     }
-
-    // Ensure the sender is a participant in this conversation
-    if (!conversation.participants.includes(senderId)) {
-      return res.status(403).json({ message: 'Not authorized to send messages in this conversation.' });
+    const isParticipant = conversation.participants.some(p => p.user.equals(senderId));
+    if (!isParticipant) {
+        return res.status(403).json({ message: 'Not authorized to send messages in this conversation.' });
     }
+    // Ensure the sender is a participant in this conversation
+    // if (!conversation.participants.includes(senderId)) {
+    //   return res.status(403).json({ message: 'Not authorized to send messages in this conversation.' });
+    // }
 
     // Create a new message
     const newMessage = new Message({
@@ -170,7 +182,13 @@ export const sendMessage = async (req: Request, res: Response) => {
     // Populate sender details for the response
     const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username profilePictureUrl');
 
-
+    // Find recipient to emit socket event (similar to logic in app.ts)
+    const recipient = conversation.participants.find(p => !p.user.equals(senderId));
+    if (recipient) {
+        // You would typically emit from here or a service. Your app.ts handles this on a separate event.
+        // For consistency, the logic is kept in app.ts for now.
+    }
+    
     res.status(201).json({ message: 'Message sent successfully!', sentMessage: populatedMessage });
   } catch (error: any) {
     console.error('Error sending message:', error.message);

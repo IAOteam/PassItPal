@@ -8,7 +8,7 @@ import {
   requestOtp, 
   verifyOtpController, 
   resendOtp, 
-  deleteOtp,
+  // deleteOtp,
   forgotPasswordRequestOtp,
   verifyPasswordResetOtpAndGenerateToken,
   resetPassword,
@@ -153,14 +153,14 @@ router.put('/change-password',
   changePassword);
 
 // Delete OTP (if needed, e.g., for cleanup or invalid attempt)
-router.delete(
-  '/delete-otp',
-  [
-    body('email').isEmail().withMessage('Please enter a valid email address.'),
-  ],
-  validate,
-  deleteOtp
-);
+// router.delete(
+//   '/delete-otp',
+//   [
+//     body('email').isEmail().withMessage('Please enter a valid email address.'),
+//   ],
+//   validate,
+//   deleteOtp
+// );
 
 
 export default router;

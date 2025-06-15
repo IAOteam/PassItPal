@@ -6,6 +6,7 @@ import User from '../models/User';
 import { createAndEmitNotification } from './notificationController';
 import { Types } from 'mongoose';
 import Order, { IOrder } from "../models/Order";
+import { sendEmail } from '../utils/emailService';
 
 // @route   POST /api/orders/initiate/:listingId
 // @desc    Initiate an order/make an offer on a listing
@@ -65,6 +66,35 @@ export const initiateOrder = async (req: Request, res: Response) => {
     });
 
     const order = await newOrder.save() as IOrder & { _id: Types.ObjectId }; // Explicitly cast to IOrder with _id type
+
+    // ---  Send Email Notification to Seller ---
+    try {
+      const emailSubject = `You've Received a New Offer on Passitpal!`;
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Hi ${seller.username || 'Seller'},</h2>
+          <p>Great news! You've received a new offer on your listing.</p>
+          <h3>Offer Details:</h3>
+          <ul>
+            <li><strong>Listing:</strong> ${listing.cultPassType}</li>
+            <li><strong>Offer Price:</strong> ₹${offerPrice.toLocaleString('en-IN')}</li>
+            <li><strong>From Buyer:</strong> ${req.user?.username || 'A Passitpal User'}</li>
+          </ul>
+          ${messageToSeller ? `<p><strong>Message from buyer:</strong> "${messageToSeller}"</p>` : ''}
+          <p>Please log in to your dashboard to review, accept, or reject this offer.</p>
+          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="background-color: #1d4ed8; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Go to Your Dashboard
+          </a>
+          <p>Thank you,<br>The Passitpal Team</p>
+        </div>
+      `;
+      await sendEmail(seller.email, emailSubject, `You have a new offer for ${listing.cultPassType}.`, emailHtml);
+      console.log(`[Email Notification] New order email sent to seller: ${seller.email}`);
+    } catch (emailError) {
+      console.error("[Email Notification] Failed to send new order email:", emailError);
+      // We don't block the main API response if the email fails, but we log the error.
+    }
+
 
     // Optionally, mark the listing as temporarily unavailable (e.g., 'on_hold')
     // For now, we'll keep it available until seller accepts.

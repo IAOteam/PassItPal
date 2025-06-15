@@ -72,11 +72,13 @@ export const io = new Server(httpServer, {
 const connectedUsers = new Map<string, string>();
 
 io.use(async (socket: Socket, next) => {
-  const token = socket.handshake.auth.token;
-  if (!token) {
-    return next(new Error('Authentication error: No token provided'));
-  }
+  // const token = socket.handshake.auth.token;
+  // if (!token) {
+  //   return next(new Error('Authentication error: No token provided'));
+  // } 
   try {
+    const token = socket.handshake.auth.token;
+    if (!token) throw new Error('Authentication error: No token provided');
     // const decoded: any = jwt.verify(token, 'THIS_IS_MY_VERY_CONSISTENT_TEST_SECRET_123!');
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const user = await User.findById(decoded.id).select('-password');
@@ -95,7 +97,7 @@ io.use(async (socket: Socket, next) => {
 
 io.on('connection', (socket: Socket) => {
   const user = socket.data.user as IUser;
-  if (!user || !user._id) {
+  if (!user || !user?._id) {
     socket.disconnect();
     return;
   }
@@ -110,19 +112,24 @@ io.on('connection', (socket: Socket) => {
         console.error('User not authenticated for sendMessage event.');
         return;
       }
+      const sender = socket.data.user as IUser;
+      if (!sender) return console.error('sendMessage Error: sender not found on socket.');
 
       const conversation = await Conversation.findById(conversationId) as IConversation;
 
-      if (!conversation || !conversation.participants.some(p => p.equals(user._id))) {
-        console.error('User not authorized for this conversation.');
+      // Correctly check if the sender is a participant in the conversation.
+      if (!conversation || !conversation.participants.some(p => p.user.equals(sender._id))) {
+        console.error(`User ${sender._id} not authorized for conversation ${conversationId}.`);
+        // Optionally, emit an error back to the sender's client
+        socket.emit('sendMessageError', { conversationId, message: "Authorization error." });
         return;
       }
 
       const newMessage = new Message({
         conversation: conversationId,
-        sender: user._id,
+        sender: sender._id,
         text,
-        readBy: [user._id]
+        readBy: [sender._id]
       }) as IMessage;
 
       await newMessage.save();
@@ -137,7 +144,7 @@ io.on('connection', (socket: Socket) => {
         io.to(participantId.toString()).emit('receiveMessage', populatedMessage);
       });
 
-      if (recipientId !== user._id.toString()) {
+      if (recipientId && recipientId !== sender._id.toString()) {
         await createAndEmitNotification(
           recipientId,
           'message',

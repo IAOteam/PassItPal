@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef , useEffect, useCallback} from 'react'
 import { motion, useScroll, useTransform } from 'motion/react'
 
 const HeroSection: React.FC = () => {

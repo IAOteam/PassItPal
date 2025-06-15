@@ -47,22 +47,25 @@ return <div>Not authenticated.</div>;
 return (
     <div className="p-4"> 
         <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white text-center">Dashboard</h2>
-        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg">
+        {/* <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg"> */}
+        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full ">
             {displayMessage && (
                 <div className="p-3 text-sm rounded border bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300 mb-4">
                     {displayMessage}
                 </div>
             )}
 
-            {user.role === 'buyer' && (
-        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
-          <BuyerDashboardContent />
-        </div>
+            {user.role === 'buyer' && (<BuyerDashboardContent />
+        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
+        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full  mx-auto">
+          
+        // </div>
       )} 
-       {user.role === 'seller' && (
-        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
-          <SellerDashboardContent />
-        </div>
+       {user.role === 'seller' && (<SellerDashboardContent />
+        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
+        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full  mx-auto">
+          
+        // </div>
       )} 
       {user.role === 'admin' && (
         <div className="space-y-8">

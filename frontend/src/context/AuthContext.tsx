@@ -35,7 +35,7 @@ interface MessagePayload {
   readBy: string[];
   createdAt: string; // Or Date
 }
-interface NotificationPayload {
+export interface Notification {
     _id: string;
     recipient: string;
     sender?: { _id: string; username?: string; profilePictureUrl?: string };
@@ -43,8 +43,9 @@ interface NotificationPayload {
     message: string;
     link?: string;
     read: boolean;
-    createdAt: string; // Or Date
+    createdAt: string;
 }
+
 
 // Define the shape of the AuthContext
 export interface AuthContextType {
@@ -54,7 +55,15 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  refetchUser: () => Promise<void>;
+
+  notifications: Notification[];
+  unreadCount: number;
+  acceptOrder: (orderId: string) => Promise<string>; 
+  rejectOrder: (orderId: string) => Promise<string>;
+  getOrCreateConversation: (recipientId: string) => Promise<string>;
+  cancelOrder: (orderId: string) => Promise<string>;
+  markNotificationsAsRead: () => Promise<void>;
+  // refetchUser: () => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (userData: {
     username ?: string; // Optional for sellers
@@ -115,6 +124,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(true); // Start as true to check local storage
   const [error, setError] = useState<string | null>(null);
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
   const setToken = useCallback((newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
@@ -124,19 +136,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const setUser = useCallback((value: React.SetStateAction<User | null>) => {
+  const setUser = useCallback<React.Dispatch<React.SetStateAction<User | null>>>(
+  (newUser) => {
     setUserState(prevState => {
-      const newUserState = typeof value === 'function' ? (value as (prevState: User | null) => User | null)(prevState) : value;
+      const newUserState =
+        typeof newUser === 'function'
+          ? (newUser as (prev: User | null) => User | null)(prevState)
+          : newUser;
+
+      // Safe to use side effect here because we computed newUserState
       if (newUserState) {
+        console.log('[AuthContext] Updating localStorage with new user data.');
         localStorage.setItem('user', JSON.stringify(newUserState));
       } else {
         localStorage.removeItem('user');
       }
+
       return newUserState;
     });
-  }, []);
+  },
+  []
+);
+
+
 
  
+   // Effect to load user and fetch initial notifications
+  useEffect(() => {
+    const loadInitialData = async (authToken: string) => {
+      setLoading(true);
+      // Fetch initial notifications
+      try {
+        console.log("[AuthContext] Fetching initial notifications...");
+        const res = await api.get('/notifications/me'); // Axios adds the token
+        const fetchedNotifications: Notification[] = res.data || [];
+        setNotifications(fetchedNotifications);
+        setUnreadCount(fetchedNotifications.filter(n => !n.read).length);
+        console.log(`[AuthContext] Fetched ${fetchedNotifications.length} notifications, ${fetchedNotifications.filter(n => !n.read).length} unread.`);
+      } catch (err) {
+        console.error("Failed to fetch initial notifications:", err);
+        setError("Could not load notifications.");
+      }
+      
+      const storedUserJson = localStorage.getItem('user');
+      if (storedUserJson) {
+        try {
+          setUserState(JSON.parse(storedUserJson));
+        } catch (e) {
+          console.error("Failed to parse user from localStorage", e);
+          setUser(null); setToken(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    const initialToken = localStorage.getItem('token');
+    if (initialToken) {
+      loadInitialData(initialToken);
+    } else {
+      setLoading(false); // Not authenticated, no data to load
+    }
+  }, [setToken, setUser]);
+
 
   useEffect(() => {
     const storedUserJson = localStorage.getItem('user');
@@ -205,7 +266,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSocketContextState(null);
       };
       const handleReceiveMessage = (message: MessagePayload) => console.log('[AuthContext] Received message:', message);
-      const handleNewNotification = (notification: NotificationPayload) => console.log('[AuthContext] Received notification:', notification);
+      const handleNewNotification = (notification: Notification) => {
+        console.log('[AuthContext] Received new notification via socket:', notification);
+        // Add the new notification to the top of the list
+        setNotifications(prev => [notification, ...prev]);
+        // Increment the unread count
+        setUnreadCount(prev => prev + 1);
+      };
 
       // Add listeners
       globalSocketInstance.on('connect', handleConnect);
@@ -244,24 +311,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const clearError = () => setError(null);
 
-  const refetchUser = useCallback(async () => {
-    if (!token) {
-      console.log("[refetchUser] No token available, cannot refetch.");
-      return;
-    }
-    console.log("[refetchUser] Refetching user data from /api/users/me");
-    try {
-      const res = await api.get('/users/me');
-      if (res.data && res.data.user) {
-        setUser(res.data.user); // Update context and localStorage
-      }
-    } catch (err) {
-      console.error("Failed to refetch user data:", err);
-      // Optional: handle error, maybe logout if token is invalid
-      // handleApiError(err, "Could not refresh user session.");
-    }
-  }, [token, setUser]); // Depends on token and setUser
+  const markNotificationsAsRead = async () => {
+    // Optimistically update UI first for better UX
+    const previouslyUnread = notifications.filter(n => !n.read);
+    if (previouslyUnread.length === 0) return; // No unread notifications to mark
 
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+
+    try {
+      // Call the backend endpoint to update the database
+      await api.put('/notifications/mark-all-read');
+      console.log("[AuthContext] Successfully marked all notifications as read on the server.");
+    } catch (err) {
+      console.error("Failed to mark notifications as read on server:", err);
+      // If server update fails, revert the UI changes
+      setNotifications(prev => prev.map(n => 
+          previouslyUnread.some(unread => unread._id === n._id) ? { ...n, read: false } : n
+      ));
+      setUnreadCount(previouslyUnread.length);
+      setError("Could not update notification status.");
+    }
+  };
 
   const handleApiError = (err: unknown, defaultMessage: string) => {
     setLoading(false);
@@ -282,6 +353,84 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const cancelOrder = async (orderId: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.put(`/orders/${orderId}/cancel`);
+      return res.data.message || 'Order cancelled successfully.';
+    } catch (err) {
+      // handleApiError will set the loading and error states.
+      // Re-throw the error so the calling component knows it failed.
+      throw new Error(handleApiError(err, 'Failed to cancel order.'));
+    } finally {
+      // Ensure loading is always stopped, even after an error.
+      setLoading(false);
+    }
+  };
+
+  const acceptOrder = async (orderId: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.put(`/orders/${orderId}/status`, { status: 'accepted' });
+      return res.data.message || 'Order accepted successfully.';
+    } catch (err) {
+      throw new Error(handleApiError(err, 'Failed to accept the order.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const rejectOrder = async (orderId: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.put(`/orders/${orderId}/status`, { status: 'rejected' });
+      return res.data.message || 'Order rejected successfully.';
+    } catch (err) {
+      throw new Error(handleApiError(err, 'Failed to reject the order.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getOrCreateConversation = async (recipientId: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post('/messages/conversations', { recipientId });
+      // The backend returns an object like { conversation: { _id: '...' } }
+      if (!res.data?.conversation?._id) {
+          throw new Error("Could not get or create a conversation.");
+      }
+      return res.data.conversation._id;
+    } catch (err) {
+      throw new Error(handleApiError(err, 'Failed to start conversation.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const refetchUser = useCallback(async () => {
+    if (!token) {
+      console.warn("[refetchUser] No token available, cannot refetch.");
+      return;
+    }
+    console.log("[refetchUser] Refetching user data from /api/users/me");
+    try {
+      const res = await api.get('/users/me');
+      if (res.data && res.data.user) {
+        setUser(res.data.user); // This updates the global state and localStorage
+        console.log("[refetchUser] Successfully refetch and updated user state.");
+      }
+    } catch (err) {
+      console.error("Failed to refetch user data:", err);
+      handleApiError(err, "Could not refresh user session.");
+    }
+  }, [token, setUser]); // Depends on token and the stable setUser function
+
   // --- Authentication Functions  ---
 
   const login = async (credentials: { email: string; password: string }) => {
@@ -290,8 +439,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const res = await api.post('/auth/login', credentials);
       const { token: accessToken, user: userData } = res.data;
-      setUser(userData);
       setToken(accessToken);
+      setUser(userData);
+
+      const notificationsRes = await api.get('/notifications/me');
+      const fetchedNotifications: Notification[] = notificationsRes.data || [];
+      setNotifications(fetchedNotifications);
+      setUnreadCount(fetchedNotifications.filter(n => !n.read).length);
 
       localStorage.setItem('user', JSON.stringify(userData));
       console.log("Login successful:", userData);
@@ -325,11 +479,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await api.post('/auth/logout'); // Call the backend logout endpoint
       // The backend will clear the HttpOnly refresh token cookie.
+      setNotifications([]);
+      setUnreadCount(0);
     } catch (err) {
       // Even if backend logout fails, proceed to clear client-side state
       console.error("Error calling backend logout, proceeding with client-side logout:", err);
       handleApiError(err, 'Logout failed on server, but client cleared.');
     } finally {
+      
       setUser(null);
       setToken(null); // This clears access token from state and localStorage
       localStorage.removeItem('user');
@@ -354,16 +511,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const res = await api.post('/users/me/request-role-change', { newRole });
     // The backend now sends back the updated request status.
     // We should update the local user object to reflect this pending status immediately.
-    if (userState && res.data.requestedRole && res.data.roleRequestStatus) {
-      const updatedUserWithRoleRequest = {
-        ...userState,
-        requestedRole: res.data.requestedRole,
-        roleRequestStatus: res.data.roleRequestStatus,
-        // roleRequestTimestamp will be set by backend, could be included in response too
-      };
-      setUser(updatedUserWithRoleRequest); // Update user state in context
-      localStorage.setItem('user', JSON.stringify(updatedUserWithRoleRequest));
-    }
+    // if (userState && res.data.requestedRole && res.data.roleRequestStatus) {
+    //   const updatedUserWithRoleRequest = {
+    //     ...userState,
+    //     requestedRole: res.data.requestedRole,
+    //     roleRequestStatus: res.data.roleRequestStatus,
+    //     // roleRequestTimestamp will be set by backend, could be included in response too
+    //   };
+    //    setUser(updatedUserWithRoleRequest); // Update user state in context
+    //    localStorage.setItem('user', JSON.stringify(updatedUserWithRoleRequest));
+    // }
+    await refetchUser();
     setLoading(false);
     return res.data.message || 'Role changed successfully.';
   } catch (err) {
@@ -491,9 +649,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     try {
       const res = await api.put('/users/profile', profileData);
-      const updatedUser = res.data.user as User;
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // const updatedUser = res.data.user as User;
+     
+      // setUser(updatedUser);
+       await refetchUser();
+      // localStorage.setItem('user', JSON.stringify(updatedUser));
       // setLoading(false);
       return res.data.message || 'Profile updated successfully!';
     } catch (err) {
@@ -517,11 +677,13 @@ const createListing = async (listingData: {
     setError(null);
     try {
       const res = await api.post('/listings', listingData);
-      setLoading(false);
+      // setLoading(false);
       return res.data.message || 'Listing created successfully!';
     } catch (err) {
       setLoading(false);
       throw new Error(handleApiError(err, 'Failed to create listing'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -534,6 +696,13 @@ const createListing = async (listingData: {
     isAuthenticated: !!userState  && !!token,
     loading,
     error,
+    notifications, 
+    unreadCount,  
+    acceptOrder, 
+    rejectOrder, 
+    getOrCreateConversation,
+    cancelOrder,
+    markNotificationsAsRead,
     setUser,
     login,
     register,
@@ -548,9 +717,10 @@ const createListing = async (listingData: {
     forgotPasswordRequestOtp,
     resetPassword,
     changePassword,
-    refetchUser,
+    // refetchUser,
     setToken, // Expose setToken
     clearError,
+    
   };
   return (
     <AuthContext.Provider value={authContextValue}>

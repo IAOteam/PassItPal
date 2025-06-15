@@ -15,7 +15,8 @@ cloudinary.config({
 });
 
 // Helper function to create a consistent user response object
-const createFrontendUserObject = (user: IUser) => {
+export const createFrontendUserObject = (user: IUser) => {
+  if (!user) return null;
   return {
     _id: user._id.toString(),
     email: user.email,

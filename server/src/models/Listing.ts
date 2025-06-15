@@ -20,6 +20,8 @@ export interface IListing extends Document {
   adImageUrl?: string;
   isAvailable: boolean ;
   isPromoted: boolean; // Added for admin controls
+  promotionExpiresAt?: Date;
+  views: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,9 +51,11 @@ const ListingSchema: Schema = new Schema({
   adImageUrl: { type: String },
   isAvailable: { type: Boolean, default: true },
   isPromoted: { type: Boolean, default: false }, // Default to false
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+  promotionExpiresAt: { type: Date, required: false },
+  views: { type: Number, default: 0 }
+  
+},
+ { timestamps: true });
 ListingSchema.index({ location: '2dsphere' });
 const Listing = mongoose.model<IListing>('Listing', ListingSchema);
 export default Listing;

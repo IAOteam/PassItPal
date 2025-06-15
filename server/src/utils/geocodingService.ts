@@ -1,11 +1,8 @@
+// server/src/utils/geocodingService.ts
 import axios from 'axios';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-// Mock Geocoding Service
-// In a real application,  integrate with a service like Google Maps Geocoding API
-//  https://developers.google.com/maps/documentation/geocoding/overview
 
 interface GeocodingResult {
   latitude: number;
@@ -13,57 +10,51 @@ interface GeocodingResult {
   formattedAddress: string;
 }
 
+const Maps_API_KEY = process.env.Maps_API_KEY;
+
+if (!Maps_API_KEY) {
+    console.warn("[Geocoding Service] WARNING: Maps_API_KEY is not set in .env. Geocoding will not work.");
+}
+
 /**
- * Mocks a geocoding service to convert a location name to coordinates.
- * For a real application, replace this with an actual geocoding API call.
+ * Geocodes an address using the Google Maps Geocoding API.
  *
- * @param {string} locationName - The name of the location (e.g., "Bengaluru, India").
+ * @param {string} address - The address or location name to geocode.
  * @returns {Promise<GeocodingResult | null>} The latitude, longitude, and formatted address, or null if not found.
  */
-export const geocodeAddress = async (locationName: string): Promise<GeocodingResult | null> => {
-  console.log(`Mocking geocoding for: ${locationName}`);
-  // In production, you'd make an API call here, e.g.:
-  /*
+export const geocodeAddress = async (address: string): Promise<GeocodingResult | null> => {
+  if (!Maps_API_KEY) {
+    console.error("Geocoding failed: API key is missing.");
+    return null;
+  }
+
+  const url = `https://maps.googleapis.com/maps/api/geocode/json`;
+
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
+    const response = await axios.get(url, {
       params: {
-        address: locationName,
-        key: process.env.Maps_API_KEY,
+        address: address,
+        key: Maps_API_KEY,
       },
     });
 
-    if (response.data.results && response.data.results.length > 0) {
-      const { lat, lng } = response.data.results[0].geometry.location;
-      const formattedAddress = response.data.results[0].formatted_address;
+    if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
+      const result = response.data.results[0];
+      const { lat, lng } = result.geometry.location;
+      const formattedAddress = result.formatted_address;
+      
+      console.log(`[Geocoding] Successfully geocoded "${address}" to: ${lat}, ${lng}`);
       return { latitude: lat, longitude: lng, formattedAddress };
+    } else {
+      console.warn(`[Geocoding] No results found for address: "${address}". Status: ${response.data.status}`);
+      return null;
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+        console.error('Error during geocoding API call:', error.response?.data || error.message);
+    } else {
+        console.error('An unexpected error occurred during geocoding:', error);
     }
     return null;
-  } catch (error) {
-    console.error('Error during geocoding:', error);
-    return null;
   }
-  */
-
-  // --- MOCK IMPLEMENTATION ---
-  // Replace with actual API call in production
-  const mockLocations: { [key: string]: GeocodingResult } = {
-    "bengaluru": { latitude: 12.9716, longitude: 77.5946, formattedAddress: "Bengaluru, Karnataka, India" },
-    "mumbai": { latitude: 19.0760, longitude: 72.8777, formattedAddress: "Mumbai, Maharashtra, India" },
-    "delhi": { latitude: 28.7041, longitude: 77.1025, formattedAddress: "Delhi, India" },
-    "new york": { latitude: 40.7128, longitude: -74.0060, formattedAddress: "New York, USA" },
-    "london": { latitude: 51.5074, longitude: -0.1278, formattedAddress: "London, UK" },
-  };
-
-  const lowerCaseLocation = locationName.toLowerCase();
-  const result = mockLocations[lowerCaseLocation];
-
-  if (result) {
-    console.log(`Mock geocoding found for ${locationName}: ${result.latitude}, ${result.longitude}`);
-    return result;
-  }
-
-  // Fallback for unknown locations (you'd typically return null or throw error)
-  // For now, let's return a default for demonstration
-  console.warn(`Mock geocoding not found for ${locationName}. Returning default.`);
-  return { latitude: 0, longitude: 0, formattedAddress: locationName }; // Placeholder for unknown
 };

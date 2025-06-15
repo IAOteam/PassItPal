@@ -174,7 +174,7 @@ io.on('connection', (socket: Socket) => {
 
 const PORT = parseInt(process.env.PORT || '5001', 10);
 
-httpServer.listen(PORT, "127.0.0.1",() => {
+httpServer.listen(PORT, "0.0.0.0",() => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO listening on port ${PORT}`);
 });

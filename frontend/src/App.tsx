@@ -66,5 +66,5 @@ function App() {
     </Router>
   );
 }
-
+//add a game in 404 page 
 export default App;

@@ -21,7 +21,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "esbuild": "^0.25.5",
+    "esbuild": "^0.21.5",
     "express": "^4.19.2",
     "express-validator": "^7.0.1",
     "helmet": "^8.1.0",

@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
  
    // Effect to load user and fetch initial notifications
   useEffect(() => {
-    const loadInitialData = async (authToken: string) => {
+    const loadInitialData = async () => {
       setLoading(true);
       // Fetch initial notifications
       try {
@@ -192,7 +192,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initialToken = localStorage.getItem('token');
     if (initialToken) {
-      loadInitialData(initialToken);
+      loadInitialData();
     } else {
       setLoading(false); // Not authenticated, no data to load
     }

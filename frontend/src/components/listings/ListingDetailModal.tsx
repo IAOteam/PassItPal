@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { X, CalendarDays, BadgeIndianRupee, MapPin, MessageSquare, Star } from 'lucide-react';
+import { X, CalendarDays, MapPin, MessageSquare, Star } from 'lucide-react';
 
 // Define the type for the listing prop, which is the full listing object
 interface Listing {

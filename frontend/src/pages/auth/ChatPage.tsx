@@ -6,8 +6,8 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, ArrowLeft } from 'lucide-react';
-import { Avatar } from 'antd'; 
-import { UserOutlined } from '@ant-design/icons';
+// import { Avatar } from 'antd'; 
+// import { UserOutlined } from '@ant-design/icons';
 
 interface Message {
   _id: string;

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea'; // For description
 import { useNavigate } from 'react-router-dom'; // To redirect after creation
 import { useAuth } from '@/hooks/useAuth';
-import { Upload, ImagePlus } from 'lucide-react';
+import { ImagePlus } from 'lucide-react';
 
 
 interface FormErrors {

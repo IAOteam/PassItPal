@@ -5,7 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api'; // To fetch reviews
+import StarRating from '@/components/ui/StarRating'; //Our star component
+import { Avatar } from 'antd'; // For reviewer avatars
+import { UserOutlined } from '@ant-design/icons';
 
+interface IReview {
+  _id: string;
+  rating: number;
+  comment?: string;
+  reviewer: {
+    _id: string;
+    username?: string;
+    profilePictureUrl?: string;
+  };
+  createdAt: string;
+}
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +38,25 @@ const ProfilePage: React.FC = () => {
 
   const [message, setMessage] = useState<string | null>(null); // Unified message state
   const [isError, setIsError] = useState<boolean>(false);
-
+  const [reviews, setReviews] = useState<IReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  // Effect to fetch reviews for the current user
+  useEffect(() => {
+    if (user?._id) {
+      const fetchReviews = async () => {
+        setReviewsLoading(true);
+        try {
+          const res = await api.get(`/reviews/user/${user._id}`);
+          setReviews(res.data || []);
+        } catch (err) {
+          console.error("Failed to fetch reviews:", err);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+      fetchReviews();
+    }
+  }, [user?._id]);
   // Effect to initialize form fields from user context
   useEffect(() => {
     if (user) {
@@ -164,112 +197,114 @@ const ProfilePage: React.FC = () => {
   
   const defaultProfilePicture = '/sharing.svg';
 
-  return (
-   <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
-      <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-        {isEditing ? "Edit Your Profile" : "Your Profile"}
-      </h2>
-      <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg space-y-4">
-        {message && (
-          <div className={`p-3 text-sm rounded border ${isError ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900 dark:text-green-300'}`}>
-            {message}
-          </div>
-        )}
-
-        <div className="flex justify-center mb-4">
-          <img src={user.profilePictureUrl || defaultProfilePicture} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
-        </div>
-
-        {isEditing ? (
-          <form onSubmit={handleProfileSave} className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            </div>
-            <div>
-              <Label htmlFor="email">Email (cannot be changed)</Label>
-              <Input id="email" type="email" value={user.email} readOnly disabled className="bg-gray-100 dark:bg-neutral-800" />
-            </div>
-            <div>
-              <Label htmlFor="mobileNumber">Mobile Number</Label>
-              <Input 
-                id="mobileNumber" 
-                type="tel" 
-                value={mobileNumber} 
-                onChange={(e) => setMobileNumber(e.target.value)} 
-                placeholder="10-digit number (e.g. 98...)"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input id="city" type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button type="button" variant="outline" onClick={handleEditToggle}>Cancel</Button>
-              <Button type="submit" disabled={profileUpdateLoading || authLoadingGlobal}>
-                {profileUpdateLoading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
-        ) : (
-          
-            <div className="space-y-2 text-gray-800 dark:text-gray-200">
-            <div><span className="font-semibold">Username:</span> {user.username || 'N/A'}</div>
-            <div><span className="font-semibold">Email:</span> {user.email} {user.isEmailVerified && <span className="text-green-500 text-sm">(Verified)</span>}</div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold">Mobile Number:</span> {user.mobileNumber || 'N/A'}{' '}
-                {user.mobileNumber && (user.isMobileVerified ? <span className="text-green-500 text-sm">(Verified)</span> : <span className="text-red-500 text-sm">(Not Verified)</span>)}
+ return (
+   <div className="bg-neutral-900 min-h-screen text-white">
+    <div className="container mx-auto p-4 md:p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1 space-y-8">
+          <div className="bg-black border border-neutral-800 rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-6 text-white text-center">
+              {isEditing ? "Edit Profile" : "My Profile"}
+            </h2>
+            {/* ... rest of the profile card ... */}
+             {message && (
+              <div className={`p-3 text-sm rounded border mb-4 ${isError ? 'bg-red-900/50 border-red-700 text-red-300' : 'bg-green-900/50 border-green-700 text-green-300'}`}>
+                {message}
               </div>
-              {user.mobileNumber && !user.isMobileVerified && (
-                <Button size="sm" variant="link" onClick={handleRequestMobileOtp} disabled={otpRequestLoading} className="p-0 h-auto text-sm">
-                  {otpRequestLoading ? 'Sending...' : 'Verify Now'}
-                </Button>
-              )}
-            </div>
-            <div><span className="font-semibold">Role:</span> <span className="capitalize">{user.role}</span></div>
-            <div><span className="font-semibold">City:</span> {user.city || 'N/A'}</div>
-            
-            <div className="pt-4 space-y-2">
-              <Button className="w-full" onClick={() => navigate('/change-password')}>Change Password</Button>
-              <Button className="w-full" onClick={handleEditToggle}>Edit Profile</Button>
-            </div>
-          </div>
-          
-        )}
+            )}
 
-        {/* Role Change Section - unchanged */}
-        {!isEditing && user.role !== 'admin' && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-neutral-700">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Switch Account Type</h3>
+            <div className="flex justify-center mb-4">
+              <img src={user.profilePictureUrl || defaultProfilePicture} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+            </div>
+
+            {isEditing ? (
+              <form onSubmit={handleProfileSave} className="space-y-4">
+                {/* ... Edit form is unchanged ... */}
+                 <div><Label htmlFor="username">Username</Label><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
+                 <div><Label htmlFor="email">Email (cannot be changed)</Label><Input id="email" value={user.email} readOnly disabled /></div>
+                 <div><Label htmlFor="mobileNumber">Mobile Number</Label><Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="10-digit number" /></div>
+                 <div><Label htmlFor="city">City</Label><Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" /></div>
+                 <div className="flex justify-end gap-2 mt-4"><Button type="button" variant="secondary" onClick={handleEditToggle}>Cancel</Button><Button type="submit" disabled={profileUpdateLoading}>Save Changes</Button></div>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                 {/* ... View mode is unchanged ... */}
+                <div><span className="font-semibold text-neutral-400">Username:</span> {user.username || 'N/A'}</div>
+                <div><span className="font-semibold text-neutral-400">Email:</span> {user.email} {user.isEmailVerified && <span className="text-green-400 text-xs">(Verified)</span>}</div>
+                <div className="flex items-center justify-between"><div><span className="font-semibold text-neutral-400">Mobile:</span> {user.mobileNumber || 'N/A'} {user.mobileNumber && (user.isMobileVerified ? <span className="text-green-400 text-xs">(Verified)</span> : <span className="text-red-400 text-xs">(Not Verified)</span>)}</div>{user.mobileNumber && !user.isMobileVerified && (<Button size="sm" variant="link" onClick={handleRequestMobileOtp} disabled={otpRequestLoading}>Verify</Button>)}</div>
+                <div><span className="font-semibold text-neutral-400">Role:</span> <span className="capitalize">{user.role}</span></div>
+                <div><span className="font-semibold text-neutral-400">City:</span> {user.city || 'N/A'}</div>
+                <div className="pt-4 space-y-2"><Button variant="outline" className="w-full" onClick={() => navigate('/change-password')}>Change Password</Button><Button className="w-full" onClick={handleEditToggle}>Edit Profile</Button></div>
+              </div>
+            )}
+          </div>
+           {/* Role Change Section */}
+           {!isEditing && user.role !== 'admin' && (
+                <div className="bg-black border border-neutral-800 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-3">Switch Account Type</h3>
                     {user.role === 'buyer' ? (
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Become a seller to list your own passes.</p>
-                            <Button 
-                                className="w-full" 
-                                onClick={() => handleSwitchRole('seller')}
-                                disabled={roleChangeLoading || authLoadingGlobal}
-                            >
-                                {roleChangeLoading ? 'Switching...' : 'Switch to Seller Account'}
-                            </Button>
+                            <p className="text-sm text-neutral-400 mb-3">Become a seller to list your own passes.</p>
+                            <Button className="w-full" onClick={() => handleSwitchRole('seller')} disabled={roleChangeLoading || authLoadingGlobal}>Switch to Seller</Button>
                         </div>
-                    ) : ( // user.role === 'seller'
+                    ) : (
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Switch back to a buyer account. You won't be able to manage your listings.</p>
-                            <Button 
-                                className="w-full" 
-                                variant="outline"
-                                onClick={() => handleSwitchRole('buyer')}
-                                disabled={roleChangeLoading || authLoadingGlobal}
-                            >
-                                {roleChangeLoading ? 'Switching...' : 'Switch to Buyer Account'}
-                            </Button>
+                            <p className="text-sm text-neutral-400 mb-3">Switch back to a buyer account.</p>
+                            <Button className="w-full" variant="secondary" onClick={() => handleSwitchRole('buyer')} disabled={roleChangeLoading || authLoadingGlobal}>Switch to Buyer</Button>
                         </div>
                     )}
                 </div>
             )}
+        </div>
+
+        {/* Right Column: Reputation & Reviews */}
+        <div className="lg:col-span-2">
+            {/* NEW: Reputation Summary */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-6 mb-8">
+                <h3 className="text-2xl font-bold mb-4">Your Reputation</h3>
+                <div className="flex items-center space-x-4">
+                    <StarRating rating={user.averageRating || 0} size={28} />
+                    <div className="text-neutral-300">
+                        <span className="font-bold text-white text-xl">{(user.averageRating || 0).toFixed(1)}</span>
+                        <span className="ml-1">out of 5</span>
+                    </div>
+                    <div className="text-neutral-400 text-lg">
+                        ({user.reviewCount || 0} reviews)
+                    </div>
+                </div>
+            </div>
+
+            {/* NEW: Reviews List */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-6">
+                <h3 className="text-2xl font-bold mb-6">What Others Are Saying</h3>
+                {reviewsLoading ? (
+                    <p className="text-neutral-400">Loading reviews...</p>
+                ) : reviews.length > 0 ? (
+                    <div className="space-y-6">
+                        {reviews.map(review => (
+                            <div key={review._id} className="border-b border-neutral-800 pb-6 last:border-b-0 last:pb-0">
+                                <div className="flex items-center mb-2">
+                                    <Avatar src={review.reviewer.profilePictureUrl} icon={<UserOutlined />} size={40} />
+                                    <div className="ml-4">
+                                        <p className="font-semibold text-white">{review.reviewer.username}</p>
+                                        <p className="text-xs text-neutral-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <StarRating rating={review.rating} size={16} className="my-2" />
+                                <p className="text-neutral-300">{review.comment}</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-neutral-400">You have not received any reviews yet.</p>
+                )}
+            </div>
+        </div>
       </div>
     </div>
+   </div>
   );
 };
 

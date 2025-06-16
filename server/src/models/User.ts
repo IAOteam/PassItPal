@@ -21,6 +21,8 @@ export interface IUser extends Document {
   otpPurpose?: 'verification' | 'password_reset'; 
   otpVerifiedAt?: Date; //  Timestamp for when an OTP was last successfully verified (mobile or email)
   profilePictureUrl?: string;
+  averageRating: number;
+  reviewCount: number;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
@@ -106,6 +108,16 @@ const UserSchema: Schema = new Schema({
     type: String ,
     default:  'https://asset.cloudinary.com/dz9qcmowr/b7e9503bc9704d834f366c513c5d51bf'// Provide a default or leave undefined
     
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: [0, 'Rating must be at least 0'],
+    max: [5, 'Rating must be at most 5'],
+  },
+  reviewCount: {
+    type: Number,
+    default: 0,
   },
   passwordResetToken: {
       type: String,

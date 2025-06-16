@@ -1,12 +1,13 @@
 // frontend/src/components/listings/ListingDetailModal.tsx (New File)
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { X, CalendarDays, MapPin, MessageSquare, Star } from 'lucide-react';
+import { X, CalendarDays, MapPin, MessageSquare, Star, Flag } from 'lucide-react';
+import ReportModal from '../shared/ReportModal'; 
 
 // Define the type for the listing prop, which is the full listing object
 interface Listing {
@@ -34,7 +35,7 @@ interface ListingDetailModalProps {
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose }) => {
   const { isAuthenticated, user, getOrCreateConversation } = useAuth();
   const navigate = useNavigate();
-
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const handleContactSeller = async () => {
     if (!isAuthenticated || !user) {
       // If user is not logged in, redirect them to the login page
@@ -62,6 +63,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const placeholderImage = `https://placehold.co/600x400/E7E7E7/6D6D6D?text=${encodeURIComponent(listing.cultPassType)}`;
 
   return (
+    <> 
     <AnimatePresence>
       <motion.div
         key="modal-backdrop"
@@ -142,6 +144,18 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                 <MessageSquare className="h-5 w-5 mr-2"/>
                 Contact Seller
             </Button>
+            {isAuthenticated && user?._id !== listing.seller._id && (
+                    <div className="text-center mt-2">
+                      <Button
+                        variant="link"
+                        className="text-xs text-neutral-500 hover:text-red-500"
+                        onClick={() => setIsReportModalOpen(true)}
+                      >
+                        <Flag className="h-3 w-3 mr-1" />
+                        Report this listing
+                      </Button>
+                    </div>
+                  )}
           </div>
 
           <Button variant="ghost" size="icon" className="absolute top-3 right-3 rounded-full bg-black/20 hover:bg-black/40 text-white" onClick={onClose}>
@@ -150,6 +164,16 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
         </motion.div>
       </motion.div>
     </AnimatePresence>
+    {listing && (
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          contentId={listing._id}
+          contentType="Listing"
+          contentTitle={listing.cultPassType}
+           />
+      )}
+    </>
   );
 };
 

@@ -19,7 +19,8 @@ export interface User {
   latitude?: number; //  it's from backend login response
   longitude?: number; // it's from backend login response
   profilePictureUrl?: string;
-
+  averageRating: number;
+  reviewCount: number;
   requestedRole?: 'buyer' | 'seller';                     
   roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
   roleRequestTimestamp?: Date;                             
@@ -58,10 +59,13 @@ export interface AuthContextType {
 
   notifications: Notification[];
   unreadCount: number;
+  submitReview: (orderId: string, rating: number, comment?: string) => Promise<string>;
+  
   acceptOrder: (orderId: string) => Promise<string>; 
   rejectOrder: (orderId: string) => Promise<string>;
   getOrCreateConversation: (recipientId: string) => Promise<string>;
   cancelOrder: (orderId: string) => Promise<string>;
+  submitReport: (contentId: string, contentType: 'Listing' | 'User', reason: string, details?: string) => Promise<string>;
   markNotificationsAsRead: () => Promise<void>;
   // refetchUser: () => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
@@ -365,6 +369,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(handleApiError(err, 'Failed to cancel order.'));
     } finally {
       // Ensure loading is always stopped, even after an error.
+      setLoading(false);
+    }
+  };
+
+  const submitReport = async (contentId: string, contentType: 'Listing' | 'User', reason: string, details?: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post(`/reports/${contentType}/${contentId}`, { reason, details });
+      return res.data.message || 'Report submitted successfully!';
+    } catch (err) {
+      throw new Error(handleApiError(err, 'Failed to submit report.'));
+    } finally {
       setLoading(false);
     }
   };
@@ -686,6 +703,19 @@ const createListing = async (listingData: {
       setLoading(false);
     }
   };
+  const submitReview = async (orderId: string, rating: number, comment?: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post(`/reviews/${orderId}`, { rating, comment });
+      return res.data.message || 'Review submitted successfully!';
+    } catch (err) {
+      // handleApiError sets the loading/error state and re-throws
+      throw new Error(handleApiError(err, 'Failed to submit review.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -697,11 +727,13 @@ const createListing = async (listingData: {
     loading,
     error,
     notifications, 
-    unreadCount,  
+    unreadCount, 
+    submitReview, 
     acceptOrder, 
     rejectOrder, 
     getOrCreateConversation,
     cancelOrder,
+    submitReport,
     markNotificationsAsRead,
     setUser,
     login,

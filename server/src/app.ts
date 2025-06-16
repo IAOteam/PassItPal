@@ -22,6 +22,8 @@ import User , {IUser} from './models/User';
 import { createAndEmitNotification } from './controllers/notificationController';
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
+import reviewRoutes from './routes/reviewRoutes';
+import reportRoutes from './routes/reportRoutes';
 dotenv.config();
 import './config/passport-setup'; 
 
@@ -59,6 +61,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/reports', reportRoutes); 
 
 // Socket.IO setup
 export const io = new Server(httpServer, {

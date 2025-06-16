@@ -1,9 +1,11 @@
-// frontend/src/components/listings/ListingCard.tsx (New File)
+// frontend/src/components/listings/ListingCard.tsx
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
 import { Star } from 'lucide-react';
 
-// Define the type for a single listing prop
+// Update the Listing type to include seller details
 interface Listing {
   _id: string;
   cultPassType: string;
@@ -11,6 +13,11 @@ interface Listing {
   city: string;
   isPromoted: boolean;
   adImageUrl?: string;
+  seller: {
+    _id: string;
+    username?: string;
+    profilePictureUrl?: string;
+  };
 }
 
 interface ListingCardProps {
@@ -19,42 +26,44 @@ interface ListingCardProps {
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
-  const placeholderImage = `https://placehold.co/600x400/E7E7E7/6D6D6D?text=${encodeURIComponent(listing.cultPassType)}`;
+  const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(listing.cultPassType)}`;
 
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1"
+      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-md border border-neutral-800 bg-neutral-200 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
     >
-      {/* Promoted Badge */}
-      {listing.isPromoted && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-1 text-xs font-bold text-neutral-900">
-          <Star className="h-3 w-3" fill="currentColor" />
-          <span>Promoted</span>
-        </div>
-      )}
-      
       {/* Image Container */}
-      <div className="overflow-hidden">
-        <img
-          src={listing.adImageUrl || placeholderImage}
-          alt={listing.cultPassType}
-          onError={(e) => { e.currentTarget.src = placeholderImage; }}
-          className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      <div className="relative overflow-hidden">
+        <div
+          className="h-48 w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+          style={{ backgroundImage: `url(${listing.adImageUrl || placeholderImage})` }}
         />
+        {listing.isPromoted && (
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-1 text-xs font-bold text-neutral-900">
+            <Star className="h-3 w-3" fill="currentColor" />
+            <span>Promoted</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="truncate text-lg font-semibold text-gray-900 dark:text-white" title={listing.cultPassType}>
+      <div className="p-4 flex flex-col flex-grow">
+        <h3 className="truncate text-lg font-semibold text-neutral-900" title={listing.cultPassType}>
           {listing.cultPassType}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{listing.city}</p>
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-xl font-bold text-primary">
-            ₹{listing.askingPrice.toLocaleString('en-IN')}
-          </p>
-          <Badge variant="outline">View Details</Badge>
+        <p className="text-sm text-neutral-900 mt-1">{listing.city}</p>
+        
+        <div className="mt-4 flex-grow flex items-end justify-between">
+            <p className="text-xl font-bold text-primary">
+                ₹{listing.askingPrice.toLocaleString('en-IN')}
+            </p>
+        </div>
+
+        {/* Seller Info */}
+        <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center gap-2">
+            <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="small" />
+            <span className="text-xs  text-neutral-900 truncate">{listing.seller.username}</span>
         </div>
       </div>
     </div>

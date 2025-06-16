@@ -18,6 +18,8 @@ import DashboardPage from "./components/dashboard/DashboardPage.tsx";
 import GoogleAuthCallbackPage from './pages/auth/GoogleAuthCallbackPage';
 import ConversationsListPage from './pages/auth/ConversationsListPage';
 import Layout from './Layout'; 
+import HomePage from "./components/pages/landing/HomePage.tsx";
+import SubmitReviewPage from "./components/pages/reviews/SubmitReviewPage.tsx";
 
 function App() {
   return (
@@ -27,7 +29,7 @@ function App() {
           {/* Routes that use the shared Layout (NavBar, Footer) */}
           <Route path="/" element={<Layout />}>
             {/* Index route (what shows up at "/") */}
-            <Route index element={<HeroSection />} />
+            <Route index element={<HomePage />} />
             
             {/* Public listing page */}
             <Route path="/listings" element={<ListingsPage />} />
@@ -39,6 +41,7 @@ function App() {
               <Route path="/change-password" element={<ChangePasswordPage />} />
               <Route path="/chat/:conversationId" element={<ChatPage />} />
               <Route path="/messages" element={<ConversationsListPage />} /> 
+              <Route path="/submit-review/:orderId" element={<SubmitReviewPage />} />
             </Route>
             
             {/* Seller-only protected route */}

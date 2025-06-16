@@ -1,18 +1,107 @@
-import React from 'react'
+// frontend/src/components/footer/Footer.tsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Twitter, Instagram, Linkedin } from 'lucide-react';
 
 const Footer: React.FC = () => {
+  const categoryLinks = [
+    { name: 'Fitness', href: '/listings?category=GYM_MEMBERSHIP' },
+    { name: 'Events', href: '/listings?category=EVENT_TICKET' },
+    { name: 'Courses', href: '/listings?category=ONLINE_COURSE' },
+  ];
+
+  const companyLinks = [
+    { name: 'About Us', href: '/about' },
+    { name: 'Blog & Alerts', href: '/blog' },
+    { name: 'Contact Us', href: '/contact' },
+  ];
+
+  const legalLinks = [
+    { name: 'Terms & Conditions', href: '/terms' },
+    { name: 'Privacy Policy', href: '/privacy' },
+    { name: 'Help Center (FAQ)', href: '/help' },
+  ];
+
+  const socialLinks = [
+    { name: 'Twitter', icon: <Twitter size={20} />, href: '#' },
+    { name: 'Instagram', icon: <Instagram size={20} />, href: '#' },
+    { name: 'LinkedIn', icon: <Linkedin size={20} />, href: '#' },
+  ];
+
   return (
-    <div className="pagePadding">
-        <div className="flex justify-between items-center h-96">
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Logo" className="w-32 h-32" />
+    <footer className="bg-black text-white">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          
+          {/* Brand Column */}
+          <div className="col-span-2 md:col-span-1">
+            <h2 className="text-xl font-bold">Passitpal</h2>
+            <p className="mt-2 text-sm text-neutral-400">
+              The trusted marketplace for buying and selling passes, tickets, and subscriptions.
+            </p>
           </div>
-          <div className="flex items-center">
-            <p>Copyright 2025 PassItPal</p>
+
+          {/* Categories Column */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Categories</h3>
+            <ul className="mt-4 space-y-2">
+              {categoryLinks.map(link => (
+                <li key={link.name}>
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company Column */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Company</h3>
+            <ul className="mt-4 space-y-2">
+              {companyLinks.map(link => (
+                <li key={link.name}>
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal & Support Column */}
+          <div>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Support</h3>
+            <ul className="mt-4 space-y-2">
+              {legalLinks.map(link => (
+                <li key={link.name}>
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="mt-12 border-t border-neutral-800 pt-8 flex flex-col sm:flex-row items-center justify-between">
+          <p className="text-sm text-neutral-500">
+            &copy; {new Date().getFullYear()} Passitpal. All Rights Reserved.
+          </p>
+          <div className="flex space-x-4 mt-4 sm:mt-0">
+            {socialLinks.map(social => (
+              <a key={social.name} href={social.href} className="text-neutral-500 hover:text-white transition-colors">
+                <span className="sr-only">{social.name}</span>
+                {social.icon}
+              </a>
+            ))}
           </div>
         </div>
-    </div>
-  )
-}
+      </div>
+    </footer>
+  );
+};
 
-export default Footer
+export default Footer;

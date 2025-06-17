@@ -63,8 +63,15 @@ export function NavBar() {
   const userInitial = user?.username?.charAt(0).toUpperCase() || "";
 
   const userMenuItems: MenuProps['items'] = [
-    { key: "dashboard", label: "Dashboard", onClick: () => navigate("/dashboard") },
+    { key: "dashboard", label: "Dashboard", onClick: () => { 
+      if(user?.role==='admin'){
+      navigate("/admin")
+    }else 
+    navigate("/dashboard")
+    }
+   },
     { key: "profile", label: "My Profile", onClick: () => navigate("/profile") },
+    { key: "admin", label: "Admin Panel", onClick: () => navigate("/admin"), style: { display: user?.role === 'admin' ? 'block' : 'none' } },
     { type: 'divider' },
     { key: "logout", label: "Logout", onClick: handleLogout, danger: true },
   ];
@@ -119,6 +126,7 @@ export function NavBar() {
                   <Link to="/messages" title="Messages">
                     <MessageSquare className="text-xl text-gray-600 dark:text-gray-300 hover:text-primary cursor-pointer" />
                   </Link>
+                  
               <Dropdown
                   menu={{ items: notificationMenuItems }} 
                   placement="bottomRight"
@@ -156,7 +164,7 @@ export function NavBar() {
           </div>
         </NavBody>
 
-        {/* Mobile Navigation */}
+        
         <MobileNav>
           <MobileNavHeader>
             <Link to="/">
@@ -204,6 +212,6 @@ export function NavBar() {
           </MobileNavMenu>
         </MobileNav>
       </Navbar>
-    </div>
+    </div> 
   );
 }

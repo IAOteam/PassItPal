@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // Update the Listing type to include seller details
 interface Listing {
@@ -61,9 +62,17 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         </div>
 
         {/* Seller Info */}
-        <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center gap-2">
-            <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="small" />
-            <span className="text-xs  text-neutral-900 truncate">{listing.seller.username}</span>
+        <div className="mt-4 pt-3 border-t border-neutral-800">
+            <Link 
+                to={`/profile/${listing.seller._id}`} 
+                onClick={(e) => e.stopPropagation()} // Prevents the main card's onClick from firing
+                className="flex items-center gap-2 group/seller"
+            >
+                <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="small" />
+                <span className="text-xs text-neutral-400 group-hover/seller:text-white group-hover/seller:underline truncate transition-colors">
+                    {listing.seller.username}
+                </span>
+            </Link>
         </div>
       </div>
     </div>

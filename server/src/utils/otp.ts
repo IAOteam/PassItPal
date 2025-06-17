@@ -2,9 +2,9 @@ import User from '../models/User';
 import { OTP_EXPIRY_MINUTES } from '../config/constants';
 import { sendEmail } from './emailService'; 
 import dotenv from 'dotenv';
+dotenv.config(); 
 import twilio from 'twilio';
 
-dotenv.config(); 
 
 
 // Initialize Twilio client

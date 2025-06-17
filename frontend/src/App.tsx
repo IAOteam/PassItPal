@@ -20,6 +20,16 @@ import ConversationsListPage from './pages/auth/ConversationsListPage';
 import Layout from './Layout'; 
 import HomePage from "./components/pages/landing/HomePage.tsx";
 import SubmitReviewPage from "./components/pages/reviews/SubmitReviewPage.tsx";
+import MessagingLayout from "./components/pages/messaging/MessagingLayout.tsx";
+import AdminLayout from './components/admin/layout/AdminLayout';
+import AdminDashboard from './components/admin/AdminDashboard';
+// import ManageRoleRequests from './components/admin/ManageRoleRequests';
+import ManageReports from './components/admin/ManageReports';
+import ManageUsers from './components/admin/ManageUsers';
+import ManageListings from './components/admin/ManageListings';
+import PublicProfilePage from "./components/pages/profile/PublicProfilePage.tsx";
+
+
 
 function App() {
   return (
@@ -33,14 +43,29 @@ function App() {
             
             {/* Public listing page */}
             <Route path="/listings" element={<ListingsPage />} />
+            <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
             {/* Protected routes that also use the layout */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
-              <Route path="/chat/:conversationId" element={<ChatPage />} />
-              <Route path="/messages" element={<ConversationsListPage />} /> 
+              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  {/* <Route path="role-requests" element={<ManageRoleRequests />} /> */}
+                  <Route path="reports" element={<ManageReports />} />
+                  <Route path="users" element={<ManageUsers />} />
+                  <Route path="listings" element={<ManageListings />} /> 
+                  {/* We will add /users and /listings routes here later */}
+                </Route>
+              </Route>
+              {/* <Route path="/chat/:conversationId" element={<ChatPage />} /> */}
+              <Route path="/messages" element={<MessagingLayout />}>
+                <Route index element={<ConversationsListPage />} />
+                <Route path=":conversationId" element={<ChatPage />} />
+              </Route>
+              {/* <Route path="/messages" element={<ConversationsListPage />} />  */}
               <Route path="/submit-review/:orderId" element={<SubmitReviewPage />} />
             </Route>
             

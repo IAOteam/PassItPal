@@ -10,7 +10,7 @@ interface GeocodingResult {
   formattedAddress: string;
 }
 
-const Maps_API_KEY = process.env.Maps_API_KEY;
+const Maps_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 if (!Maps_API_KEY) {
     console.warn("[Geocoding Service] WARNING: Maps_API_KEY is not set in .env. Geocoding will not work.");

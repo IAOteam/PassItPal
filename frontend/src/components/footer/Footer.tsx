@@ -1,25 +1,25 @@
 // frontend/src/components/footer/Footer.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Twitter, Instagram, Linkedin, ShieldAlert } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const categoryLinks = [
-    { name: 'Fitness', href: '/listings?category=GYM_MEMBERSHIP' },
-    { name: 'Events', href: '/listings?category=EVENT_TICKET' },
-    { name: 'Courses', href: '/listings?category=ONLINE_COURSE' },
+    { name: 'Fitness & Gyms', href: '/listings?category=GYM_MEMBERSHIP' },
+    { name: 'Events & Concerts', href: '/listings?category=EVENT_TICKET' },
+    { name: 'Courses & Workshops', href: '/listings?category=ONLINE_COURSE' },
   ];
 
   const companyLinks = [
     { name: 'About Us', href: '/about' },
-    { name: 'Blog & Alerts', href: '/blog' },
+    { name: 'Blog & Safety Alerts', href: '/blog' },
     { name: 'Contact Us', href: '/contact' },
   ];
 
   const legalLinks = [
+    { name: 'Help Center (FAQ)', href: '/help' },
     { name: 'Terms & Conditions', href: '/terms' },
     { name: 'Privacy Policy', href: '/privacy' },
-    { name: 'Help Center (FAQ)', href: '/help' },
   ];
 
   const socialLinks = [
@@ -29,15 +29,18 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-black text-white">
+    <footer className="bg-black text-white border-t border-neutral-800">
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
-            <h2 className="text-xl font-bold">Passitpal</h2>
-            <p className="mt-2 text-sm text-neutral-400">
-              The trusted marketplace for buying and selling passes, tickets, and subscriptions.
+            <Link to="/" className="flex items-center gap-2">
+                <ShieldAlert className="h-7 w-7 text-primary" />
+                <span className="text-xl font-bold">Passitpal</span>
+            </Link>
+            <p className="mt-3 text-sm text-neutral-400">
+              The trusted marketplace for buying and selling passes, tickets, and subscriptions securely.
             </p>
           </div>
 
@@ -47,7 +50,7 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               {categoryLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -61,7 +64,7 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               {companyLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -75,7 +78,7 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               {legalLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors">
+                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -92,7 +95,7 @@ const Footer: React.FC = () => {
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             {socialLinks.map(social => (
-              <a key={social.name} href={social.href} className="text-neutral-500 hover:text-white transition-colors">
+              <a key={social.name} href={social.href} className="text-neutral-500 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                 <span className="sr-only">{social.name}</span>
                 {social.icon}
               </a>

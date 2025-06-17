@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import Listing from '../models/Listing';
+import Report from '../models/Report';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
+import { v2 as cloudinary } from 'cloudinary';
 import Notification from '../models/Notification'; // This import is used by createAndEmitNotification
+import Ad from '../models/Ad';
 import { createAndEmitNotification } from './notificationController';
 
 // @route   GET /api/admin/users
@@ -223,7 +226,7 @@ export const getPlatformStats = async (req: Request, res: Response) => {
 // @route   GET /api/admin/role-requests
 // @desc    List all pending role change requests
 // @access  Private (Admin)
-export const listRoleChangeRequests = async (req: Request, res: Response) => {
+/*export const listRoleChangeRequests = async (req: Request, res: Response) => {
   try {
     // Find users who have a pending role change request
     const pendingRequests = await User.find({ roleRequestStatus: 'pending' })
@@ -333,5 +336,164 @@ export const rejectRoleChangeRequest = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid user ID.' });
     }
     res.status(500).json({ message: 'Server error: Could not reject role change request.' });
+  }
+};*/
+
+// @route   GET /api/admin/reports
+// @desc    Get all reports (with optional status filter)
+// @access  Private (Admin)
+export const getReports = async (req: Request, res: Response) => {
+  try {
+    const { status } = req.query; // Filter by status e.g., ?status=open
+
+    const query: any = {};
+    if (status && ['open', 'under_review', 'resolved_no_action', 'resolved_action_taken'].includes(status as string)) {
+      query.status = status;
+    }
+
+    const reports = await Report.find(query)
+      .populate('reporter', 'username email')
+      .sort({ createdAt: -1 });
+
+    // Since reportedContentId can refer to either User or Listing, we can't use a simple populate.
+    // We'll fetch the details separately or handle this on the frontend for simplicity for now.
+    // For a more advanced solution, you could populate dynamically after fetching.
+
+    res.status(200).json(reports);
+  } catch (error: any) {
+    console.error('Error fetching reports:', error.message);
+    res.status(500).json({ message: 'Server error: Could not fetch reports.' });
+  }
+};
+
+// @route   PUT /api/admin/reports/:reportId
+// @desc    Update a report's status and add admin notes
+// @access  Private (Admin)
+export const updateReport = async (req: Request, res: Response) => {
+  const { reportId } = req.params;
+  const { status, adminNotes } = req.body;
+
+  try {
+    const report = await Report.findById(reportId);
+
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found.' });
+    }
+
+    // Update the fields
+    report.status = status;
+    if (adminNotes) {
+      report.adminNotes = adminNotes;
+    }
+
+    const updatedReport = await report.save();
+
+    // Notify the original reporter that their report has been updated
+    await createAndEmitNotification(
+      report.reporter.toString(),
+      'admin_announcement',
+      `Your report regarding a ${report.reportedContentType} has been updated to "${status}".`,
+      `/profile` // A neutral link for now
+    );
+
+    res.status(200).json(updatedReport);
+  } catch (error: any) {
+    console.error('Error updating report:', error.message);
+    res.status(500).json({ message: 'Server error: Could not update report.' });
+  }
+};
+
+// @route   POST /api/admin/ads
+// @desc    Create a new ad
+// @access  Private (Admin)
+export const createAd = async (req: Request, res: Response) => {
+  const { sponsorName, adTitle, adDescription, targetUrl, locations, isActive, priority, adImageBase64 } = req.body;
+
+  if (!adImageBase64) {
+    return res.status(400).json({ message: 'Ad image is required.' });
+  }
+
+  try {
+    const uploadResponse = await cloudinary.uploader.upload(adImageBase64, {
+      upload_preset: 'passitpal_ads', // You might want to create a separate preset for ads
+      folder: 'ads'
+    });
+
+    const newAd = new Ad({
+      sponsorName,
+      adTitle,
+      adDescription,
+      targetUrl,
+      locations,
+      isActive,
+      priority,
+      imageUrl: uploadResponse.secure_url,
+    });
+
+    const savedAd = await newAd.save();
+    res.status(201).json(savedAd);
+  } catch (error: any) {
+    console.error('Error creating ad:', error);
+    res.status(500).json({ message: 'Server error while creating ad.' });
+  }
+};
+
+// @route   GET /api/admin/ads
+// @desc    Get all ads
+// @access  Private (Admin)
+export const getAllAds = async (req: Request, res: Response) => {
+  try {
+    const ads = await Ad.find({}).sort({ createdAt: -1 });
+    res.status(200).json(ads);
+  } catch (error: any) {
+    console.error('Error fetching ads:', error);
+    res.status(500).json({ message: 'Server error while fetching ads.' });
+  }
+};
+
+// @route   PUT /api/admin/ads/:adId
+// @desc    Update an existing ad
+// @access  Private (Admin)
+export const updateAd = async (req: Request, res: Response) => {
+  const { adId } = req.params;
+  const updateData = req.body;
+
+  try {
+    // If a new image is being uploaded, handle it
+    if (updateData.adImageBase64) {
+      const uploadResponse = await cloudinary.uploader.upload(updateData.adImageBase64, {
+        upload_preset: 'passitpal_ads',
+        folder: 'ads'
+      });
+      updateData.imageUrl = uploadResponse.secure_url;
+      delete updateData.adImageBase64; // Don't save the base64 string to DB
+    }
+
+    const updatedAd = await Ad.findByIdAndUpdate(adId, updateData, { new: true });
+    if (!updatedAd) {
+      return res.status(404).json({ message: 'Ad not found.' });
+    }
+    res.status(200).json(updatedAd);
+  } catch (error: any) {
+    console.error('Error updating ad:', error);
+    res.status(500).json({ message: 'Server error while updating ad.' });
+  }
+};
+
+// @route   DELETE /api/admin/ads/:adId
+// @desc    Delete an ad
+// @access  Private (Admin)
+export const deleteAd = async (req: Request, res: Response) => {
+  const { adId } = req.params;
+  try {
+    const deletedAd = await Ad.findByIdAndDelete(adId);
+    if (!deletedAd) {
+      return res.status(404).json({ message: 'Ad not found.' });
+    }
+    // Optionally, delete the image from Cloudinary here as well
+    res.status(200).json({ message: 'Ad deleted successfully.' });
+  } catch (error: any) {
+    console.error('Error deleting ad:', error);
+    res.status(500).json({ message: 'Server error while deleting ad.' });
   }
 };

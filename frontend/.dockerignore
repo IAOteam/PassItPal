@@ -1,0 +1,14 @@
+# Dependency directories
+node_modules
+dist
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.*
+!/.env.example
+
+# Misc
+.DS_Store

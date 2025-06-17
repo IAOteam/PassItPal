@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 import validator from 'validator';
 export interface IUser extends Document {
   _id: Types.ObjectId;
-  googleId?: string;
+  googleId?: string; 
   email: string;
   password?: string; // Optional because Google login might not have a local password
   username?: string; // Buyer-specific

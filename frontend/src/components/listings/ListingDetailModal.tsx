@@ -1,6 +1,6 @@
 // frontend/src/components/listings/ListingDetailModal.tsx (New File)
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
 
     try {
       const conversationId = await getOrCreateConversation(listing.seller._id);
-      navigate(`/chat/${conversationId}`);
+      navigate(`/messages/${conversationId}`);
     } catch (err: any) {
       alert(err.message || "Could not start chat.");
     }
@@ -92,7 +92,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
             <img
               src={listing.adImageUrl || placeholderImage}
               alt={listing.cultPassType}
-              onError={(e) => { e.currentTarget.src = placeholderImage; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }}
               className="w-full h-56 object-cover"
             />
           </div>
@@ -134,10 +134,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
 
             <div className="pt-4 border-t dark:border-neutral-700">
               <p className="text-xs font-semibold text-gray-500 mb-2">SELLER INFORMATION</p>
-              <div className="flex items-center gap-3">
-                <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="large" />
-                <span className="font-medium text-gray-800 dark:text-gray-200">{listing.seller.username}</span>
-              </div>
+                  {/* UPDATED: Seller Info is now a clickable link */}
+                  <Link 
+                    to={`/profile/${listing.seller._id}`} 
+                    className="flex items-center gap-3 group/seller rounded-lg p-2 -ml-2 hover:bg-neutral-800/50 transition-colors"
+                  >
+                    <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="large" />
+                    <span className="font-medium text-gray-800 dark:text-gray-200 group-hover/seller:text-primary transition-colors">{listing.seller.username}</span>
+                  </Link>
             </div>
 
             <Button className="w-full mt-4" size="lg" onClick={handleContactSeller}>

@@ -14,6 +14,7 @@ export interface User {
   role: 'buyer' | 'seller'| 'admin';
   isEmailVerified: boolean;
   isMobileVerified: boolean;
+  isBlocked: boolean;
   city?: string; //  as user.location?.city could be undefined/null
   mobileNumber?: string; //  as it's optional in register
   latitude?: number; //  it's from backend login response

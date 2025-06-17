@@ -1,12 +1,16 @@
 // frontend/src/pages/ListingsPage.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import ListingCard from '@/components/listings/ListingCard'; // Import the new card component
 import ListingDetailModal from '@/components/listings/ListingDetailModal'; // Import the new modal component
+import AdCard, { type IAd } from '@/components/listings/AdCard';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RangeSlider } from '@/components/ui/RangeSlider';
+import usePlacesAutocomplete from 'use-places-autocomplete';
 
 // Define a type for a single listing from the API
 interface Listing {
@@ -26,14 +30,15 @@ interface Listing {
   };
 }
 
+type DisplayItem = (Listing & { type: 'listing' }) | (IAd & { type: 'ad' });
 const ListingsPage: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // State for listings
   const [promotedListings, setPromotedListings] = useState<Listing[]>([]);
   const [regularListings, setRegularListings] = useState<Listing[]>([]);
-  
+  const [ads, setAds] = useState<IAd[]>([]); 
   // --- State for the modal ---
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   
@@ -42,32 +47,49 @@ const ListingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // State for filters and sorting
+  const [locationTerm, setLocationTerm] = useState(searchParams.get('locationName') || '');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'createdAt_desc');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+  // const [minPrice, setMinPrice] = useState('');
+  // const [maxPrice, setMaxPrice] = useState('');
   
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
+  const { ready, value, suggestions, setValue, clearSuggestions } = usePlacesAutocomplete({
+    requestOptions: { componentRestrictions: { country: 'in' } },
+    debounce: 300,
+  });
+
+  const handleLocationSelect = (description: string) => {
+    setValue(description, false);
+    setLocationTerm(description);
+    clearSuggestions();
+  };
   const fetchListings = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (searchParams.get('locationName')) params.append('locationName', searchParams.get('locationName')!);
+      if (locationTerm) params.set('locationName', locationTerm);
+      // if (searchParams.get('locationName')) params.append('locationName', searchParams.get('locationName')!);
       if (searchTerm) params.append('cultPassType', searchTerm);
       if (sortBy) params.append('sortBy', sortBy);
-      if (minPrice) params.append('minPrice', minPrice);
-      if (maxPrice) params.append('maxPrice', maxPrice);
+      // if (minPrice) params.append('minPrice', minPrice);
+      // if (maxPrice) params.append('maxPrice', maxPrice);
+      if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
+      if (priceRange[1] < 50000) params.set('maxPrice', priceRange[1].toString());
       params.append('page', page.toString());
       params.append('limit', '12');
+      setSearchParams(params);
 
       const response = await api.get(`/listings?${params.toString()}`);
       
       setPromotedListings(response.data.promotedListings || []);
       setRegularListings(response.data.regularListings || []);
+      setAds(response.data.ads || []);
       setCurrentPage(response.data.currentPage || 1);
       setTotalPages(response.data.totalPages || 0);
 
@@ -76,19 +98,50 @@ const ListingsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchParams, searchTerm, sortBy, minPrice, maxPrice]);
-
+  }, [searchParams,locationTerm, searchTerm, sortBy, priceRange]);
+  const handleFilterApply = () => {
+    fetchListings(1); // Fetch from page 1 when applying new filters
+  };
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setLocationTerm('');
+    setValue(''); // Also clear autocomplete input
+    setPriceRange([0, 50000]);
+    setSortBy('createdAt_desc');
+    setSearchParams({}); // Clear URL params
+  };
   useEffect(() => {
     fetchListings(1);
   }, [fetchListings]);
+
+  //useMemo hook to combine listings and ads into a single array for display
+  const displayItems = useMemo(() => {
+    const items: DisplayItem[] = regularListings.map(l => ({ ...l, type: 'listing' }));
+    
+    // Inject ads at specific positions
+    if (ads.length > 0) {
+      // Insert the first ad after the 4th listing (if enough listings exist)
+      const firstAdIndex = 4;
+      if (items.length >= firstAdIndex) {
+        items.splice(firstAdIndex, 0, { ...ads[0], type: 'ad' });
+      } else {
+        items.push({ ...ads[0], type: 'ad' }); // else, add to end
+      }
+    }
+    if (ads.length > 1) {
+      // Insert the second ad after the 10th listing (index is now +1 due to first ad)
+      const secondAdIndex = 11;
+      if(items.length >= secondAdIndex) {
+        items.splice(secondAdIndex, 0, { ...ads[1], type: 'ad' });
+      }
+    }
+    return items;
+  }, [regularListings, ads]);
 
   const handleSortChange = (value: string) => {
     setSortBy(value);
   };
 
-  const handleFilterApply = () => {
-    fetchListings(1);
-  };
 
   const handlePageChange = (newPage: number) => {
     fetchListings(newPage);
@@ -115,10 +168,27 @@ const ListingsPage: React.FC = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="relative">
+            <Input 
+              placeholder="Search by location..." 
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              disabled={!ready}
+            />
+             {suggestions.status === 'OK' && (
+              <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.data.map(s => (
+                  <li key={s.place_id} onClick={() => handleLocationSelect(s.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-black dark:text-white">
+                    {s.description}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        {/* <div className="flex gap-2 w-full md:w-auto">
           <Input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
           <Input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
-        </div>
+        </div> */}
         <Select value={sortBy} onValueChange={handleSortChange}>
             <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="Sort by" />
@@ -131,9 +201,22 @@ const ListingsPage: React.FC = () => {
                 <SelectItem value="createdAt_asc">Oldest First</SelectItem>
             </SelectContent>
         </Select>
-        <Button onClick={handleFilterApply} className="w-full md:w-auto">Apply</Button>
+        {/* <Button onClick={handleFilterApply} className="w-full md:w-auto">Apply</Button> */}
       </div>
-
+      <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-800">Price Range</label>
+            <RangeSlider
+                value={priceRange}
+                onValueChange={(newRange) => setPriceRange(newRange as [number, number])}
+                max={50000}
+                step={1000}
+            />
+        </div>
+        <div className="flex justify-end items-center gap-2 pt-2">
+            <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>
+            <Button onClick={handleFilterApply}>Apply</Button>
+        </div>
+      
       {loading && <p className="text-center py-10">Loading listings...</p>}
       {error && <p className="text-center py-10 text-red-500">{error}</p>}
       
@@ -153,13 +236,22 @@ const ListingsPage: React.FC = () => {
 
           {/* Regular Listings Section */}
           <section>
-             {promotedListings.length > 0 && regularListings.length > 0 && <h2 className="text-2xl font-semibold mb-4 border-b pb-2">All Passes</h2>}
+             {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-4 border-b pb-2">All Passes</h2>}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {regularListings.map(listing => (
+              {/* {regularListings.map(listing => (
                 <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />
-              ))}
+              ))} */}
+               {displayItems.map(item => {
+                if (item.type === 'listing') {
+                  return <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />;
+                }
+                if (item.type === 'ad') {
+                  return <AdCard key={item._id} ad={item} />;
+                }
+                return null;
+              })}
             </div>
-             {regularListings.length === 0 && promotedListings.length === 0 && (
+             {displayItems.length === 0 && promotedListings.length === 0 && (
                 <p className="text-center py-10 text-gray-500">No listings found matching your criteria.</p>
              )}
           </section>

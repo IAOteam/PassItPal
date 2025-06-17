@@ -101,7 +101,8 @@ const HeroSection: React.FC = () => {
       >
         <div className="max-w-3xl">
           <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight uppercase">
-            Find Your Perfect Fit
+            <div>Pass<span className='text-blue-400'>Karo</span> & Cash<span className='text-blue-400'>Karo</span></div>
+            
           </h1>
           <p className="mt-4 text-base md:text-xl text-gray-200">
             Discover gym passes, event tickets, and subscriptions near you. Get personalized deals based on your location and preferences.

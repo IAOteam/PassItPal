@@ -5,8 +5,8 @@ import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent'
 import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent'; 
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import ManageRoleRequests from '@/components/admin/ManageRoleRequests';
-
+// import ManageRoleRequests from '@/components/admin/ManageRoleRequests';
+import ManageReports from '@/components/admin/ManageReports';
 
 const DashboardPage: React.FC = () => {
     const { user, loading ,isAuthenticated} = useAuth();
@@ -67,18 +67,21 @@ return (
           
         // </div>
       )} 
-      {user.role === 'admin' && (
+      {/* {user.role === 'admin' && (
         <div className="space-y-8">
           <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
             <h3 className="text-xl font-semibold mb-4">Admin Overview</h3>
             <p>Welcome, Admin {user.username}!</p>
-            {/* Other admin summary stats can go here */}
+            
           </div>
           <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
             <ManageRoleRequests />
           </div>
+          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
+            <ManageReports />
+          </div>
         </div>
-      )}
+      )} */}
       {user.role !== 'buyer' && user.role !== 'seller' && user.role !== 'admin' && (
           <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg mx-auto">
             <p>Welcome to your dashboard, {user.username}!</p>

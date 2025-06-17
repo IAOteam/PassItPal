@@ -1,0 +1,66 @@
+services:
+  # Backend Service Configuration
+  backend:
+    build:
+      context: ./server
+    container_name: passitpal-backend-container
+    ports:
+      - "5001:5001"
+    environment:
+      # --- All Backend Variables Now Listed ---
+      - MONGO_URI=${MONGO_URI}
+
+      - PORT=5001
+      - CLIENT_URL=http://localhost:5173
+
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_OAUTH_REDIRECT_URI=http://localhost:5001/api/auth/google/callback
+
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+    volumes:
+      - ./server/src:/app/src
+    depends_on:
+      - mongo
+
+  # Frontend Service Configuration
+  frontend:
+    build:
+      context: ./frontend
+    container_name: passitpal-frontend-container
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_BACKEND_URL=http://backend:5001/api
+      - VITE_Maps_API_KEY=${VITE_Maps_API_KEY}
+    depends_on:
+      - backend
+
+  # Development Database Service Configuration
+  mongo:
+    image: mongo:latest
+    container_name: mongo-db-container
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  mongodb-data:

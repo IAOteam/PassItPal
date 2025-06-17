@@ -382,9 +382,15 @@ export const switchUserRole = async (req: Request, res: Response) => {
     if (!user.isEmailVerified) {
         return res.status(400).json({ message: 'Your email must be verified to switch roles.' });
     }
-    if (!user.isMobileVerified) {
-        return res.status(400).json({ message: 'Your mobile number must be verified to switch roles.' });
-    }
+    if (newRole === 'seller') {
+      // Prerequisite check to become a seller
+      if (!user.isEmailVerified || !user.isMobileVerified) {
+        return res.status(403).json({ message: 'To become a seller, your email and mobile number must both be verified.' });
+      }
+    } 
+    // if (!user.isMobileVerified) {
+    //     return res.status(400).json({ message: 'Your mobile number must be verified to switch roles.' });
+    // }
     // 2. Check for Active Transactions (if switching from seller to buyer)
     if (user.role === 'seller' && newRole === 'buyer') {
         const activeListingsWithOrders = await Order.findOne({

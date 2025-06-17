@@ -7,10 +7,15 @@ import {
   toggleListingPromotion,
   deleteListingAdmin,
   getPlatformStats,
-
-  listRoleChangeRequests,
-  approveRoleChangeRequest,
-  rejectRoleChangeRequest
+  getReports,
+  updateReport,
+  createAd,      
+  getAllAds,     
+  updateAd,      
+  deleteAd,  
+  // listRoleChangeRequests,
+  // approveRoleChangeRequest,
+  // rejectRoleChangeRequest
 } from '../controllers/adminController';
 import { protect, authorizeRoles } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
@@ -60,6 +65,8 @@ router.delete(
 
 router.get('/stats', getPlatformStats);
 
+
+/*
 // GET all pending role change requests
 router.get('/role-requests', listRoleChangeRequests); // Example: /api/admin/role-requests?status=pending (query param handled in controller if needed)
 
@@ -84,6 +91,46 @@ router.put(
   validate,
   rejectRoleChangeRequest
 );
+*/
 
+
+router.get('/reports', getReports);
+const validReportStatuses = ['open', 'under_review', 'resolved_no_action', 'resolved_action_taken'];
+
+router.put(
+  '/reports/:reportId',
+  [
+    param('reportId').isMongoId().withMessage('Invalid report ID.'),
+    body('status').isIn(validReportStatuses).withMessage('Invalid status provided.'),
+    body('adminNotes').optional().isString().trim(),
+  ],
+  validate,
+  updateReport
+);
+
+router.route('/ads')
+  .get(getAllAds)
+  .post(
+    [
+      body('sponsorName').notEmpty().withMessage('Sponsor name is required.'),
+      body('adTitle').notEmpty().withMessage('Ad title is required.'),
+      body('adDescription').notEmpty().withMessage('Ad description is required.'),
+      body('targetUrl').isURL().withMessage('A valid target URL is required.'),
+    ],
+    validate,
+    createAd
+  );
+
+router.route('/ads/:adId')
+  .put(
+    [ param('adId').isMongoId().withMessage('Invalid Ad ID.') ],
+    validate,
+    updateAd
+  )
+  .delete(
+    [ param('adId').isMongoId().withMessage('Invalid Ad ID.') ],
+    validate,
+    deleteAd
+  );
 
 export default router;

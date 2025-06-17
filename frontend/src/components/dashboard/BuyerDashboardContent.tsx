@@ -53,7 +53,7 @@ const BuyerDashboardContent: React.FC = () => {
   const handleContactSeller = async (sellerId: string) => {
     try {
       const conversationId = await getOrCreateConversation(sellerId);
-      navigate(`/chat/${conversationId}`);
+      navigate(`/messages/${conversationId}`);
     } catch (err: any) {
       alert(err.message || "Could not start chat.");
     }

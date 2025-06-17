@@ -6,6 +6,7 @@ import { createAndEmitNotification } from './notificationController';
 import { Types } from 'mongoose';
 import Order from '../models/Order';
 import { geocodeAddress } from '../utils/geocodingService'; 
+import Ad from '../models/Ad';
 
 dotenv.config();
 
@@ -114,6 +115,7 @@ export const getListings = async (req: Request, res: Response) => {
   } = req.query; 
 
     let baseQuery: any = { isAvailable: true };
+    let searchCity: string | null = null;
     if (req.user?.role === 'admin' && req.query.includeInactive === 'true') {
         delete baseQuery.isAvailable; // Admin can override to see all
     }
@@ -138,6 +140,8 @@ export const getListings = async (req: Request, res: Response) => {
                     $centerSphere: [[geocodeResult.longitude, geocodeResult.latitude], 50 / 6378.1] // Example: 50km radius around city center
                 }
             };
+            // Extract the city name for ad targeting
+        searchCity = geocodeResult.formattedAddress.split(',')[0].trim();
         // searchLat = geocodeResult.latitude;
         // searchLon = geocodeResult.longitude;
         //  to filter by city name directly,  add:
@@ -152,6 +156,7 @@ export const getListings = async (req: Request, res: Response) => {
                 totalCount: 0,
                 promotedListings: [],
                 regularListings: [],
+                ads: [],
                 totalPages: 0,
                 currentPage: 1,
              });
@@ -262,11 +267,26 @@ export const getListings = async (req: Request, res: Response) => {
       .sort(sortOptions)
       .skip(skip)
       .limit(limitNum);
+
+      const adQuery: any = { isActive: true };
+      if (searchCity) {
+        // Fetch ads that are targeted to the searched city OR are global (locations array is empty)
+        adQuery.$or = [
+          { locations: { $in: [new RegExp(searchCity, 'i')] } },
+          { locations: { $size: 0 } }
+        ];
+      } else {
+        // If no location is searched, only fetch global ads
+        adQuery.locations = { $size: 0 };
+      }
+      // Fetch up to 2 active, relevant ads, sorted by priority
+      const ads = await Ad.find(adQuery).sort({ priority: -1 }).limit(2);
       res.status(200).json({
       message: 'Listings fetched successfully',
       totalCount: promotedListings.length + totalRegularCount, // Combined total
       promotedListings, // Send promoted listings as a separate array
       regularListings,  // Send paginated regular listings
+      ads,
       totalPages: Math.ceil(totalRegularCount / limitNum), // Pagination based on regular listings
       currentPage: pageNum,
     });

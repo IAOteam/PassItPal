@@ -56,6 +56,20 @@ const ListingSchema: Schema = new Schema({
   
 },
  { timestamps: true });
+// Geospatial index for location-based queries (already existed, which is good)
 ListingSchema.index({ location: '2dsphere' });
+
+// Compound index for the most common query: finding available, non-promoted listings sorted by date.
+ListingSchema.index({ isAvailable: 1, isPromoted: 1, createdAt: -1 });
+
+// Compound index to help with price sorting
+ListingSchema.index({ isAvailable: 1, askingPrice: 1 });
+
+// Index for city, which is often used as a filter
+ListingSchema.index({ city: 1 });
+
+// Text index to make searching by pass name (cultPassType) much faster
+ListingSchema.index({ cultPassType: 'text' });
+
 const Listing = mongoose.model<IListing>('Listing', ListingSchema);
 export default Listing;

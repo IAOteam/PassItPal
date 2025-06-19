@@ -168,7 +168,8 @@ const ListingsPage: React.FC = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <div className="relative">
+        
+        <div className="relative ">
             <Input 
               placeholder="Search by location..." 
               value={value}
@@ -185,6 +186,8 @@ const ListingsPage: React.FC = () => {
               </ul>
             )}
           </div>
+          
+          
         {/* <div className="flex gap-2 w-full md:w-auto">
           <Input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
           <Input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
@@ -203,7 +206,7 @@ const ListingsPage: React.FC = () => {
         </Select>
         {/* <Button onClick={handleFilterApply} className="w-full md:w-auto">Apply</Button> */}
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 p-4 ">
             <label className="text-sm font-medium text-neutral-800">Price Range</label>
             <RangeSlider
                 value={priceRange}

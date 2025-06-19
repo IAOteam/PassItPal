@@ -187,7 +187,10 @@ export const getListings = async (req: Request, res: Response) => {
     // if (cultPassType && typeof cultPassType === 'string') {
     //   query.cultPassType = cultPassType;
     // }
-    if (cultPassType && typeof cultPassType === 'string') baseQuery.cultPassType = new RegExp(cultPassType, 'i');
+    // if (cultPassType && typeof cultPassType === 'string') baseQuery.cultPassType = new RegExp(cultPassType, 'i');
+    if (cultPassType && typeof cultPassType === 'string') {
+      baseQuery.$text = { $search: cultPassType };
+    }
     if (minPrice || maxPrice) {
       baseQuery.askingPrice = {};
       if (minPrice) baseQuery.askingPrice.$gte = parseFloat(minPrice as string);

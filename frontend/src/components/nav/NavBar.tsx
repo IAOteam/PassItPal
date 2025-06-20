@@ -297,14 +297,14 @@ export function NavBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-800 bg-black/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 w-full rounded-sm border-b border-neutral-800 bg-black/80 backdrop-blur-lg">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
               {/* <ShieldAlert className="h-6 w-6 text-primary" /> */}
-              <span className="font-bold text-lg text-white">Passitpal</span>
+              <span className="font-bold text-2xl text-white">PassItPal</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               {navItems.filter(item => !item.roles || (user && item.roles.includes(user.role))).map((item) => (
@@ -333,7 +333,7 @@ export function NavBar() {
                 </Dropdown>
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 text-gray-200">
                 <Button variant="outline" onClick={() => navigate('/login')}>Log In</Button>
                 <Button onClick={() => navigate('/register')}>Sign Up</Button>
               </div>
@@ -351,21 +351,21 @@ export function NavBar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md md:hidden"
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md md:hidden "
           >
-            <div className="container mx-auto px-4 h-full">
+            <div className="container mx-auto px-4 h-full ">
               <div className="flex items-center justify-between h-16 border-b border-neutral-800">
                 <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
                   {/* <ShieldAlert className="h-6 w-6 text-primary" /><span className="font-bold text-lg text-white">Passitpal</span> */}
                 </Link>
                 <button onClick={closeMobileMenu} className="text-neutral-400 hover:text-white"><X size={26} /></button>
               </div>
-              <div className="mt-8 flex flex-col items-center gap-y-6 text-center">
+              <div className="mt-8 flex flex-col items-center gap-y-6 text-center ">
                 {navItems.filter(item => !item.roles || (user && item.roles.includes(user.role))).map((item) => (
                   <Link key={`mobile-${item.name}`} to={item.href} onClick={closeMobileMenu} className="text-xl font-medium text-neutral-300 hover:text-white">{item.name}</Link>
                 ))}
                 {!isAuthenticated && (
-                  <div className="mt-8 flex flex-col gap-4 w-full max-w-xs">
+                  <div className="mt-8 flex flex-col gap-4 w-full max-w-xs ">
                     <Button size="lg" variant="outline" onClick={() => {closeMobileMenu(); navigate('/login');}}>Log In</Button>
                     <Button size="lg" onClick={() => {closeMobileMenu(); navigate('/register');}}>Sign Up</Button>
                   </div>

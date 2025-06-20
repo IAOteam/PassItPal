@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { X, CalendarDays, MapPin, MessageSquare, Star, Flag } from 'lucide-react';
+import { X, CalendarDays, MapPin, MessageSquare, Star,Share2, Flag ,Check } from 'lucide-react';
 import ReportModal from '../shared/ReportModal'; 
 
 // Define the type for the listing prop, which is the full listing object
@@ -36,6 +36,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const { isAuthenticated, user, getOrCreateConversation } = useAuth();
   const navigate = useNavigate();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+   const [isCopied, setIsCopied] = useState(false);
   const handleContactSeller = async () => {
     if (!isAuthenticated || !user) {
       // If user is not logged in, redirect them to the login page
@@ -57,7 +58,20 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
       alert(err.message || "Could not start chat.");
     }
   };
-
+const handleShare = () => {
+    if (!listing) return;
+    const listingUrl = `${window.location.origin}/listings?listingId=${listing._id}`;
+    
+    // Use the modern clipboard API
+    navigator.clipboard.writeText(listingUrl).then(() => {
+        setIsCopied(true);
+        // Reset the "copied" state after 2 seconds
+        setTimeout(() => setIsCopied(false), 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy link.');
+    });
+  };
   if (!listing) return null;
 
   const placeholderImage = `https://placehold.co/600x400/E7E7E7/6D6D6D?text=${encodeURIComponent(listing.cultPassType)}`;
@@ -82,6 +96,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
           onClick={(e) => e.stopPropagation()}
           className="bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
         >
+          
           <div className="relative">
             {listing.isPromoted && (
               <div className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-neutral-900">
@@ -120,8 +135,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                         {/* <BadgeIndianRupee className="h-3 w-3" /> */}
                         {listing.originalPrice.toLocaleString('en-IN')}</p>
                 </div>
-                <div className="text-right text-primary">
-                    <span className="text-xs font-semibold">Asking Price</span>
+                <div className="text-right text-primary dark:text-gray-200">
+                    <span className="text-xs font-semibold">Offered Price</span>
                     <p className="text-2xl font-bold">₹
                         {/* <BadgeIndianRupee className="h-3 w-3" /> */}
                         {listing.askingPrice.toLocaleString('en-IN')}</p>
@@ -133,8 +148,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
             )}
 
             <div className="pt-4 border-t dark:border-neutral-700">
-              <p className="text-xs font-semibold text-gray-500 mb-2">SELLER INFORMATION</p>
-                  {/* UPDATED: Seller Info is now a clickable link */}
+              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2">SELLER INFORMATION</p>
+                  {/*  Seller Info is now a clickable link */}
                   <Link 
                     to={`/profile/${listing.seller._id}`} 
                     className="flex items-center gap-3 group/seller rounded-lg p-2 -ml-2 hover:bg-neutral-800/50 transition-colors"
@@ -143,11 +158,22 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                     <span className="font-medium text-gray-800 dark:text-gray-200 group-hover/seller:text-primary transition-colors">{listing.seller.username}</span>
                   </Link>
             </div>
-
-            <Button className="w-full mt-4" size="lg" onClick={handleContactSeller}>
+            <div className="p-4 flex justify-between dark:text-gray-200 items-center  z-20">
+            <Button className="w-auto  outline" size="lg" onClick={handleContactSeller}>
                 <MessageSquare className="h-5 w-5 mr-2"/>
                 Contact Seller
             </Button>
+            
+                {/* Share Button */}
+                <Button variant="link" size="icon" className="rounded-full p-3 bg-black/20 hover:bg-black/40 text-white" onClick={handleShare}>
+                  {isCopied ? <Check className="h-5 w-5 text-green-400" /> : <Share2 className="h-5 w-5" />}
+                  <span className="sr-only">{isCopied ? 'Copied!' : 'Share'}</span>
+                </Button>
+                 {/* Close Button */}
+                <Button variant="link" size="icon" className="rounded-full p-3 bg-black/20 hover:bg-black/40 text-white" onClick={onClose}>
+                  <X className="h-5 w-5" />
+                </Button>
+            </div>
             {isAuthenticated && user?._id !== listing.seller._id && (
                     <div className="text-center mt-2">
                       <Button
@@ -162,9 +188,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                   )}
           </div>
 
-          <Button variant="ghost" size="icon" className="absolute top-3 right-3 rounded-full bg-black/20 hover:bg-black/40 text-white" onClick={onClose}>
+          {/* <Button variant="ghost" size="icon" className="absolute top-3 right-3 rounded-full bg-black/20 hover:bg-black/40 text-white" onClick={onClose}>
             <X className="h-5 w-5" />
-          </Button>
+          </Button> */}
         </motion.div>
       </motion.div>
     </AnimatePresence>

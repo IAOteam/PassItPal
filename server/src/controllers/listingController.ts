@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { createAndEmitNotification } from './notificationController';
 import { Types } from 'mongoose';
 import Order from '../models/Order';
-import { geocodeAddress } from '../utils/geocodingService'; 
+import { geocodeAddress, reverseGeocode } from '../utils/geocodingService'; 
 import Ad from '../models/Ad';
 
 dotenv.config();
@@ -588,5 +588,27 @@ export const promoteListing = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid listing ID.' });
     }
     res.status(500).json({ message: 'Server error: Could not promote listing.' });
+  }
+};
+
+// @route   POST /api/listings/reverse-geocode
+// @desc    Get city name from coordinates
+// @access  Public
+export const getCityFromCoords = async (req: Request, res: Response) => {
+  const { latitude, longitude } = req.body;
+
+  if (!latitude || !longitude) {
+    return res.status(400).json({ message: 'Latitude and longitude are required.' });
+  }
+
+  try {
+    const cityName = await reverseGeocode(latitude, longitude);
+    if (cityName) {
+      res.status(200).json({ locationName: cityName });
+    } else {
+      res.status(404).json({ message: 'Could not determine location from coordinates.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error during reverse geocoding.' });
   }
 };

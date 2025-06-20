@@ -41,11 +41,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
           style={{ backgroundImage: `url(${listing.adImageUrl || placeholderImage})` }}
         />
         {listing.isPromoted && (
-          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-1 text-xs font-bold text-neutral-900">
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-blue-400 px-2 py-1 text-xs font-bold text-neutral-900">
             <Star className="h-3 w-3" fill="currentColor" />
             <span>Promoted</span>
           </div>
         )}
+        
       </div>
 
       {/* Content */}
@@ -69,7 +70,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
                 className="flex items-center gap-2 group/seller"
             >
                 <Avatar src={listing.seller.profilePictureUrl} icon={<UserOutlined />} size="small" />
-                <span className="text-xs text-neutral-400 group-hover/seller:text-white group-hover/seller:underline truncate transition-colors">
+                <span className="text-xs text-neutral-800 group-hover/seller:text-white group-hover/seller:underline truncate transition-colors">
                     {listing.seller.username}
                 </span>
             </Link>

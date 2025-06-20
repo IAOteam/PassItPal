@@ -6,6 +6,7 @@ import {
   createListing,
   getListings,
   getListingById,
+  getCityFromCoords,
   updateListing,
   deleteListing,
   getMyListings
@@ -40,7 +41,7 @@ router.get(
   authorizeRoles('seller'), // Only sellers can have listings to manage
   getMyListings //  controller function
 );
-
+router.post('/reverse-geocode', getCityFromCoords);
 router.get(
   '/:id',
   [

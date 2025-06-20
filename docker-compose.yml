@@ -9,7 +9,7 @@ services:
     environment:
       # --- All Backend Variables Now Listed ---
       - MONGO_URI=${MONGO_URI}
-
+      - REDIS_URL=redis://redis:6379 
       - PORT=5001
       - CLIENT_URL=http://localhost:5173
 
@@ -39,6 +39,7 @@ services:
       - ./server/src:/app/src
     depends_on:
       - mongo
+      - redis # Make backend wait for Redis to be ready
 
   # Frontend Service Configuration
   frontend:
@@ -61,6 +62,14 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
+  redis:
+    image: redis:7-alpine # Use the official Redis image
+    container_name: redis-cache-container
+    ports:
+      - "6379:6379" # Expose Redis port to your local machine if needed
+    volumes:
+      - redis-data:/data
 
 volumes:
   mongodb-data:
+  redis-data: #  Define a volume for Redis data persistence

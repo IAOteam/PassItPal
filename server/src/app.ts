@@ -1,5 +1,6 @@
 import express,{ Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
 import cors from 'cors';
 import helmet from 'helmet'; //  For security headers
 import { createServer } from 'http';
@@ -24,13 +25,22 @@ import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import reportRoutes from './routes/reportRoutes';
-dotenv.config();
+import { createEmailWorker, emailQueue } from './config/queue'; 
+import emailProcessor from './workers/emailProcessor';
+
 import './config/passport-setup'; 
 
 const app = express();
 const httpServer = createServer(app);
 
 connectDB();
+
+// --- INITIALIZE THE EMAIL WORKER ---
+// This starts the worker, and it begins listening for jobs in the queue.
+const emailWorker = createEmailWorker(emailProcessor);
+console.log("Email worker initialized and listening for jobs.");
+// ------------------------------------
+
 
 // Security Middleware
 app.use(helmet()); // Add Helmet to set various HTTP headers for security
@@ -155,6 +165,29 @@ io.on('connection', (socket: Socket) => {
           `New message from ${user.username || user.email}: ${text.substring(0, 50)}...`,
           `/chat/${conversationId}`,
           user._id.toString()
+        );
+      }
+
+      // --- OFFLINE NOTIFICATION LOGIC ---
+      // Check if the recipient is offline
+      const isRecipientOnline = connectedUsers.has(recipientId);
+
+      if (!isRecipientOnline) {
+        console.log(`[Queue] Recipient ${recipientId} is offline. Scheduling an email notification.`);
+        
+        // Add a job to the queue to send an email in 15 minutes
+        await emailQueue.add(
+          `send-email-to-${recipientId}`, // Job name
+          { // The data for our processor
+            recipientId: recipientId,
+            senderName: sender.username || 'A user',
+            messageText: text
+          },
+          { // Job options
+            delay: 15 * 60 * 1000, // 15 minutes in milliseconds
+            removeOnComplete: true, // Clean up job from Redis on success
+            removeOnFail: 50 // Keep failed jobs for debugging
+          }
         );
       }
 

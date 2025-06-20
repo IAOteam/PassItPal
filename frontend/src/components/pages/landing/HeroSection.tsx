@@ -33,18 +33,23 @@ const HeroSection: React.FC = () => {
   } = usePlacesAutocomplete({
     initOnMount: false,
     debounce: 300,
-    requestOptions: {
-      componentRestrictions: { country: 'in' }, // Restrict search to India
-    },
+    // requestOptions: {
+    //   componentRestrictions: { country: 'in' }, // Restrict search to India
+    // },
   });
 
-  const initializeAutocomplete = useCallback(() => {
+  /*const initializeAutocomplete = useCallback(() => {
     if (window.google && window.google.maps && window.google.maps.places) {
+      init();
+    }
+  }, [init]);*/
+  useEffect(() => {
+    if (window.google) {
       init();
     }
   }, [init]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (googleMapsApiKey) {
       if (!window.google) {
         (window as any)[uniqueCallbackName] = initializeAutocomplete;
@@ -66,7 +71,7 @@ const HeroSection: React.FC = () => {
     } else {
       console.warn("VITE_Maps_API_KEY is not set. Location autocomplete will not work.");
     }
-  }, [googleMapsApiKey, initializeAutocomplete]);
+  }, [googleMapsApiKey, initializeAutocomplete]);*/
 
   const handleSelectSuggestion = (description: string) => {
     setValue(description, false);

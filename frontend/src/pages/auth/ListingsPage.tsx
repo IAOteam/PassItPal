@@ -11,6 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RangeSlider } from '@/components/ui/RangeSlider';
 import usePlacesAutocomplete from 'use-places-autocomplete';
+import ListingCardSkeleton from '@/components/listings/ListingCardSkeleton'; 
+import { Pagination } from '@/components/ui/Pagination';
+
 
 // Define a type for a single listing from the API
 interface Listing {
@@ -55,52 +58,73 @@ const ListingsPage: React.FC = () => {
   // const [maxPrice, setMaxPrice] = useState('');
   
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(0);
 
-  const { ready, value, suggestions, setValue, clearSuggestions } = usePlacesAutocomplete({
-    requestOptions: { componentRestrictions: { country: 'in' } },
+  const { ready, value, suggestions, setValue, clearSuggestions  ,init} = usePlacesAutocomplete({
+    initOnMount: false,
+    // requestOptions: { componentRestrictions: { country: 'in' } },
     debounce: 300,
   });
+  // Initialize the hook once the global Google script is ready
+  useEffect(() => {
+    if (window.google) {
+      init();
+    }
+  }, [init]);
 
   const handleLocationSelect = (description: string) => {
     setValue(description, false);
     setLocationTerm(description);
     clearSuggestions();
   };
-  const fetchListings = useCallback(async (page = 1) => {
+  const fetchListings = useCallback((pageToFetch: number) => {
     setLoading(true);
     setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (locationTerm) params.set('locationName', locationTerm);
-      // if (searchParams.get('locationName')) params.append('locationName', searchParams.get('locationName')!);
-      if (searchTerm) params.append('cultPassType', searchTerm);
-      if (sortBy) params.append('sortBy', sortBy);
-      // if (minPrice) params.append('minPrice', minPrice);
-      // if (maxPrice) params.append('maxPrice', maxPrice);
-      if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
-      if (priceRange[1] < 50000) params.set('maxPrice', priceRange[1].toString());
-      params.append('page', page.toString());
-      params.append('limit', '12');
-      setSearchParams(params);
+    const params = new URLSearchParams();
 
-      const response = await api.get(`/listings?${params.toString()}`);
-      
-      setPromotedListings(response.data.promotedListings || []);
-      setRegularListings(response.data.regularListings || []);
-      setAds(response.data.ads || []);
-      setCurrentPage(response.data.currentPage || 1);
-      setTotalPages(response.data.totalPages || 0);
+   // Build query params from state
+    if (locationTerm) params.set('locationName', locationTerm);
+    if (searchTerm) params.set('cultPassType', searchTerm);
+    if (sortBy) params.set('sortBy', sortBy);
+    if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
+    if (priceRange[1] < 50000) params.set('maxPrice', priceRange[1].toString());
+    params.set('page', pageToFetch.toString());
+    
+    setSearchParams(params, { replace: true });
 
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch listings.');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams,locationTerm, searchTerm, sortBy, priceRange]);
+    api.get(`/listings?${params.toString()}`).then(response => {
+        setPromotedListings(response.data.promotedListings || []);
+        setRegularListings(response.data.regularListings || []);
+        setAds(response.data.ads || []);
+        setCurrentPage(response.data.currentPage || 1);
+        setTotalPages(response.data.totalPages || 0);
+    }).catch(err => {
+        setError(err.response?.data?.message || 'Failed to fetch listings.');
+    }).finally(() => {
+        setLoading(false);
+        
+    });
+  }, [searchTerm, locationTerm, priceRange, sortBy, setSearchParams]);
+
+  useEffect(() => {
+    fetchListings(currentPage);
+    window.scrollTo(0, 0);
+  }, [currentPage]); 
+
+  // This effect runs ONLY ONCE on mount to fetch initial data based on URL.
+  useEffect(() => {
+    const initialPage = Number(searchParams.get('page')) || 1;
+    setCurrentPage(initialPage);
+    fetchListings(initialPage);
+  }, []); // Empty dependency array ensures it runs only once
+
   const handleFilterApply = () => {
-    fetchListings(1); // Fetch from page 1 when applying new filters
+    if (currentPage === 1) {
+        fetchListings(1); // Manually fetch if already on page 1
+    } else {
+        setCurrentPage(1); // Change page state, which triggers the useEffect above
+    } // Fetch from page 1 when applying new filters
   };
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -108,48 +132,57 @@ const ListingsPage: React.FC = () => {
     setValue(''); // Also clear autocomplete input
     setPriceRange([0, 50000]);
     setSortBy('createdAt_desc');
-    setSearchParams({}); // Clear URL params
+    // setSearchParams({}); // Clear URL params
+     if (currentPage === 1) {
+        fetchListings(1);
+    } else {
+        setCurrentPage(1);
+    }
   };
-  useEffect(() => {
-    fetchListings(1);
-  }, [fetchListings]);
-
+  
   //useMemo hook to combine listings and ads into a single array for display
   const displayItems = useMemo(() => {
-    const items: DisplayItem[] = regularListings.map(l => ({ ...l, type: 'listing' }));
-    
-    // Inject ads at specific positions
-    if (ads.length > 0) {
-      // Insert the first ad after the 4th listing (if enough listings exist)
-      const firstAdIndex = 4;
-      if (items.length >= firstAdIndex) {
-        items.splice(firstAdIndex, 0, { ...ads[0], type: 'ad' });
-      } else {
-        items.push({ ...ads[0], type: 'ad' }); // else, add to end
+    const items: DisplayItem[] = [];
+    let adIndex = 0;
+
+    regularListings.forEach((listing, index) => {
+      // Add the listing to our display array
+      items.push({ ...listing, type: 'listing' as const });
+
+      // After every 5th listing, try to inject an ad
+      if ((index + 1) % 5 === 0) {
+        if (adIndex < ads.length) {
+          items.push({ ...ads[adIndex], type: 'ad' as const });
+          adIndex++; // Move to the next available ad
+        }
       }
-    }
-    if (ads.length > 1) {
-      // Insert the second ad after the 10th listing (index is now +1 due to first ad)
-      const secondAdIndex = 11;
-      if(items.length >= secondAdIndex) {
-        items.splice(secondAdIndex, 0, { ...ads[1], type: 'ad' });
-      }
-    }
+    });
     return items;
   }, [regularListings, ads]);
+
 
   const handleSortChange = (value: string) => {
     setSortBy(value);
   };
 
 
-  const handlePageChange = (newPage: number) => {
-    fetchListings(newPage);
-    window.scrollTo(0, 0);
-  };
+  // const handlePageChange = (newPage: number) => {
+  //   fetchListings(newPage);
+  //   window.scrollTo(0, 0);
+  // };
+
+  const SkeletonGrid = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <ListingCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+  
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+    <div className='bg-gray-600 dark:bg-slate-200'>
+    <div className="container  mx-auto p-4 md:p-6 lg:p-8">
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-2">Find Your Next Pass</h1>
         <p className="text-lg text-gray-600 dark:text-gray-400">
@@ -161,7 +194,7 @@ const ListingsPage: React.FC = () => {
       </header>
 
       {/* Filters and Sorting Bar */}
-      <div className="mb-6 p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg flex flex-col md:flex-row gap-4 items-center">
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-neutral-400 rounded-lg flex flex-col md:flex-row gap-4 items-center">
         <Input 
           placeholder="Search by pass name..." 
           value={searchTerm}
@@ -177,7 +210,7 @@ const ListingsPage: React.FC = () => {
               disabled={!ready}
             />
              {suggestions.status === 'OK' && (
-              <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto">
+              <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto ">
                 {suggestions.data.map(s => (
                   <li key={s.place_id} onClick={() => handleLocationSelect(s.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-black dark:text-white">
                     {s.description}
@@ -192,11 +225,11 @@ const ListingsPage: React.FC = () => {
           <Input type="number" placeholder="Min Price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
           <Input type="number" placeholder="Max Price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
         </div> */}
-        <Select value={sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-full md:w-[200px]">
+        <Select value={sortBy}  onValueChange={handleSortChange}>
+            <SelectTrigger className="w-full md:w-[200px] ">
                 <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className='bg-slate-400'>
                 <SelectItem value="createdAt_desc">Newest First</SelectItem>
                 <SelectItem value="price_asc">Price: Low to High</SelectItem>
                 <SelectItem value="price_desc">Price: High to Low</SelectItem>
@@ -214,16 +247,21 @@ const ListingsPage: React.FC = () => {
                 max={50000}
                 step={1000}
             />
-        </div>
-        <div className="flex justify-end items-center gap-2 pt-2">
-            <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>
-            <Button onClick={handleFilterApply}>Apply</Button>
-        </div>
+      </div>
       
-      {loading && <p className="text-center py-10">Loading listings...</p>}
+      <div className="flex justify-end items-center gap-2 pt-2 ">
+          <Button variant="ghost"  onClick={handleClearFilters}>Clear Filters</Button>
+          <Button onClick={handleFilterApply}>Apply</Button>
+      </div>
+      
+      {/* {loading && <p className="text-center py-10">Loading listings...</p>}
       {error && <p className="text-center py-10 text-red-500">{error}</p>}
-      
-      {!loading && !error && (
+       */}
+      {loading ? (
+        <SkeletonGrid />
+      ) : error ? (
+        <div className="text-center py-10 text-red-500">{error}</div>
+      ) : (
         <div className="space-y-10">
           {/* Promoted Listings Section */}
           {promotedListings.length > 0 && (
@@ -260,17 +298,8 @@ const ListingsPage: React.FC = () => {
           </section>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
-                Previous
-              </Button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
-                Next
-              </Button>
-            </div>
-          )}
+           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => setCurrentPage(page)} />
+        
         </div>
       )}
       
@@ -280,7 +309,10 @@ const ListingsPage: React.FC = () => {
         onClose={() => setSelectedListing(null)} 
       />
     </div>
+    </div>
   );
 };
 
 export default ListingsPage;
+
+

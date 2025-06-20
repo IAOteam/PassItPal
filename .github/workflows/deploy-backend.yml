@@ -1,0 +1,27 @@
+# GitHub Actions Workflow for deploying the backend to Render
+
+name: Deploy Backend to Render
+
+# This workflow runs on pushes to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+    # Only run if there are changes in the 'server/' directory
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Trigger Render Deploy Hook
+        # This step sends a request to the Render Deploy Hook URL.
+        # Render then pulls the latest code from your 'main' branch and redeploys the service.
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

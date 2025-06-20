@@ -315,6 +315,8 @@ export function NavBar() {
             </nav>
           </div>
 
+          
+
           <div className="flex items-center gap-2 md:gap-4">
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-neutral-400 hover:text-white">
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

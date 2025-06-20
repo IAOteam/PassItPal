@@ -86,17 +86,17 @@ const HeroSection: React.FC = () => {
     }
   };
 
-  const heroBackgroundImage = "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
+  // const heroBackgroundImage = "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+  const heroBackgroundImage = "/sharing.svg"
   return (
     <div
       ref={heroRef}
-      className="relative h-[85vh] text-white bg-cover bg-center overflow-hidden"
+      className="relative h-[145vh]  bg-cover bg-center overflow-hidden"
     >
       {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${heroBackgroundImage})` }}
+        style={{ backgroundImage: ` url(${heroBackgroundImage})` }}
       />
       
       {/* Animated Content Container */}
@@ -105,11 +105,11 @@ const HeroSection: React.FC = () => {
         className="relative z-10 flex flex-col items-center justify-center h-full text-center p-4"
       >
         <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight uppercase">
+          <h1 className="text-4xl md:text-6xl font-black text-gray-800 leading-tight tracking-tight uppercase">
             <div>Pass<span className='text-blue-400'>Karo</span> & Cash<span className='text-blue-400'>Karo</span></div>
             
           </h1>
-          <p className="mt-4 text-base md:text-xl text-gray-200">
+          <p className="mt-4 text-base md:text-xl text-gray-800">
             Discover gym passes, event tickets, and subscriptions near you. Get personalized deals based on your location and preferences.
           </p>
         </div>

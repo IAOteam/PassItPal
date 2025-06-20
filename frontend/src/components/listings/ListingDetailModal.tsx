@@ -30,9 +30,10 @@ interface Listing {
 interface ListingDetailModalProps {
   listing: Listing | null;
   onClose: () => void;
+   isDirectLink?: boolean;
 }
 
-const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose }) => {
+const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose,isDirectLink = false  }) => {
   const { isAuthenticated, user, getOrCreateConversation } = useAuth();
   const navigate = useNavigate();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -58,6 +59,16 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
       alert(err.message || "Could not start chat.");
     }
   };
+  const handleClose = () => {
+    if (isDirectLink) {
+      // If opened via direct link, go to homepage on close
+      navigate('/');
+    } else {
+      // Otherwise, just call the normal close handler
+      onClose();
+    }
+  };
+  
 const handleShare = () => {
     if (!listing) return;
     const listingUrl = `${window.location.origin}/listings?listingId=${listing._id}`;
@@ -84,7 +95,7 @@ const handleShare = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={handleClose}
         className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
       >
         <motion.div

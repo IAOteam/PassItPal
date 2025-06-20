@@ -1,0 +1,36 @@
+# GitHub Actions Workflow for deploying the frontend to Vercel
+
+name: Deploy Frontend to Vercel
+
+# This workflow runs on pushes to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+    # Only run if there are changes in the 'frontend/' directory
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # This action builds and deploys your app to Vercel.
+      # It automatically uses the Vercel CLI to handle everything.
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          # The Vercel access token we stored in GitHub secrets
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          # The Org ID and Project ID to link to the correct Vercel project
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Specifies the directory of our frontend code
+          working-directory: ./frontend
+

@@ -61,6 +61,7 @@ export interface AuthContextType {
   notifications: Notification[];
   unreadCount: number;
   submitReview: (orderId: string, rating: number, comment?: string) => Promise<string>;
+  createPromotionOrder: (listingId: string, amount: number) => Promise<any>; 
   
   acceptOrder: (orderId: string) => Promise<string>; 
   rejectOrder: (orderId: string) => Promise<string>;
@@ -704,7 +705,7 @@ const createListing = async (listingData: {
       setLoading(false);
     }
   };
-  const submitReview = async (orderId: string, rating: number, comment?: string): Promise<string> => {
+const submitReview = async (orderId: string, rating: number, comment?: string): Promise<string> => {
     setLoading(true);
     setError(null);
     try {
@@ -718,9 +719,20 @@ const createListing = async (listingData: {
     }
   };
 
+const createPromotionOrder = async (listingId: string, amount: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post('/payments/create-order', { listingId, amount });
+      return res.data; // This will be the Razorpay order object
+    } catch (err) {
+      throw new Error(handleApiError(err, 'Failed to create promotion order.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-  const authContextValue: AuthContextType = {
+const authContextValue: AuthContextType = {
     user: userState,
     token, // Access token
     socket: socketContextState,
@@ -730,6 +742,7 @@ const createListing = async (listingData: {
     notifications, 
     unreadCount, 
     submitReview, 
+    createPromotionOrder,
     acceptOrder, 
     rejectOrder, 
     getOrCreateConversation,

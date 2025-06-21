@@ -67,16 +67,23 @@ export const registerUser = async (req: Request, res: Response) => {
     //   coordinates?: [number, number];
     // }
     
-    const location: { city: string; type?: 'Point'; coordinates?: [number, number] } = { city };
-    
-    if (latitude != null && longitude != null) {
-      location.type = 'Point';
-      location.coordinates = [longitude, latitude];
-    }
-    else{
-      location.type = 'Point';
-      // location.coordinates = [0, 0]; 
-    }
+    const location = {
+      city: city,
+      type: 'Point',
+      coordinates: [
+        longitude != null ? longitude : 0,
+        latitude != null ? latitude : 0
+      ]
+    };
+
+    // if (latitude != null && longitude != null) {
+    //   location.type = 'Point';
+    //   location.coordinates = [longitude, latitude];
+    // }
+    // else{
+    //   location.type = 'Point';
+    //   // location.coordinates = [0, 0]; 
+    // }
 
     user = new User({
       email,

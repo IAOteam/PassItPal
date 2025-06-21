@@ -24,6 +24,7 @@ import { createAndEmitNotification } from './controllers/notificationController'
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 import reportRoutes from './routes/reportRoutes';
 import { createEmailWorker, emailQueue } from './config/queue'; 
 import emailProcessor from './workers/emailProcessor';
@@ -72,6 +73,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/payments', paymentRoutes); 
 app.use('/api/reports', reportRoutes); 
 
 // Socket.IO setup

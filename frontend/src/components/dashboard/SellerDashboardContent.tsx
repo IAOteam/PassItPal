@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Edit, Trash2, Megaphone } from 'lucide-react';
+import PromotionPaymentModal from '../payments/PromotionPaymentModal';
 
 interface ReceivedOrder {
   _id: string;
@@ -40,6 +41,9 @@ const SellerDashboardContent: React.FC = () => {
   const [listings, setListings] = useState<MyListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [listingToPromote, setListingToPromote] = useState<MyListing | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -95,9 +99,15 @@ const SellerDashboardContent: React.FC = () => {
     alert(`Edit functionality for listing ${listingId} coming soon!`);
   };
 
-  const handlePromoteListing = (listingId: string) => {
-    alert(`Promotion feature for listing ${listingId} coming soon!`);
-  }
+  const handlePromoteClick = (listing: MyListing) => {
+    setListingToPromote(listing);
+    setIsPaymentModalOpen(true);
+  };
+  
+
+  // const handlePromoteListing = (listingId: string) => {
+  //   alert(`Promotion feature for listing ${listingId} coming soon!`);
+  // }
 
   const getStatusBadgeVariant = (status: ReceivedOrder['status']) => {
     switch (status) {
@@ -110,6 +120,7 @@ const SellerDashboardContent: React.FC = () => {
   };
 
   return (
+    <>
     <div className="space-y-8">
       {/* Section for managing incoming orders */}
       <div>
@@ -200,7 +211,7 @@ const SellerDashboardContent: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right space-x-1">
                        {!listing.isPromoted && (
-                         <Button variant="ghost" size="icon" onClick={() => handlePromoteListing(listing._id)} title="Promote Listing">
+                         <Button variant="ghost" size="icon" onClick={() => handlePromoteClick(listing)} title="Promote Listing">
                            <Megaphone className="h-4 w-4 text-blue-500" />
                          </Button>
                        )}
@@ -219,6 +230,15 @@ const SellerDashboardContent: React.FC = () => {
         ) : !loading && <p className="text-center text-gray-500 py-8">You have no listings.</p>}
       </div>
     </div>
+    <PromotionPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        listing={listingToPromote}
+        onSuccess={() => {
+            fetchData(); // Refresh the dashboard data on successful payment
+        }}
+      />
+    </>
   );
 };
 

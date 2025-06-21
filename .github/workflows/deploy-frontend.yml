@@ -32,5 +32,5 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           # Specifies the directory of our frontend code
-          working-directory: ./frontend
+          # working-directory: ./frontend
 

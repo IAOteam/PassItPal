@@ -15,12 +15,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy Backend
+    name: Build, Test, and Deploy Backend
+
+    # Define the working directory for all steps in this job
+    defaults:
+      run:
+        working-directory: ./server
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Setup Node.js in the environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Use the same Node version as your Dockerfile
+
+      - name: Install Dependencies
+        run: npm install
+
+      #  Run the tests. If this step fails, the workflow stops.
+      - name: Run Tests
+        run: npm test
       - name: Trigger Render Deploy Hook
         # This step sends a request to the Render Deploy Hook URL.
         # Render then pulls the latest code from your 'main' branch and redeploys the service.

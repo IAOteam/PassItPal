@@ -3,9 +3,9 @@ import dotenv from 'dotenv';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import Listing from '../models/Listing';
-import User from '../models/User'; // NEW: Import User model
+import User from '../models/User'; //  Import User model
 import { createAndEmitNotification } from './notificationController';
-import { sendEmail } from '../utils/emailService'; // NEW: Import email service
+import { sendEmail } from '../utils/emailService'; //  Import email service
 dotenv.config();
 
 

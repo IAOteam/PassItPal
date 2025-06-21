@@ -44,10 +44,23 @@ if (!user) {
 return <div>Not authenticated.</div>;
 }
 
-return (
+const renderDashboardContent = () => {
+        switch (user.role) {
+            case 'buyer':
+                return <BuyerDashboardContent />;
+            case 'seller':
+                return <SellerDashboardContent />;
+            default:
+                // This case handles any other roles, or can redirect if needed
+                return <p>Welcome, {user.username}! Your dashboard is under construction.</p>;
+        }
+    };
+
+
+/*return (
     <div className="p-4"> 
         <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white text-center">Dashboard</h2>
-        {/* <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg"> */}
+        
         <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full ">
             {displayMessage && (
                 <div className="p-3 text-sm rounded border bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300 mb-4">
@@ -81,7 +94,7 @@ return (
             <ManageReports />
           </div>
         </div>
-      )} */}
+      )} //}
       {user.role !== 'buyer' && user.role !== 'seller' && user.role !== 'admin' && (
           <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg mx-auto">
             <p>Welcome to your dashboard, {user.username}!</p>
@@ -110,9 +123,19 @@ return (
             <p className="mt-8 text-gray-600 dark:text-gray-400">
                 This is a protected page. You can only see this because you are logged in.
             </p>
-        </> ) */}
+        </> ) //}
     </div>
 
-);
+);*/
+return (
+        <div className="container mx-auto p-4 md:p-8">
+            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+                My Dashboard
+            </h1>
+            <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-lg p-6 w-full">
+                {renderDashboardContent()}
+            </div>
+        </div>)
+        
 };
 export default DashboardPage;

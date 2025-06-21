@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
+import dotenv from 'dotenv';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import dotenv from 'dotenv';
 import Listing from '../models/Listing';
 import User from '../models/User'; // NEW: Import User model
 import { createAndEmitNotification } from './notificationController';
 import { sendEmail } from '../utils/emailService'; // NEW: Import email service
-
 dotenv.config();
+
 
 // Ensure Razorpay keys are loaded
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {

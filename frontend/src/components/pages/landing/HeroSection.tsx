@@ -96,7 +96,7 @@ const HeroSection: React.FC = () => {
       {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: ` url(${heroBackgroundImage})` }}
+        // style={{ backgroundImage: ` url(${heroBackgroundImage})` }}
       />
       
       {/* Animated Content Container */}
@@ -110,7 +110,7 @@ const HeroSection: React.FC = () => {
             
           </h1>
           <p className="mt-4 text-base md:text-xl text-gray-800">
-            Discover gym passes, event tickets, and subscriptions near you. Get personalized deals based on your location and preferences.
+            Discover gym passes, event tickets, and subscriptions near you. Get personalized deals too dude
           </p>
         </div>
 

@@ -13,13 +13,29 @@ on:
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
-  deploy:
+  build_and_deploy:
     runs-on: ubuntu-latest
-    name: Deploy Frontend
+    name: Build, Test, and Deploy Frontend
+
+    defaults:
+      run:
+        working-directory: ./frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Use the same Node version as your Dockerfile
+
+      - name: Install Dependencies
+        run: npm install
+
+      #  Run the tests. If this step fails, the workflow stops.
+      - name: Run Tests
+        run: npm test
 
       # This action builds and deploys your app to Vercel.
       # It automatically uses the Vercel CLI to handle everything.

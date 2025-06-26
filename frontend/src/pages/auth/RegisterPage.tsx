@@ -61,16 +61,16 @@ const RegisterPage: React.FC = () => {
           <Link to="/" className="text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">
              &larr; Back to Home
           </Link>
-          <div className="mt-6">
+          <div className="mt-2">
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Create your account
             </h1>
             <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
-              Start your journey with us – it only takes a minute.
+              Start your journey with us.
             </p>
           </div>
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-4 dark:text-white">
             <Button
               variant="outline"
               className="w-full flex items-center justify-center gap-2"
@@ -102,39 +102,39 @@ const RegisterPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="username">Username</Label>
-                  <Input id="username" type="text" placeholder="Your name" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                  <Input id="username" type="text"  value={username} onChange={(e) => setUsername(e.target.value)} required />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <Input id="password" type="password"  value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="mobileNumber">Mobile Number</Label>
-                  <Input id="mobileNumber" type="tel" placeholder="10-digit number" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <Input id="mobileNumber" type="tel"  value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" type="text" placeholder="e.g., Bengaluru" value={city} onChange={(e) => setCity(e.target.value)} required />
+                  <Input id="city" type="text"  value={city} onChange={(e) => setCity(e.target.value)} required />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="role">I am a</Label>
-                  <select id="role" value={role} onChange={(e) => setRole(e.target.value as 'buyer' | 'seller')} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required>
+                  <Label htmlFor="role">Role</Label>
+                  <select id="role" value={role} onChange={(e) => setRole(e.target.value as 'buyer' | 'seller')} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground dark:bg-black focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required>
                     <option value="buyer">Buyer</option>
                     <option value="seller">Seller</option>
                   </select>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full bg-black text-white  dark:text-black dark:bg-white" disabled={loading}>
                 {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
           </div>
         
-          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
             <Link to="/login" className="font-medium text-primary hover:underline">
               Login here

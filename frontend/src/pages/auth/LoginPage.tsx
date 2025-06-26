@@ -51,12 +51,12 @@ const LoginPage: React.FC = () => {
     <div className="flex min-h-screen bg-gray-50 dark:bg-neutral-950">
       
       {/* Left side: The Form */}
-      <div className="flex flex-col justify-center w-full max-w-2xl px-8 sm:px-12 lg:px-20 mx-auto">
+      <div className="flex flex-col justify-center w-full max-w-3xl px-8 sm:px-12 lg:px-20 mx-auto">
         <div className="mx-auto w-full max-w-md">
           <Link to="/" className="text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">
              &larr; Back to Home
           </Link>
-          <div className="mt-6">
+          <div className="mt-2">
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Sign in to your account
             </h1>
@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-4 dark:text-white">
             {/* Google Login Button */}
             <Button
               variant="outline"
@@ -101,7 +101,6 @@ const LoginPage: React.FC = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -118,20 +117,19 @@ const LoginPage: React.FC = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full font-semibold bg-black text-white  dark:text-black dark:bg-white"  disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
           </div>
         
-          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
             Don't have an account?{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
               Sign up

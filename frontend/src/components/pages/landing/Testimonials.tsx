@@ -46,24 +46,26 @@ const Testimonials: React.FC = () => {
         <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <div key={index} className="bg-neutral-900 p-8 rounded-xl border border-neutral-800 flex flex-col">
-              <div className="flex mb-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    className={cn(
-                      i < testimonial.rating ? 'text-yellow-400' : 'text-neutral-600'
-                    )}
-                    fill={i < testimonial.rating ? 'currentColor' : 'none'}
-                  />
-                ))}
-              </div>
               <blockquote className="text-neutral-200 flex-grow">"{testimonial.quote}"</blockquote>
-              <div className="mt-6 flex items-center">
-                <Avatar src={testimonial.imageUrl} icon={<UserOutlined />} size={40} />
-                <div className="ml-4">
-                  <p className="font-semibold text-white">{testimonial.name}</p>
-                  <p className="text-neutral-400 text-sm">{testimonial.role} from {testimonial.city}</p>
+              <div className="mt-6 flex justify-between">
+                <div className='flex items-center'>
+                  <Avatar src={testimonial.imageUrl} icon={<UserOutlined />} size={40} />
+                  <div className="ml-4">
+                    <p className="font-semibold text-white">{testimonial.name}</p>
+                    <p className="text-neutral-400 text-sm">{testimonial.role} from {testimonial.city}</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={20}
+                      className={cn(
+                        i < testimonial.rating ? 'text-yellow-400' : 'text-neutral-600'
+                      )}
+                      fill={i < testimonial.rating ? 'currentColor' : 'none'}
+                    />
+                  ))}
                 </div>
               </div>
             </div>

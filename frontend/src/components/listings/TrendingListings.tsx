@@ -51,15 +51,15 @@ const TrendingListings: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-neutral-900 py-12 md:py-20">
+    <div className="bg-blue-300 py-12 md:py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-white">Recent & Trending Passes</h2>
-          <p className="text-neutral-400 mt-2">Freshly listed passes from our community.</p>
+          <h2 className="text-3xl md:text-4xl font-bold dark:text-white">Recent & Trending Passes</h2>
+          <p className="text-neutral-800 dark:text-white mt-2">Freshly listed passes from our community.</p>
         </div>
 
         {loading ? (
-          <p className="text-center text-neutral-400">Loading listings...</p>
+          <p className="text-center text-neutral-800 dark:text-white">Loading listings...</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {listings.map((listing) => (
@@ -74,7 +74,7 @@ const TrendingListings: React.FC = () => {
 
         <div className="text-center mt-12">
             <Link to="/listings">
-                <Button size="lg" className = " text-neutral-400" variant="outline">
+                <Button size="lg" className = " text-neutral-900 dark:text-white" variant="outline">
                     View More Listings
                 </Button>
             </Link>

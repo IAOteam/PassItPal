@@ -22,7 +22,7 @@ const CategoryTabs: React.FC = () => {
   };
 
   return (
-    <div className="bg-neutral-900 border-b border-neutral-800 flex justify-center">
+    <div className="bg-gray-200 border-gray-100 dark:bg-neutral-900 border-b dark:border-neutral-800 flex justify-center">
       <div className="flex space-x-4 md:space-x-8 overflow-x-auto px-4">
         {categories.map((category) => (
           <button
@@ -31,8 +31,8 @@ const CategoryTabs: React.FC = () => {
             className={cn(
               'py-4 px-2 text-sm md:text-base font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 focus:outline-none',
               activeTab === category.name
-                ? 'text-white border-white'
-                : 'text-neutral-400 border-transparent hover:text-white hover:border-neutral-500'
+                ? 'dark:text-white dark:border-white text-black border-black'
+                : 'dark:text-neutral-400 text-neutral-700 border-transparent dark:hover:text-white dark:hover:border-neutral-500 hover:text-black hover:border-neutral-900'
             )}
           >
             {category.name}

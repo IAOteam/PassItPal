@@ -297,18 +297,18 @@ export function NavBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full rounded-sm border-b border-neutral-800 bg-black/80 backdrop-blur-lg">
+    <header className="fixed top-0 z-50 w-full bg-black/20 dark:bg-black/80 backdrop-blur-lg">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-12 items-center justify-between">
           
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
               {/* <ShieldAlert className="h-6 w-6 text-primary" /> */}
-              <span className="font-bold text-2xl text-white">PassItPal</span>
+              <span className="font-bold text-2xl dark:text-white">PassItPal</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               {navItems.filter(item => !item.roles || (user && item.roles.includes(user.role))).map((item) => (
-                <NavLink key={item.name} to={item.href} className={({isActive}) => cn("text-sm transition-colors", isActive ? 'text-white font-semibold' : 'text-neutral-400 hover:text-white')}>
+                <NavLink key={item.name} to={item.href} className={({isActive}) => cn("text-sm transition-colors", isActive ? 'text-black dark:text-white font-semibold' : 'text-neutral-700  hover:text-black dark:text-neutral-400 dark:hover:text-white')}>
                   {item.name}
                 </NavLink>
               ))}
@@ -318,7 +318,7 @@ export function NavBar() {
           
 
           <div className="flex items-center gap-2 md:gap-4">
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-neutral-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-neutral-700  hover:text-black dark:text-neutral-400 dark:hover:text-white">
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
@@ -326,9 +326,9 @@ export function NavBar() {
             
             {isAuthenticated ? (
               <div className="flex items-center gap-3 md:gap-4">
-                <Link to="/messages" title="Messages" className="text-neutral-400 hover:text-white transition-colors"><MessageSquare className="h-5 w-5" /></Link>
+                <Link to="/messages" title="Messages" className="text-neutral-800  hover:text-black dark:text-neutral-400 dark;hover:text-white transition-colors"><MessageSquare className="h-5 w-5" /></Link>
                 <Dropdown menu={{ items: notificationMenuItems }} placement="bottomRight" arrow trigger={['click']} onOpenChange={(open) => open && unreadCount > 0 && markNotificationsAsRead()}>
-                  <Badge count={unreadCount} size="small"><BellOutlined className="cursor-pointer text-xl text-neutral-400 hover:text-white transition-colors" /></Badge>
+                  <Badge count={unreadCount} size="small"><BellOutlined className="cursor-pointer text-xl text-neutral-700  hover:text-black  dark:text-neutral-400 dark:hover:text-white transition-colors" /></Badge>
                 </Dropdown>
                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
                   <Avatar style={{ backgroundColor: "#2563eb", cursor: "pointer" }} icon={<UserOutlined />}>{user?.username?.charAt(0).toUpperCase()}</Avatar>
@@ -336,12 +336,12 @@ export function NavBar() {
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2 text-gray-200">
-                <Button variant="outline" onClick={() => navigate('/login')}>Log In</Button>
-                <Button onClick={() => navigate('/register')}>Sign Up</Button>
+                <Button className="text-neutral-900 dark:text-white" variant="outline" onClick={() => navigate('/login')}>Log In</Button>
+                <Button className="text-neutral-900 dark:text-white" variant="outline" onClick={() => navigate('/register')}>Sign Up</Button>
               </div>
             )}
             <div className="md:hidden">
-              <button onClick={() => setIsMobileMenuOpen(true)} className="text-neutral-400 hover:text-white"><Menu size={24} /></button>
+              <button onClick={() => setIsMobileMenuOpen(true)} className="text-neutral-700  hover:text-black dark:text-neutral-400 dark:hover:text-white"><Menu size={24} /></button>
             </div>
           </div>
         </div>
@@ -360,16 +360,16 @@ export function NavBar() {
                 <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
                   {/* <ShieldAlert className="h-6 w-6 text-primary" /><span className="font-bold text-lg text-white">Passitpal</span> */}
                 </Link>
-                <button onClick={closeMobileMenu} className="text-neutral-400 hover:text-white"><X size={26} /></button>
+                <button onClick={closeMobileMenu} className="text-neutral-700  hover:text-black dark:text-neutral-400 dark:hover:text-white"><X size={26} /></button>
               </div>
               <div className="mt-8 flex flex-col items-center gap-y-6 text-center ">
                 {navItems.filter(item => !item.roles || (user && item.roles.includes(user.role))).map((item) => (
-                  <Link key={`mobile-${item.name}`} to={item.href} onClick={closeMobileMenu} className="text-xl font-medium text-neutral-300 hover:text-white">{item.name}</Link>
+                  <Link key={`mobile-${item.name}`} to={item.href} onClick={closeMobileMenu} className="text-xl font-medium text-neutral-700  hover:text-black dark:text-neutral-400 dark:hover:text-white">{item.name}</Link>
                 ))}
                 {!isAuthenticated && (
-                  <div className="mt-8 flex flex-col gap-4 w-full max-w-xs ">
-                    <Button size="lg" variant="outline" onClick={() => {closeMobileMenu(); navigate('/login');}}>Log In</Button>
-                    <Button size="lg" onClick={() => {closeMobileMenu(); navigate('/register');}}>Sign Up</Button>
+                  <div className="mt-8 flex flex-col gap-4 w-full max-w-xs">
+                    <Button size="lg" className='text-black dark:text-white' variant="outline" onClick={() => {closeMobileMenu(); navigate('/login');}}>Log In</Button>
+                    <Button size="lg" className='text-black dark:text-white' variant="outline" onClick={() => {closeMobileMenu(); navigate('/register');}}>Sign Up</Button>
                   </div>
                 )}
               </div>

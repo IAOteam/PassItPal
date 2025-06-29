@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const featuredItems = [
   {
     title: 'Exclusive Discounts on Premium Passes',
-    description: 'Limited-time offers on top-rated gyms and events.',
+    description: 'Limited-time offers on top-rated gyms.',
     imageUrl: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=2669&auto=format&fit=crop',
     link: '/listings?sortBy=price_asc',
   },
@@ -33,25 +33,26 @@ const FeaturedContent: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-neutral-900 py-12 md:py-16">
-      <div className="container mx-auto px-4">
+    <div className="py-12 md:py-16 bg-gray-200 dark:bg-neutral-900">
+      <div className="container px-4">
         {/* Scrollable Container */}
-        <div className="flex space-x-6 overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex justify-evenly space-x-6 overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {featuredItems.map((item) => (
-            <div
-              key={item.title}
-              className="group flex-shrink-0 w-72 md:w-80 cursor-pointer"
-              onClick={() => navigate(item.link)}
-            >
-              <div className="overflow-hidden rounded-xl">
-                <div
-                  className="h-48 w-full bg-center bg-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-                  style={{ backgroundImage: `url(${item.imageUrl})` }}
-                />
-              </div>
-              <div className="mt-4">
-                <h3 className="text-white text-lg font-bold leading-tight">{item.title}</h3>
-                <p className="text-neutral-400 text-sm mt-1">{item.description}</p>
+            <div className="group flex-shrink-0 w-72 md:w-80 cursor-pointer bg-slate-50  dark:bg-neutral-950 rounded-lg" >
+              <div
+                key={item.title}
+                onClick={() => navigate(item.link)}
+              >
+                <div className="overflow-hidden rounded-t-lg">
+                  <div
+                    className="h-48 w-full bg-center bg-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                    style={{ backgroundImage: `url(${item.imageUrl})` }}
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className=" text-lg dark:text-white font-bold leading-tight">{item.title}</h3>
+                  <p className="text-gray-700 dark:text-gray-400 text-sm mt-1">{item.description}</p>
+                </div>
               </div>
             </div>
           ))}

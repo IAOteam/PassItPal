@@ -6,6 +6,7 @@ import FeaturedContent from './FeaturedContent';
 import TrendingListings from '@/components/listings/TrendingListings';
 import HowItWorks from './HowItWorks';
 import Testimonials from './Testimonials';
+import Achievements from './Achievements';
 
 const HomePage: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const HomePage: React.FC = () => {
       <CategoryTabs />
       <FeaturedContent />
       <TrendingListings />
+      <Achievements />
       <HowItWorks />
       <Testimonials />
       {/* The new "Featured Content" section will go here next */}

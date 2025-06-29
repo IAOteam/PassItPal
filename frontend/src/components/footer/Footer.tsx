@@ -29,28 +29,27 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-black text-white border-t border-neutral-800">
+    <footer className="dark:bg-black dark:text-white">
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2">
-                <ShieldAlert className="h-7 w-7 text-primary" />
                 <span className="text-xl font-bold">Passitpal</span>
             </Link>
-            <p className="mt-3 text-sm text-neutral-400">
+            <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
               The trusted marketplace for buying and selling passes, tickets, and subscriptions securely.
             </p>
           </div>
 
           {/* Categories Column */}
           <div>
-            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Categories</h3>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-900 dark:text-neutral-300">Categories</h3>
             <ul className="mt-4 space-y-2">
               {categoryLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
+                  <Link to={link.href} className="text-neutral-700 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -60,11 +59,11 @@ const Footer: React.FC = () => {
 
           {/* Company Column */}
           <div>
-            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Company</h3>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-900 dark:text-neutral-300">Company</h3>
             <ul className="mt-4 space-y-2">
               {companyLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
+                  <Link to={link.href} className="text-neutral-700 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -74,11 +73,11 @@ const Footer: React.FC = () => {
 
           {/* Legal & Support Column */}
           <div>
-            <h3 className="font-semibold tracking-wider uppercase text-neutral-300">Support</h3>
+            <h3 className="font-semibold tracking-wider uppercase text-neutral-900 dark:text-neutral-300">Support</h3>
             <ul className="mt-4 space-y-2">
               {legalLinks.map(link => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-neutral-400 hover:text-white transition-colors text-sm">
+                  <Link to={link.href} className="text-neutral-700 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors text-sm">
                     {link.name}
                   </Link>
                 </li>
@@ -89,13 +88,13 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 border-t border-neutral-800 pt-8 flex flex-col sm:flex-row items-center justify-between">
+        <div className="mt-8 border-t border-neutral-200 dark:border-neutral-800 pt-8 flex flex-col sm:flex-row items-center justify-between">
           <p className="text-sm text-neutral-500">
             &copy; {new Date().getFullYear()} Passitpal. All Rights Reserved.
           </p>
-          <div className="flex space-x-4 mt-4 sm:mt-0">
+          <div className="flex space-x-4">
             {socialLinks.map(social => (
-              <a key={social.name} href={social.href} className="text-neutral-500 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
+              <a key={social.name} href={social.href} className="hover:text-black text-neutral-500 dark:hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                 <span className="sr-only">{social.name}</span>
                 {social.icon}
               </a>

@@ -87,7 +87,7 @@ const HeroSection: React.FC = () => {
   };
 
   // const heroBackgroundImage = "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-  const heroBackgroundImage = "/sharing.svg"
+  const heroBackgroundImage = "/herobg.png"
   return (
     <div
       ref={heroRef}
@@ -95,8 +95,8 @@ const HeroSection: React.FC = () => {
     >
       {/* Background Image with Overlay */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
-        // style={{ backgroundImage: ` url(${heroBackgroundImage})` }}
+        className="absolute inset-0 bg-cover bg-center dark:bg-neutral-800"
+        style={{ backgroundImage: ` url(${heroBackgroundImage})` }}
       />
       
       {/* Animated Content Container */}
@@ -105,30 +105,30 @@ const HeroSection: React.FC = () => {
         className="relative z-10 flex flex-col items-center justify-center h-full text-center p-4"
       >
         <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-black text-gray-800 leading-tight tracking-tight uppercase">
-            <div>Pass<span className='text-blue-400'>Karo</span> & Cash<span className='text-blue-400'>Karo</span></div>
+          <h1 className="text-4xl md:text-6xl font-black text-gray-800 leading-tight tracking-tight uppercase" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.5)' }}>
+            <div>Pass<span className='text-blue-500'>Karo</span> & Cash<span className='text-blue-500'>Karo</span></div>
             
           </h1>
-          <p className="mt-4 text-base md:text-xl text-gray-800">
-            Discover gym passes, event tickets, and subscriptions near you. Get personalized deals too dude
+          <p className="mt-4 text-base md:text-xl text-black " style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+            Discover gym passes, event tickets, and subscriptions near you and get personalized deals!
           </p>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="mt-8 w-full max-w-lg relative">
           <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-800 dark:text-gray-200" />
               <Input
                   type="text"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   disabled={!ready}
                   placeholder="Enter your location (e.g., Koramangala, Bengaluru)"
-                  className="w-full h-14 pl-12 pr-32 rounded-full bg-neutral-800/80 border-neutral-700 text-white placeholder:text-gray-400 text-base"
+                  className="w-full h-14 pl-12 pr-32 rounded-full bg-neutral-100/40 placeholder:text-gray-800  dark:bg-neutral-800/80  dark:text-white dark:placeholder:text-gray-400 drop-shadow-xl"
                   autoComplete="off"
               />
               <Button
                   type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-6"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-6 text-gray-800 dark:text-gray-400"
                   disabled={!value}
               >
                   Search

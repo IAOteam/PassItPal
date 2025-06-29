@@ -36,7 +36,6 @@ const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2">
-                <ShieldAlert className="h-7 w-7 text-primary" />
                 <span className="text-xl font-bold">Passitpal</span>
             </Link>
             <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">

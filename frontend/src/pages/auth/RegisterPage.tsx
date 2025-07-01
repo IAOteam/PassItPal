@@ -106,7 +106,7 @@ const RegisterPage: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input id="email" type="email" value={email} pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="password">Password</Label>
@@ -114,7 +114,7 @@ const RegisterPage: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="mobileNumber">Mobile Number</Label>
-                  <Input id="mobileNumber" type="tel"  value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                  <Input id="mobileNumber" type="tel" pattern="[0-9]{10}" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))} required/>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="city">City</Label>

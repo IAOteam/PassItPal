@@ -17,14 +17,15 @@ import { Star, Bookmark, CalendarDays, MapPin, NotebookText, MessageCircle } fro
 
 interface ListingCardProps {
   listing: IListing;
-  onClick: () => void; //  will be used for the "View Details" button
+  onClick: () => void; // This will be used for the "View Details" button
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
+  // --- CONSOLIDATED HOOKS AND VARIABLES ---
+  // All hooks and variables are declared only ONCE here.
   const navigate = useNavigate();
-  const { isAuthenticated, user, getOrCreateConversation, saveListing, unsaveListing } = useAuth();
+  const { user, isAuthenticated, getOrCreateConversation, saveListing, unsaveListing } = useAuth();
   const isSaved = user?.savedListings?.includes(listing._id);
-
   const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(listing.cultPassType)}`;
   const { isAuthenticated, user, getOrCreateConversation } = useAuth();
   const navigate = useNavigate();
@@ -50,13 +51,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     }
   };
 
+  // --- HANDLER FUNCTIONS ---
   const handleContactSeller = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent modal from opening
-    if (!isAuthenticated || !user) {
+    e.stopPropagation(); // Prevent the main card click
+    if (!isAuthenticated) {
       navigate('/login', { state: { from: `/listings/${listing?._id}` } });
       return;
     }
-    if (!listing || user._id === listing.seller._id) {
+    if (user?._id === listing.seller._id) {
       alert("You cannot contact yourself.");
       return;
     }
@@ -88,7 +90,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
       className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg  bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
 
     >
-      {/* --- Smart Save/Bookmark Button --- */}
+      {/* Smart Save/Bookmark Button */}
       <Button
           variant="ghost"
           size="icon"
@@ -106,19 +108,19 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         />
         
         {listing.isPromoted && (
-          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-blue-400 px-2 py-1 text-xs font-bold dark:text-white">
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-blue-400 px-2 py-1 text-xs font-bold text-neutral-900">
             <Star className="h-3 w-3" fill="currentColor" />
             <span>Promoted</span>
           </div>
         )}
       </div>
 
-      {/* ---   UI layout   --- */}
+      {/* Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className='flex justify-between'>
-          <div>
+        <div className='flex justify-between items-start'>
+          <div className="flex-1">
             <Badge variant="secondary" className="mb-2">
-              {listing.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              {listing.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
             </Badge>
             <h3 className="truncate text-xl font-bold dark:text-white" title={listing.cultPassType}>
               {listing.cultPassType}
@@ -128,7 +130,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
               <span>Expires: {new Date(listing.expiryDate).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className='mt-2 text-right'>
+          <div className='mt-2 text-right flex-shrink-0 ml-2'>
             <p className="line-through text-xs font-medium text-gray-500">
               ₹{listing.originalPrice.toLocaleString('en-IN')}
             </p>
@@ -162,11 +164,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-around mt-6">
+        <div className="flex justify-around gap-2 mt-6">
           <Button className="w-auto flex-1 bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800/30 dark:text-blue-300 dark:hover:bg-blue-800/50" size="sm" onClick={onClick}>
             <NotebookText className="mr-2 h-4 w-4" /> View Details
           </Button>
-          <Button className="w-auto flex-1 ml-2 bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50" size="sm" onClick={handleContactSeller}>
+          <Button className="w-auto flex-1 bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50" size="sm" onClick={handleContactSeller}>
             <MessageCircle className="mr-2 h-4 w-4" /> Contact
           </Button>
         </div>

@@ -27,29 +27,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   const { user, isAuthenticated, getOrCreateConversation, saveListing, unsaveListing } = useAuth();
   const isSaved = user?.savedListings?.includes(listing._id);
   const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(listing.cultPassType)}`;
-  const { isAuthenticated, user, getOrCreateConversation } = useAuth();
-  const navigate = useNavigate();
-  const handleContactSeller = async () => {
-    if (!isAuthenticated || !user) {
-      // If user is not logged in, redirect them to the login page
-      // Pass the listing ID so we can potentially redirect them back after login
-      navigate('/login', { state: { from: `/listings/${listing?._id}` } });
-      return;
-    }
-
-    if (!listing || user._id === listing.seller._id) {
-      // Prevent user from contacting themselves
-      alert("You cannot contact yourself.");
-      return;
-    }
-
-    try {
-      const conversationId = await getOrCreateConversation(listing.seller._id);
-      navigate(`/messages/${conversationId}`);
-    } catch (err: any) {
-      alert(err.message || "Could not start chat.");
-    }
-  };
 
   // --- HANDLER FUNCTIONS ---
   const handleContactSeller = async (e: React.MouseEvent) => {

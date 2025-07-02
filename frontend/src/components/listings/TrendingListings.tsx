@@ -1,33 +1,17 @@
 // frontend/src/components/pages/landing/TrendingListings.tsx
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
 import { Button } from '@/components/ui/button';
+import type { IListing } from '@/types';
 
-// Define the type for the full listing object, which ListingCard now expects
-interface Listing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  originalPrice: number; // needed for modal
-  city: string;
-  isPromoted: boolean;
-  adImageUrl?: string;
-  expiryDate: string; // needed for modal
-  availableCredits?: number; // needed for modal
-  seller: {
-    _id: string;
-    username?: string;
-    profilePictureUrl?: string;
-  };
-}
 
 const TrendingListings: React.FC = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<IListing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [selectedListing, setSelectedListing] = useState<IListing | null>(null);
 
   useEffect(() => {
     const fetchTrendingListings = async () => {

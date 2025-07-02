@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'; // For description
 import { useNavigate } from 'react-router-dom'; // To redirect after creation
 import { useAuth } from '@/hooks/useAuth';
 import { ImagePlus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 interface FormErrors {
@@ -16,6 +17,7 @@ interface FormErrors {
   askingPrice?: string;
   expiryDate?: string;
   locationName?: string;
+  category?: string;
   form?: string; // For general form errors
 }
 
@@ -31,7 +33,9 @@ const CreateListingPage: React.FC = () => {
   const [locationName, setLocationName] = useState('');
   const [adImageBase64, setAdImageBase64] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  // Add more state variables as per your Listing model fields
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  
   // e.g., const [images, setImages] = useState<File[]>([]); for file uploads
 
   const [message, setMessage] = useState<string | null>(null);
@@ -55,7 +59,7 @@ const CreateListingPage: React.FC = () => {
     }
   }, [apiError]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -68,7 +72,8 @@ const CreateListingPage: React.FC = () => {
     };
     reader.readAsDataURL(file);
   };
-  const validateForm = (): boolean => {
+
+const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     
     if (!cultPassType.trim()) newErrors.cultPassType = "Pass name is required.";
@@ -93,11 +98,13 @@ const CreateListingPage: React.FC = () => {
     }
     
     if (!locationName.trim()) newErrors.locationName = "Location is required.";
+
+    if (!category) newErrors.category = "Category is required.";
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0; // Return true if no errors
   };
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setIsError(false);
@@ -123,6 +130,8 @@ const CreateListingPage: React.FC = () => {
         askingPrice: parseFloat(askingPrice),
         expiryDate,
         locationName,
+        category, 
+        description,
         availableCredits: availableCredits ? parseInt(availableCredits, 10) : undefined,
         adImageBase64: adImageBase64 || undefined,
       });
@@ -135,7 +144,7 @@ const CreateListingPage: React.FC = () => {
     }
   };
 
-  const handleNumericInput = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+const handleNumericInput = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
     const numericValue = value.replace(/[^0-9]/g, ''); // Allow only digits
     setter(numericValue);
   };
@@ -180,23 +189,49 @@ const CreateListingPage: React.FC = () => {
             {errors.cultPassType && <p className="text-sm text-red-500 mt-1">{errors.cultPassType}</p>}
           </div>
           <div>
+                <Label htmlFor="category">Category</Label>
+                <Select onValueChange={setCategory} value={category}>
+                    <SelectTrigger className="w-full mt-1"><SelectValue placeholder="Select a category..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="GYM_FITNESS">Gym & Fitness</SelectItem>
+                        <SelectItem value="EVENT_TICKET">Event Tickets</SelectItem>
+                        <SelectItem value="COUPON_VOUCHER">Coupons & Vouchers</SelectItem>
+                    </SelectContent>
+                </Select>
+                  {errors.category && <p className="text-sm text-red-500 mt-1">{errors.category}</p>}
+            </div>
+
+            <div className="md:col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea 
+                      id="description" 
+                      value={description} 
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Provide details about your pass, like included benefits, transfer process, how to redeem a coupon, etc."
+                      required 
+                      className="mt-1 min-h-[120px]"
+                  />
+                  {/* Add your errors.description logic here if needed */}
+            </div>
+          <div>
             <Label htmlFor="originalPrice">Original Price (₹)</Label>
-            <Input id="originalPrice" type="text" value={originalPrice} onChange={(e) => handleNumericInput(setOriginalPrice, e.target.value)} placeholder="e.g., 15000" />
+            <Input id="originalPrice" type="text" inputMode="numeric" value={originalPrice} onChange={(e) => handleNumericInput(setOriginalPrice, e.target.value)} placeholder="e.g., 15000" />
             {errors.originalPrice && <p className="text-sm text-red-500 mt-1">{errors.originalPrice}</p>}
           </div>
           <div>
             <Label htmlFor="askingPrice">Your Asking Price (₹)</Label>
-            <Input id="askingPrice" type="text" value={askingPrice} onChange={(e) => handleNumericInput(setAskingPrice, e.target.value)} placeholder="e.g., 12000" />
+            <Input id="askingPrice" type="text" inputMode="numeric" value={askingPrice} onChange={(e) => handleNumericInput(setAskingPrice, e.target.value)} placeholder="e.g., 12000" />
             {errors.askingPrice && <p className="text-sm text-red-500 mt-1">{errors.askingPrice}</p>}
           </div>
           <div>
-            <Label htmlFor="expiryDate">Expiry Date</Label>
-            <Input id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
-            {errors.expiryDate && <p className="text-sm text-red-500 mt-1">{errors.expiryDate}</p>}
+                  <Label htmlFor="expiryDate">Expiry Date</Label>
+                  <Input id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                  {errors.expiryDate && <p className="text-sm text-red-500 mt-1">{errors.expiryDate}</p>}
+            
           </div>
           <div>
             <Label htmlFor="availableCredits">Available Credits (Optional)</Label>
-            <Input id="availableCredits" type="text" value={availableCredits} onChange={(e) => handleNumericInput(setAvailableCredits, e.target.value)} placeholder="e.g., 50" />
+            <Input id="availableCredits" type="text" inputMode="numeric" value={availableCredits} onChange={(e) => handleNumericInput(setAvailableCredits, e.target.value)} placeholder="e.g., 50" />
           </div>
           <div className="md:col-span-2">
             <Label htmlFor="locationName">Location / City</Label>
@@ -204,6 +239,7 @@ const CreateListingPage: React.FC = () => {
             {errors.locationName && <p className="text-sm text-red-500 mt-1">{errors.locationName}</p>}
           </div>
         </div>
+       
         <Button type="submit" className="border" disabled={loading}>
           {loading ? 'Submitting Listing...' : 'Create Listing'}
         </Button>

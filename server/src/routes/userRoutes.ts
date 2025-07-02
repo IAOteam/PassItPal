@@ -7,7 +7,9 @@ import {
   blockUser ,
   getMe, 
   updateMe,
-  switchUserRole  
+  switchUserRole,
+  addSavedListing, 
+  removeSavedListing
 } from '../controllers/userController';
 import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
@@ -45,6 +47,8 @@ router.post(
   switchUserRole
 );
 
+router.post('/me/saved/:listingId', protect, addSavedListing);
+router.delete('/me/saved/:listingId', protect, removeSavedListing);
 
 // @route   GET /api/users/all
 // @desc    Get all users (Admin only)

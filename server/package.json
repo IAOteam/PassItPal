@@ -9,12 +9,13 @@
     "build": "tsc",
     "test": "jest",
     "data:import": "ts-node src/seeder.ts",
-    "data:destroy": "ts-node src/seeder.ts -d" 
+    "data:destroy": "ts-node src/seeder.ts -d"
   },
   "keywords": [],
   "author": "Varaprasad Kare",
   "license": "ISC",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
     "bcryptjs": "^2.4.3",
     "brace-expansion": "^4.0.1",
     "bullmq": "^5.54.3",
@@ -30,6 +31,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.16.0",
     "mongoose": "^8.4.1",
+    "node-cron": "^4.2.0",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",

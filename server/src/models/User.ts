@@ -26,7 +26,7 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
-
+  savedListings: Types.ObjectId[];
   requestedRole?: 'buyer' | 'seller';                     
   roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
   roleRequestTimestamp?: Date;                             
@@ -92,7 +92,7 @@ const UserSchema: Schema = new Schema({
         // index: '2dsphere', // Create a geospatial index
       },
   },
-  
+  savedListings: [{ type: Schema.Types.ObjectId, ref: 'Listing' }],
   isMobileVerified: { type: Boolean, default: false },
   isEmailVerified: { type: Boolean, default: false }, 
   isBlocked: { type: Boolean, default: false },

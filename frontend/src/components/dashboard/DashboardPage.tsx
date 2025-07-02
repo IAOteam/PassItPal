@@ -1,6 +1,6 @@
 // src/pages/dashboard/DashboardPage.tsx
 import React, { useEffect, useState } from 'react';
-
+import SavedListingsContent from './SavedListingsContent';
 import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent'; 
 import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent'; 
 import { useLocation } from 'react-router-dom';
@@ -12,6 +12,8 @@ const DashboardPage: React.FC = () => {
     const { user, loading ,isAuthenticated} = useAuth();
     const location = useLocation();
     const [displayMessage, setDisplayMessage] = useState<string | null>(null);
+    type Tab = 'buyer' | 'seller' | 'saved';
+    const [activeTab, setActiveTab] = useState<Tab>(user?.role === 'seller' ? 'seller' : 'buyer');
 
   
 useEffect(() => {
@@ -44,98 +46,29 @@ if (!user) {
 return <div>Not authenticated.</div>;
 }
 
-const renderDashboardContent = () => {
-        switch (user.role) {
-            case 'buyer':
-                return <BuyerDashboardContent />;
-            case 'seller':
-                return <SellerDashboardContent />;
-            default:
-                // This case handles any other roles, or can redirect if needed
-                return <p>Welcome, {user.username}! Your dashboard is under construction.</p>;
-        }
-    };
-
-
-/*return (
-    <div className="p-4"> 
-        <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white text-center">Dashboard</h2>
-        
-        <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full ">
-            {displayMessage && (
-                <div className="p-3 text-sm rounded border bg-red-100 border-red-400 text-red-700 dark:bg-red-900 dark:text-red-300 mb-4">
-                    {displayMessage}
-                </div>
-            )}
-
-            {user.role === 'buyer' && (<BuyerDashboardContent />
-        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
-        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full  mx-auto">
-          
-        // </div>
-      )} 
-       {user.role === 'seller' && (<SellerDashboardContent />
-        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-2xl mx-auto">
-        // <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full  mx-auto">
-          
-        // </div>
-      )} 
-      {/* {user.role === 'admin' && (
-        <div className="space-y-8">
-          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
-            <h3 className="text-xl font-semibold mb-4">Admin Overview</h3>
-            <p>Welcome, Admin {user.username}!</p>
-            
-          </div>
-          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
-            <ManageRoleRequests />
-          </div>
-          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-4xl mx-auto">
-            <ManageReports />
-          </div>
-        </div>
-      )} //}
-      {user.role !== 'buyer' && user.role !== 'seller' && user.role !== 'admin' && (
-          <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg mx-auto">
-            <p>Welcome to your dashboard, {user.username}!</p>
-          </div>
-        )}
-      </div>
-      {/* : (
-        <>
-            <p className="text-gray-700 dark:text-gray-300">Welcome to your dashboard. {user.username}!!</p>
-
-            <div className="bg-white dark:bg-neutral-900 shadow-md rounded-lg p-6 w-full max-w-lg space-y-4">
-                <p className="text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Email:</span> {user.email}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Role:</span> {user.role}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">City:</span> {user.city || 'N/A'} 
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Email Verified:</span> {user.isEmailVerified ? 'Yes' : 'No'}
-                </p>
-            
-            </div>
-            <p className="mt-8 text-gray-600 dark:text-gray-400">
-                This is a protected page. You can only see this because you are logged in.
-            </p>
-        </> ) //}
-    </div>
-
-);*/
 return (
         <div className="container mx-auto p-4 md:p-8">
-            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-                My Dashboard
-            </h1>
-            <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-lg p-6 w-full">
-                {renderDashboardContent()}
-            </div>
-        </div>)
-        
-};
+    <div className="flex border-b mb-6">
+        {user?.role === 'buyer' && (
+            <button onClick={() => setActiveTab('buyer')} className={`py-2 px-4 ${activeTab === 'buyer' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+                My Orders
+            </button>
+        )}
+        {user?.role === 'seller' && (
+            <button onClick={() => setActiveTab('seller')} className={`py-2 px-4 ${activeTab === 'seller' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+                My Listings & Offers
+            </button>
+        )}
+        <button onClick={() => setActiveTab('saved')} className={`py-2 px-4 ${activeTab === 'saved' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+            Saved Items
+        </button>
+    </div>
+
+    <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-lg p-6 w-full">
+        {activeTab === 'buyer' && <BuyerDashboardContent />}
+        {activeTab === 'seller' && <SellerDashboardContent />}
+        {activeTab === 'saved' && <SavedListingsContent />}
+    </div>
+</div>
+)};
 export default DashboardPage;

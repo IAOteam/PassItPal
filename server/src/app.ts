@@ -16,7 +16,7 @@ import userRoutes from './routes/userRoutes';
 import messageRoutes from './routes/messageRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/adminRoutes';
-
+import adRoutes from './routes/adRoutes';
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
 import User , {IUser} from './models/User';
@@ -28,7 +28,9 @@ import paymentRoutes from './routes/paymentRoutes';
 import reportRoutes from './routes/reportRoutes';
 import { createEmailWorker, emailQueue } from './config/queue'; 
 import emailProcessor from './workers/emailProcessor';
-
+import cron from 'node-cron';
+import adExpiryProcessor from './workers/adExpiryProcessor';
+import listingExpiryProcessor from './workers/listingExpiryProcessor';
 import './config/passport-setup'; 
 
 const app = express();
@@ -42,6 +44,18 @@ const emailWorker = createEmailWorker(emailProcessor);
 console.log("Email worker initialized and listening for jobs.");
 // ------------------------------------
 
+// --- SCHEDULE CRON JOBS ---
+// Schedule the ad expiry job to run once every day at midnight.
+cron.schedule('0 0 * * *', adExpiryProcessor, {
+  //scheduled: true,
+  timezone: "Asia/Kolkata" // Set to your target timezone
+});
+console.log("Scheduled ad expiry job to run daily at midnight.");
+cron.schedule('5 0 * * *', listingExpiryProcessor, { // Runs at 12:05 AM daily
+  //scheduled: true,
+  timezone: "Asia/Kolkata"
+});
+console.log("Scheduled listing expiry job to run daily.");
 
 // Security Middleware
 app.use(helmet()); // Add Helmet to set various HTTP headers for security
@@ -72,6 +86,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/ads', adRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes); 
 app.use('/api/reports', reportRoutes); 

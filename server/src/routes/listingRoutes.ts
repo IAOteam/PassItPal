@@ -64,6 +64,8 @@ router.post(
     // body('availableCredits').optional().isString().trim().escape(),
     body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
     body('locationName').notEmpty().isString().trim().escape().withMessage('Location name is required.'), //  Required location name
+    body('category').notEmpty().withMessage('Category is required.'),
+    body('description').notEmpty().withMessage('Description is required.').isLength({ min: 20, max: 2000 }).withMessage('Description must be between 20 and 2000 characters.'),
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.')
   ],
   validate,

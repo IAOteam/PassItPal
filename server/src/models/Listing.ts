@@ -22,6 +22,8 @@ export interface IListing extends Document {
   isPromoted: boolean; // Added for admin controls
   promotionExpiresAt?: Date;
   views: number;
+  category: string; 
+  description: string; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,10 +54,13 @@ const ListingSchema: Schema = new Schema({
   isAvailable: { type: Boolean, default: true },
   isPromoted: { type: Boolean, default: false }, // Default to false
   promotionExpiresAt: { type: Date, required: false },
-  views: { type: Number, default: 0 }
+  views: { type: Number, default: 0 },
+  category: { type: String, required: true, index: true }, 
+  description: { type: String, required: true, maxlength: 2000 }, 
   
 },
  { timestamps: true });
+ 
 // Geospatial index for location-based queries (already existed, which is good)
 ListingSchema.index({ location: '2dsphere' });
 

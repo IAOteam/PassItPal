@@ -8,6 +8,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import Notification from '../models/Notification'; // This import is used by createAndEmitNotification
 import Ad from '../models/Ad';
 import { createAndEmitNotification } from './notificationController';
+import { sendEmail } from '../utils/emailService';
 
 // @route   GET /api/admin/users
 // @desc    Get all users (admin only)
@@ -496,4 +497,59 @@ export const deleteAd = async (req: Request, res: Response) => {
     console.error('Error deleting ad:', error);
     res.status(500).json({ message: 'Server error while deleting ad.' });
   }
+};
+
+// @route   PUT /api/admin/ads/:adId/approve
+// @desc    Approve a pending ad and notify the advertiser
+// @access  Private (Admin)
+export const approveAd = async (req: Request, res: Response) => {
+    try {
+        const ad = await Ad.findById(req.params.adId);
+        if (!ad || ad.approvalStatus !== 'pending') {
+            return res.status(404).json({ message: 'Pending ad not found.' });
+        }
+
+        ad.approvalStatus = 'approved';
+        await ad.save();
+
+        // Notify the advertiser via email with a payment link
+        // In a real scenario, you would fetch the advertiser's email. For now, we assume it's collected or they contact us.
+        const paymentLink = `${process.env.CLIENT_URL}/ad-payment/${ad._id}`;
+        const emailSubject = 'Your Ad on Passitpal has been Approved!';
+        const emailHtml = `
+            <p>Congratulations!</p>
+            <p>Your ad, "<strong>${ad.adTitle}</strong>", has been approved for display on Passitpal.</p>
+            <p>To get your ad published, please complete the payment by clicking the link below:</p>
+            <a href="${paymentLink}" style="background-color: #1d4ed8; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Pay Now</a>
+            <p>Your ad will go live as soon as the payment is confirmed.</p>
+        `;
+        // We need the advertiser's email. For this MVP, we will assume a placeholder.
+        // In a V2, the email would be saved with the ad submission.
+        // await sendEmail('advertiser-email@example.com', emailSubject, '', emailHtml);
+
+        res.status(200).json({ message: 'Ad approved. Advertiser needs to complete payment.', ad });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Server error while approving ad.' });
+    }
+};
+
+// @route   PUT /api/admin/ads/:adId/reject
+// @desc    Reject a pending ad
+// @access  Private (Admin)
+export const rejectAd = async (req: Request, res: Response) => {
+    try {
+        const ad = await Ad.findById(req.params.adId);
+        if (!ad || ad.approvalStatus !== 'pending') {
+            return res.status(404).json({ message: 'Pending ad not found.' });
+        }
+
+        ad.approvalStatus = 'rejected';
+        // Optionally, you could delete the ad record entirely upon rejection
+        // await ad.deleteOne();
+        await ad.save();
+
+        res.status(200).json({ message: 'Ad has been rejected.', ad });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Server error while rejecting ad.' });
+    }
 };

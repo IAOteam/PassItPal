@@ -44,3 +44,27 @@ export interface ListingsResponse {
     limit: number;
   }
   
+export interface IListing {
+  _id: string;
+  cultPassType: string;
+  description: string; // We added this
+  category: string;     // We added this
+  askingPrice: number;
+  originalPrice: number;
+  city: string;
+  latitude: number;     // Now included
+  longitude: number;    // Now included
+  isPromoted: boolean;
+  isAvailable: boolean;
+  adImageUrl?: string;
+  expiryDate: string;
+  availableCredits?: number;
+  views: number; // For the seller dashboard
+  seller: {
+    _id: string;
+    username?: string;
+    profilePictureUrl?: string;
+    averageRating?: number;
+    reviewCount?: number;
+  };
+}

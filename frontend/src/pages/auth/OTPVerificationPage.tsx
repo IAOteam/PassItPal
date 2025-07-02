@@ -45,21 +45,22 @@ const OTPVerificationPage: React.FC = () => {
     return () => clearError(); // Cleanup on unmount
   }, [clearError, email]);
 
-  const handleChange = (element: HTMLInputElement, index: number) => {
-    const value = element.value;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const { value } = e.target;
     if (isNaN(Number(value))) return; // Only allow numbers
+    if (!/^[0-9]$/.test(value) && value !== '') return; // Allow only single digits
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // If a digit is entered and it's not the last input, focus next input
+    // If a digit is entered, move to the next input
     if (value && index < OTP_LENGTH - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
+        inputRefs.current[index + 1]?.focus();
     }
-  };
+};
 
-const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
+/*const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
     if (e.key === 'Backspace') {
       const newOtp = [...otp];
       if (newOtp[index] === '' && index > 0 && inputRefs.current[index - 1]) {
@@ -81,17 +82,36 @@ const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
     } else if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1]?.focus();
     }
-  };
+  }; */
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
+        if (e.key === 'Backspace') {
+            const newOtp = [...otp];
+            // If the current input is empty, move focus to the previous one and clear it
+            if (otp[index] === '' && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+                newOtp[index - 1] = '';
+            } else {
+                newOtp[index] = '';
+            }
+            setOtp(newOtp);
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
 
   // Handle pasting OTP
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim().slice(0, OTP_LENGTH);
     if (pastedData && /^\d+$/.test(pastedData)) { // Check if it's all digits
-      const newOtp = new Array(OTP_LENGTH).fill('');
-      for (let i = 0; i < pastedData.length; i++) {
+      //const newOtp = new Array(OTP_LENGTH).fill('');
+      const newOtp = [...otp];
+      for (let i = 0; i < OTP_LENGTH; i++) {
         if (i < OTP_LENGTH) {
-          newOtp[i] = pastedData[i];
+          newOtp[i] = pastedData[i] || '';
         }
       }
       setOtp(newOtp);
@@ -200,7 +220,7 @@ const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
                     maxLength={1}
                     className="w-12 h-12 md:w-14 md:h-14 text-center text-lg md:text-xl border-input focus:border-primary focus:ring-primary dark:bg-neutral-800 dark:text-white"
                     value={data}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange(e.target, index)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange(e, index)}
                     onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(e, index)}
                     onFocus={(e) => e.target.select()}
                     onPaste={index === 0 ? handlePaste : undefined} // Attach paste handler only to the first input

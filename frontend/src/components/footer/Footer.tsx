@@ -11,10 +11,11 @@ const Footer: React.FC = () => {
   ];
 
   const companyLinks = [
-    { name: 'About Us', href: '/about' },
-    { name: 'Blog & Safety Alerts', href: '/blog' },
-    { name: 'Contact Us', href: '/contact' },
-  ];
+  { name: 'About Us', href: '/about' },
+  { name: 'Blog & Safety Alerts', href: '/blog' },
+  { name: 'Contact Us', href: '/contact' },
+  { name: 'Advertise With Us', href: '/advertise' },
+];
 
   const legalLinks = [
     { name: 'Help Center (FAQ)', href: '/help' },

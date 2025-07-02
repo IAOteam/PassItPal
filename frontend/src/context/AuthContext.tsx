@@ -26,6 +26,7 @@ export interface User {
   roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
   roleRequestTimestamp?: Date;                             
   roleReviewNotes?: string;  
+  savedListings?: string[];
   
 }
 // These should match what your backend emits/expects
@@ -97,6 +98,8 @@ export interface AuthContextType {
     originalPrice: number;
     availableCredits?: number;
     locationName: string;
+    category?: string;
+    description?: string;
     adImageBase64?: string;
   }) => Promise<string>; // Returns success message
 
@@ -112,6 +115,8 @@ export interface AuthContextType {
   clearError: () => void;
   sendSocketMessage: (data: { conversationId: string; text: string; recipientId: string }) => void;
   switchUserRole: (newRole: 'buyer' | 'seller') => Promise<string>;
+  saveListing: (listingId: string) => Promise<void>;
+  unsaveListing: (listingId: string) => Promise<void>;
 }
 
 // Create the context with default values
@@ -164,8 +169,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   []
 );
 
+const saveListing = async (listingId: string) => {
+    try {
+        await api.post(`/users/me/saved/${listingId}`);
+        // Optimistically update user state
+        setUser(prev => prev ? { ...prev, savedListings: [...(prev.savedListings || []), listingId] } : null);
+    } catch (err) {
+        console.error("Failed to save listing", err);
+        // Optionally handle error display
+    }
+};
 
-
+const unsaveListing = async (listingId: string) => {
+    try {
+        await api.delete(`/users/me/saved/${listingId}`);
+        setUser(prev => prev ? { ...prev, savedListings: prev.savedListings?.filter(id => id !== listingId) } : null);
+    } catch (err) {
+        console.error("Failed to unsave listing", err);
+    }
+};
  
    // Effect to load user and fetch initial notifications
   useEffect(() => {
@@ -766,6 +788,8 @@ const authContextValue: AuthContextType = {
     // refetchUser,
     setToken, // Expose setToken
     clearError,
+    saveListing,
+    unsaveListing,
     
   };
   return (

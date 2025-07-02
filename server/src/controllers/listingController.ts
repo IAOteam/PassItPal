@@ -50,7 +50,7 @@ export const createListing = async (req: Request, res: Response) => {
     if (!geocodeResult) {
       return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
     }
-    const { latitude, longitude, formattedAddress } = geocodeResult;
+    const { latitude, longitude, formattedAddress, city } = geocodeResult;
 
     let adImageUrl: string | undefined;
 
@@ -542,5 +542,33 @@ export const getCityFromCoords = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error during reverse geocoding.' });
+  }
+};
+
+
+// @route   GET /api/listings/stats/public
+// @desc    Get public-facing platform statistics
+// @access  Public
+export const getPublicStats = async (req: Request, res: Response) => {
+  try {
+    const activeListings = await Listing.countDocuments({ isAvailable: true });
+    const successfulDeals = await Order.countDocuments({ status: 'completed' });
+
+    const moneySavedAggregate = await Order.aggregate([
+      { $match: { status: 'completed' } },
+      { $lookup: { from: 'listings', localField: 'listing', foreignField: '_id', as: 'listingDetails' } },
+      { $unwind: '$listingDetails' },
+      { $group: {
+          _id: null,
+          totalSaved: { $sum: { $subtract: ['$listingDetails.originalPrice', '$listingDetails.askingPrice'] } }
+      }}
+    ]);
+
+    const moneySaved = moneySavedAggregate.length > 0 ? moneySavedAggregate[0].totalSaved : 0;
+
+    res.json({ activeListings, successfulDeals, moneySaved });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching stats.' });
   }
 };

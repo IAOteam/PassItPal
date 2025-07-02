@@ -9,7 +9,8 @@ import {
   getCityFromCoords,
   updateListing,
   deleteListing,
-  getMyListings
+  getMyListings,
+  getPublicStats
 } from '../controllers/listingController';
 
 const router = Router();
@@ -100,5 +101,7 @@ router.delete(
   validate,
   deleteListing
 );
+
+router.get('/stats/public', getPublicStats);
 
 export default router;

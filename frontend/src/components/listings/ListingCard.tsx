@@ -8,28 +8,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { getDistance } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth'; // We'll need the user's location
-
-
-// Update the Listing type to include seller details
-interface Listing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  city: string;
-  isPromoted: boolean;
-  adImageUrl?: string;
-  seller: {
-    _id: string;
-    username?: string;
-    profilePictureUrl?: string;
-  };
-  category : string;
-  latitude: number ; 
-  longitude: number;
-}
+import { type IListing } from '@/types'
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: IListing;
   onClick: () => void;
 }
 

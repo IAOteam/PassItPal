@@ -13,37 +13,22 @@ import { RangeSlider } from '@/components/ui/RangeSlider';
 import usePlacesAutocomplete from 'use-places-autocomplete';
 import ListingCardSkeleton from '@/components/listings/ListingCardSkeleton'; 
 import { Pagination } from '@/components/ui/Pagination';
-
+import { type IListing } from '@/types'
 
 // Define a type for a single listing from the API
-interface Listing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  originalPrice: number;
-  city: string;
-  isPromoted: boolean;
-  adImageUrl?: string;
-  expiryDate: string;
-  availableCredits?: number;
-  seller: {
-    _id: string;
-    username?: string;
-    profilePictureUrl?: string;
-  };
-}
 
-type DisplayItem = (Listing & { type: 'listing' }) | (IAd & { type: 'ad' });
+
+type DisplayItem = (IListing & { type: 'listing' }) | (IAd & { type: 'ad' });
 const ListingsPage: React.FC = () => {
   // const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // State for listings
-  const [promotedListings, setPromotedListings] = useState<Listing[]>([]);
-  const [regularListings, setRegularListings] = useState<Listing[]>([]);
+  const [promotedListings, setPromotedListings] = useState<IListing[]>([]);
+  const [regularListings, setRegularListings] = useState<IListing[]>([]);
   const [ads, setAds] = useState<IAd[]>([]); 
   // --- State for the modal ---
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [selectedListing, setSelectedListing] = useState<IListing | null>(null);
   
   // State for UI and fetching
   const [loading, setLoading] = useState(true);

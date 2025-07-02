@@ -9,30 +9,10 @@ import { UserOutlined } from '@ant-design/icons';
 import { X, CalendarDays, MapPin, MessageSquare, Star,Share2, Flag ,Check } from 'lucide-react';
 import ReportModal from '../shared/ReportModal'; 
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
-
-// Define the type for the listing prop, which is the full listing object
-interface Listing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  originalPrice: number;
-  city: string;
-  isPromoted: boolean;
-  adImageUrl?: string;
-  expiryDate: string;
-  availableCredits?: number;
-  seller: {
-    _id:string;
-    username?: string;
-    profilePictureUrl?: string;
-  };
-  latitude : number;
-  longitude : number;
-
-}
+import type { IListing } from '@/types';
 
 interface ListingDetailModalProps {
-  listing: Listing | null;
+  listing: IListing | null;
   onClose: () => void;
    isDirectLink?: boolean;
 }

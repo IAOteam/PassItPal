@@ -1,6 +1,5 @@
 // frontend/src/components/listings/ListingCard.tsx
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { type IListing } from '@/types';
@@ -15,6 +14,7 @@ import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Star, Bookmark, CalendarDays, MapPin, NotebookText, MessageCircle } from 'lucide-react';
 
+
 interface ListingCardProps {
   listing: IListing;
   onClick: () => void; //  will be used for the "View Details" button
@@ -26,6 +26,29 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   const isSaved = user?.savedListings?.includes(listing._id);
 
   const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(listing.cultPassType)}`;
+  const { isAuthenticated, user, getOrCreateConversation } = useAuth();
+  const navigate = useNavigate();
+  const handleContactSeller = async () => {
+    if (!isAuthenticated || !user) {
+      // If user is not logged in, redirect them to the login page
+      // Pass the listing ID so we can potentially redirect them back after login
+      navigate('/login', { state: { from: `/listings/${listing?._id}` } });
+      return;
+    }
+
+    if (!listing || user._id === listing.seller._id) {
+      // Prevent user from contacting themselves
+      alert("You cannot contact yourself.");
+      return;
+    }
+
+    try {
+      const conversationId = await getOrCreateConversation(listing.seller._id);
+      navigate(`/messages/${conversationId}`);
+    } catch (err: any) {
+      alert(err.message || "Could not start chat.");
+    }
+  };
 
   const handleContactSeller = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent modal from opening
@@ -61,7 +84,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
+
+      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg  bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
+
     >
       {/* --- Smart Save/Bookmark Button --- */}
       <Button
@@ -79,6 +104,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
           className="h-48 w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
           style={{ backgroundImage: `url(${listing.adImageUrl || placeholderImage})` }}
         />
+        
         {listing.isPromoted && (
           <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-blue-400 px-2 py-1 text-xs font-bold dark:text-white">
             <Star className="h-3 w-3" fill="currentColor" />

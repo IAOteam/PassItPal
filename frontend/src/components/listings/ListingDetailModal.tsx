@@ -29,6 +29,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+
   // ---  Map setup logic  ---
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -46,7 +47,10 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
       navigate('/login', { state: { from: `/listings/${listing?._id}` } });
       return;
     }
+
     if (!listing || user._id === listing.seller._id) {
+      // Prevent user from contacting themselves
+
       alert("You cannot contact yourself.");
       return;
     }
@@ -69,8 +73,12 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const handleShare = () => {
     if (!listing) return;
     const listingUrl = `${window.location.origin}/listings?listingId=${listing._id}`;
+
+    // Use the modern clipboard API
     navigator.clipboard.writeText(listingUrl).then(() => {
       setIsCopied(true);
+      // Reset the "copied" state after 2 seconds
+
       setTimeout(() => setIsCopied(false), 2000);
     }).catch(err => {
       console.error('Failed to copy text: ', err);
@@ -85,6 +93,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   return (
     <>
       <AnimatePresence>
+
         <motion.div key="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={handleClose} className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <motion.div key="modal-content" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div className="relative">

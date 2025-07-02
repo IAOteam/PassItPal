@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { protect, authorizeRoles } from '../middleware/authMiddleware';
 import { validate } from '../middleware/validationMiddleware';
 import { createRazorpayOrder, verifyPayment } from '../controllers/paymentController';
+import { createAdPaymentOrder, verifyAdPayment } from '../controllers/paymentController';
 
 const router = Router();
 
@@ -34,5 +35,8 @@ router.post(
   validate,
   verifyPayment
 );
-
+// These routes are public because the advertiser is not a logged-in user.
+// The adId provides enough context and security for this flow.
+router.post('/ads/:adId/create-order', createAdPaymentOrder);
+router.post('/ads/verify', verifyAdPayment);
 export default router;

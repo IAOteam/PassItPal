@@ -12,6 +12,10 @@ export interface IAd extends Document {
   priority: number; // For sorting, higher number = higher priority
   createdAt: Date;
   updatedAt: Date;
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  durationDays: number;
+  price: number; // Price for the ad based on duration/type
+  expiresAt?: Date; // The exact date the ad will expire
 }
 
 const AdSchema: Schema = new Schema({
@@ -51,6 +55,18 @@ const AdSchema: Schema = new Schema({
     type: Number,
     default: 1, // Default priority
   },
+  approvalStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+    },
+  durationDays: {
+        type: Number,
+        required: true,
+        default: 7, // Default duration of 7 days
+    },
+  price: { type: Number, required: true },
+  expiresAt: { type: Date },
 }, {
   timestamps: true,
 });

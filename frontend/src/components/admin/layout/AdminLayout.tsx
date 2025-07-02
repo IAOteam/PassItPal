@@ -1,17 +1,16 @@
 // frontend/src/components/admin/layout/AdminLayout.tsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, FileText, ShieldAlert, BadgeHelp } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, ShieldAlert, BadgeHelp, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-  // { name: 'Role Requests', href: '/admin/role-requests', icon: BadgeHelp },
   { name: 'Reports', href: '/admin/reports', icon: ShieldAlert },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Listings', href: '/admin/listings', icon: FileText },
+  { name: 'Ads', href: '/admin/ads', icon: Megaphone }, 
 ];
-
 const AdminLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-neutral-900 text-white">

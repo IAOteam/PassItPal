@@ -8,6 +8,7 @@ import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { X, CalendarDays, MapPin, MessageSquare, Star,Share2, Flag ,Check } from 'lucide-react';
 import ReportModal from '../shared/ReportModal'; 
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 
 // Define the type for the listing prop, which is the full listing object
 interface Listing {
@@ -25,6 +26,9 @@ interface Listing {
     username?: string;
     profilePictureUrl?: string;
   };
+  latitude : number;
+  longitude : number;
+
 }
 
 interface ListingDetailModalProps {
@@ -68,6 +72,17 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
       onClose();
     }
   };
+
+const { isLoaded } = useJsApiLoader({
+  id: 'google-map-script',
+  googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!
+});
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '200px',
+  borderRadius: '0.5rem',
+};
   
 const handleShare = () => {
     if (!listing) return;
@@ -153,6 +168,17 @@ const handleShare = () => {
                         {listing.askingPrice.toLocaleString('en-IN')}</p>
                 </div>
             </div>
+            {isLoaded && listing.latitude && listing.longitude ? (
+              <div className="mt-4">
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={{ lat: listing.latitude, lng: listing.longitude }}
+                  zoom={14}
+                >
+                  <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
+                </GoogleMap>
+              </div>
+            ) : <div>Loading map...</div>}
 
             {listing.availableCredits && (
                  <p className="text-sm text-gray-600 dark:text-gray-400">Available Credits: <span className="font-semibold">{listing.availableCredits}</span></p>

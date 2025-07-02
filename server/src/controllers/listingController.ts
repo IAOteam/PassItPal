@@ -7,6 +7,8 @@ import mongoose, { Types } from 'mongoose';
 import Order from '../models/Order';
 import { geocodeAddress, reverseGeocode } from '../utils/geocodingService'; 
 import Ad from '../models/Ad';
+import IORedis from 'ioredis';
+const redis = new IORedis(process.env.REDIS_URL!);
 
 dotenv.config();
 
@@ -25,8 +27,10 @@ export const createListing = async (req: Request, res: Response) => {
     expiryDate,
     askingPrice,
     originalPrice,
-    availableCredits,// Note: Consider making this a Number type in  schema and here .
+    availableCredits,
     locationName, //  Taking locationName instead of city, latitude, longitude directly
+    category,
+    description,
     adImageBase64
   } = req.body;
 
@@ -60,6 +64,8 @@ export const createListing = async (req: Request, res: Response) => {
 
     const newListing = new Listing({
       seller: req.user._id,
+      category,
+      description,
       cultPassType,
       expiryDate: new Date(expiryDate),
       askingPrice,
@@ -220,7 +226,7 @@ export const getListings = async (req: Request, res: Response) => {
 // @desc    Get a single Cult Fit pass listing by ID
 // @access  Public
 export const getListingById = async (req: Request, res: Response) => {
-  try {
+ /* try {
     const listing = await Listing.findById(req.params.id).populate('seller', 'username email mobileNumber role city profilePictureUrl') as IListing;
 
     if (!listing) {
@@ -235,7 +241,34 @@ export const getListingById = async (req: Request, res: Response) => {
       // We save this in the background and don't need to wait for it to complete
       // to send the response. This is a fire-and-forget update for performance.
       listing.save().catch(err => console.error(`Failed to save view count for listing ${listing._id}:`, err));
+    }*/
+
+    try {
+    const listingId = req.params.id;
+    const cacheKey = `listing:${listingId}`;
+
+    // 1. Check cache first
+    const cachedListing = await redis.get(cacheKey);
+    if (cachedListing) {
+      console.log(`[Cache HIT] for ${cacheKey}`);
+      const listing = JSON.parse(cachedListing);
+      // We still increment views, but don't wait for it
+      Listing.updateOne({ _id: listingId }, { $inc: { views: 1 } }).exec();
+      return res.json(listing);
     }
+
+    console.log(`[Cache MISS] for ${cacheKey}`);
+    // 2. If not in cache, get from DB
+    const listing = await Listing.findById(listingId).populate('seller', 'username profilePictureUrl averageRating reviewCount');
+    if (!listing) {
+      return res.status(404).json({ message: 'Listing not found.' });
+    }
+
+    // 3. Save to cache with an expiry (e.g., 1 hour) and return
+    redis.setex(cacheKey, 3600, JSON.stringify(listing));
+    listing.views = (listing.views || 0) + 1;
+    await listing.save(); // Save the view count update
+
 
     res.json(listing); // Send the response immediately
   } catch (error: any) {
@@ -429,7 +462,7 @@ export const deleteListing = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error: Could not delete listing.' });
   }
 };
-// --- NEW FUNCTION: Promote a Listing ---
+// --- Promote a Listing ---
 // @route   PUT /api/listings/:id/promote
 // @desc    Promote a specific listing (simulates after successful payment)
 // @access  Private (Seller who owns the listing)

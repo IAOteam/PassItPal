@@ -28,7 +28,10 @@ import ManageReports from './components/admin/ManageReports';
 import ManageUsers from './components/admin/ManageUsers';
 import ManageListings from './components/admin/ManageListings';
 import PublicProfilePage from "./components/pages/profile/PublicProfilePage.tsx";
-
+import AdvertisePage from './pages/auth/AdvertisePage';
+import ManageAds from "./components/admin/ManageAds.tsx";
+import AdPaymentPage from "./components/payments/AdPaymentPage.tsx";
+import AboutPage from "./pages/auth/AboutPage.tsx";
 
 
 function App() {
@@ -40,7 +43,6 @@ function App() {
           <Route path="/" element={<Layout />}>
             {/* Index route (what shows up at "/") */}
             <Route index element={<HomePage />} />
-            
             {/* Public listing page */}
             <Route path="/listings" element={<ListingsPage />} />
             <Route path="/profile/:userId" element={<PublicProfilePage />} />
@@ -57,6 +59,7 @@ function App() {
                   <Route path="reports" element={<ManageReports />} />
                   <Route path="users" element={<ManageUsers />} />
                   <Route path="listings" element={<ManageListings />} /> 
+                  <Route path="ads" element={<ManageAds />} />
                   {/* We will add /users and /listings routes here later */}
                 </Route>
               </Route>
@@ -73,6 +76,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['seller']} unauthorizedMessage="Only sellers can create listings." />}>
               <Route path="/seller/create-listing" element={<CreateListingPage />} />
             </Route>
+            <Route path="/advertise" element={<AdvertisePage />} />
           </Route>
 
           {/* Routes that DO NOT use the shared Layout (e.g., full-screen auth pages) */}
@@ -82,6 +86,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/auth/google/success" element={<GoogleAuthCallbackPage />} />
+          <Route path="/ad-payment/:adId" element={<AdPaymentPage />} />
+          <Route path="/about" element={<AboutPage />} />
 
           {/* Catch-all 404 Not Found page */}
           <Route path="*" element={

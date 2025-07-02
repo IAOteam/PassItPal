@@ -14,12 +14,14 @@ interface ReceivedOrder {
   listing: {
     _id: string;
     cultPassType: string;
+    views: number;
   };
   buyer: {
     _id: string;
     username?: string;
   };
   offerPrice: number;
+  
   status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
   createdAt: string;
 }
@@ -136,6 +138,7 @@ const SellerDashboardContent: React.FC = () => {
                   <TableHead>Buyer</TableHead>
                   <TableHead>Offer Price</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Views</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -145,6 +148,7 @@ const SellerDashboardContent: React.FC = () => {
                     <TableCell className="font-medium">{order.listing.cultPassType}</TableCell>
                     <TableCell>{order.buyer.username || 'N/A'}</TableCell>
                     <TableCell>₹{order.offerPrice.toLocaleString('en-IN')}</TableCell>
+                    <TableCell>{order.listing.views}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">{order.status}</Badge>
                     </TableCell>

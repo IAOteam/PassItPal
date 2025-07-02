@@ -13,6 +13,8 @@ import {
   getAllAds,     
   updateAd,      
   deleteAd,  
+  approveAd, 
+  rejectAd, 
   // listRoleChangeRequests,
   // approveRoleChangeRequest,
   // rejectRoleChangeRequest
@@ -132,5 +134,19 @@ router.route('/ads/:adId')
     validate,
     deleteAd
   );
+
+router.put(
+  '/ads/:adId/approve',
+  [ param('adId').isMongoId().withMessage('Invalid Ad ID.') ],
+  validate,
+  approveAd
+);
+
+router.put(
+  '/ads/:adId/reject',
+  [ param('adId').isMongoId().withMessage('Invalid Ad ID.') ],
+  validate,
+  rejectAd
+);
 
 export default router;

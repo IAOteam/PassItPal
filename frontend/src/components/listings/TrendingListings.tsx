@@ -7,7 +7,7 @@ import ListingDetailModal from '@/components/listings/ListingDetailModal';
 import { Button } from '@/components/ui/button';
 
 // Define the type for the full listing object, which ListingCard now expects
-interface Listing {
+export interface Listing {
   _id: string;
   cultPassType: string;
   askingPrice: number;
@@ -22,6 +22,9 @@ interface Listing {
     username?: string;
     profilePictureUrl?: string;
   };
+  category: string;
+  latitude: number;
+  longitude: number;
 }
 
 const TrendingListings: React.FC = () => {

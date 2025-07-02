@@ -434,3 +434,29 @@ export const switchUserRole = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error while processing your request.' });
   }
 };
+
+// @route   POST /api/users/me/saved/:listingId
+export const addSavedListing = async (req: Request, res: Response) => {
+  try {
+    const { listingId } = req.params;
+    const userId = req.user?._id;
+
+    await User.findByIdAndUpdate(userId, { $addToSet: { savedListings: listingId } });
+    res.status(200).json({ message: 'Listing saved successfully.' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error while saving listing.' });
+  }
+};
+
+// @route   DELETE /api/users/me/saved/:listingId
+export const removeSavedListing = async (req: Request, res: Response) => {
+  try {
+    const { listingId } = req.params;
+    const userId = req.user?._id;
+
+    await User.findByIdAndUpdate(userId, { $pull: { savedListings: listingId } });
+    res.status(200).json({ message: 'Listing unsaved successfully.' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error while unsaving listing.' });
+  }
+};

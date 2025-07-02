@@ -5,18 +5,18 @@ import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingCardSkeleton from '@/components/listings/ListingCardSkeleton';
-import { type Listing } from '@/components/listings/TrendingListings';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
+import type { IListing } from '@/types';
 
 // The backend must populate the 'savedListings' field for this to work.
 interface PopulatedUser {
-    savedListings: Listing[];
+    savedListings: IListing[];
 }
 
 const SavedListingsContent: React.FC = () => {
-    const [savedListings, setSavedListings] = useState<Listing[]>([]);
+    const [savedListings, setSavedListings] = useState<IListing[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+    const [selectedListing, setSelectedListing] = useState<IListing | null>(null);
 
     useEffect(() => {
         const fetchSavedListings = async () => {

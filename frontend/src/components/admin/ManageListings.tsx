@@ -5,23 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Link } from 'react-router-dom';
+import type { IListing } from '@/types';
 
-interface Listing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  city: string;
-  isAvailable: boolean;
-  isPromoted: boolean;
-  seller: {
-    _id: string;
-    username: string;
-  };
-  createdAt: string;
-}
+
 
 const ManageListings: React.FC = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<IListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

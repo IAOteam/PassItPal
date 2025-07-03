@@ -183,11 +183,11 @@ const ListingsPage: React.FC = () => {
 
 
   return (
-    <div className='mt-10 px-8 bg-neutral-200 dark:bg-neutral-900'>
+    <div className='mt-12 px-8 bg-neutral-200 dark:bg-neutral-800'>
       <div className="container md:p-6 lg:p-8">
         <header className="mb-8 text-center">
           <h1 className="text-4xl dark:text-white font-bold mb-2">Find Your Next Pass</h1>
-          <p className="text-lg text-neutral-700 dark:text-neutral-300">
+          <p className="text-lg text-neutral-800 dark:text-neutral-400">
             {searchParams.get('locationName')
               ? `Showing listings for: ${searchParams.get('locationName')}`
               : "Browse all available passes from our community."
@@ -200,7 +200,7 @@ const ListingsPage: React.FC = () => {
             {/* Filters and Sorting Bar */}
             <Input
               placeholder="Search by pass name..."
-              className="w-full rounded-full"
+              className="w-full rounded-full text-black dark:text-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -208,7 +208,7 @@ const ListingsPage: React.FC = () => {
             <div className="relative">
               <Input
                 placeholder="Search by location..."
-                className='w-full rounded-full'
+                className='w-full rounded-full text-black dark:text-white'
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 disabled={!ready}
@@ -225,7 +225,7 @@ const ListingsPage: React.FC = () => {
             </div>
 
             <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full rounded-full">
+              <SelectTrigger className="w-full rounded-full text-black dark:text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-neutral-800">
@@ -238,16 +238,14 @@ const ListingsPage: React.FC = () => {
             </Select>
 
             <div className="flex gap-2 justify-around">
-              <Button className='w-auto flex-1 bg-blue-300' onClick={handleFilterApply}>Apply</Button>
-              <Button className='w-auto flex-1 bg-blue-300' variant="ghost" onClick={handleClearFilters}>Clear</Button>
+              <Button className='w-auto flex-1 rounded-full bg-blue-300 hover:bg-blue-400 dark:bg-blue-400 dark:hover:bg-blue-500 dark:text-white' onClick={handleFilterApply}>Apply</Button>
+              <Button className='w-auto flex-1 rounded-full bg-blue-300 hover:bg-blue-400 dark:bg-blue-400 dark:hover:bg-blue-500 dark:text-white'  onClick={handleClearFilters}>Clear</Button>
             </div>
           </div>
 
           {/* <Button onClick={handleFilterApply} className="w-full md:w-auto">Apply</Button> */}
         </div>
         <div className="space-y-8 ">
-          <label className=" font-medium text-neutral-800">Price Range</label>
-
           <DualRangeSlider
             value={priceRange}
             onValueChange={(newRange) => setPriceRange(newRange)}
@@ -256,12 +254,6 @@ const ListingsPage: React.FC = () => {
             step={1000}
           />
         </div>
-      </div>
-
-
-      <div className="flex justify-end items-center gap-2 pt-2 ">
-        <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>
-        <Button onClick={handleFilterApply}>Apply</Button>
       </div>
 
       {/* {loading && <p className="text-center py-10">Loading listings...</p>}
@@ -276,7 +268,7 @@ const ListingsPage: React.FC = () => {
           {/* Promoted Listings Section */}
           {promotedListings.length > 0 && (
             <section>
-              <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Featured Passes</h2>
+              <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">Featured Passes</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {promotedListings.map(listing => (
                   <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />
@@ -287,7 +279,7 @@ const ListingsPage: React.FC = () => {
 
           {/* Regular Listings Section */}
           <section>
-            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-4 border-b pb-2">All Passes</h2>}
+            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">All Passes</h2>}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {/* {regularListings.map(listing => (
                 <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />
@@ -308,7 +300,9 @@ const ListingsPage: React.FC = () => {
           </section>
 
           {/* Pagination */}
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => setCurrentPage(page)} />
+          <div className='pb-10'>
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => setCurrentPage(page)} />
+          </div>
 
         </div>
       )}

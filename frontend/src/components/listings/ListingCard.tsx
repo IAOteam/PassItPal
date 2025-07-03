@@ -64,7 +64,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     <div
       onClick={onClick}
 
-      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg  bg-neutral-100 dark:bg-neutral-800 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
+      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg  bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
 
     >
       {/* Smart Save/Bookmark Button */}
@@ -117,7 +117,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         </div>
 
         {/* Seller Info & Location/Distance */}
-        <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-800">
+        <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-700">
           <a
             href={`/profile/${listing.seller._id}`}
             onClick={(e) => e.stopPropagation()}

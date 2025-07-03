@@ -88,9 +88,9 @@ export function DualRangeSlider({
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Price Range</h3>
-        <div className="flex justify-between text-sm text-gray-600">
+      <div className="mb-4 ">
+        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-300 mb-2">Price Range</h3>
+        <div className="flex justify-between text-sm text-gray-800 dark:text-gray-300">
           <span>₹{minValue}</span>
           <span>₹{maxValue}</span>
         </div>
@@ -100,12 +100,12 @@ export function DualRangeSlider({
         {/* Track */}
         <div
           ref={sliderRef}
-          className="relative h-2 bg-gray-300 rounded-full cursor-pointer"
+          className="relative h-2 bg-neutral-500 rounded-full cursor-pointer"
           onClick={handleTrackClick}
         >
           {/* Active range */}
           <div
-            className="absolute h-2 bg-gray-600 rounded-full"
+            className="absolute h-2 bg-neutral-700 dark:bg-neutral-400 rounded-full"
             style={{
               left: `${getPercentage(minValue)}%`,
               width: `${getPercentage(maxValue) - getPercentage(minValue)}%`,
@@ -114,7 +114,7 @@ export function DualRangeSlider({
 
           {/* Min handle */}
           <div
-            className="absolute w-5 h-5 bg-white border-2 border-gray-600 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 top-1/2 hover:scale-110 transition-transform"
+            className="absolute w-5 h-5 bg-black dark:bg-white rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 top-1/2 hover:scale-110 transition-transform"
             style={{ left: `${getPercentage(minValue)}%` }}
             onMouseDown={handleMouseDown("min")}
             role="slider"
@@ -127,7 +127,7 @@ export function DualRangeSlider({
 
           {/* Max handle */}
           <div
-            className="absolute w-5 h-5 bg-white border-2 border-gray-600 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 top-1/2 hover:scale-110 transition-transform"
+            className="absolute w-5 h-5 bg-black dark:bg-white rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 top-1/2 hover:scale-110 transition-transform"
             style={{ left: `${getPercentage(maxValue)}%` }}
             onMouseDown={handleMouseDown("max")}
             role="slider"

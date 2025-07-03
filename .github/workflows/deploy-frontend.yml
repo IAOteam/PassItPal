@@ -11,7 +11,8 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
-
+  pull_request:
+    branches: [ main ]
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest

@@ -69,7 +69,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     >
       {/* Smart Save/Bookmark Button */}
       <Button
-          variant="ghost"
           size="icon"
           className="absolute top-2 right-2 z-10 bg-black/30 text-white rounded-full hover:bg-black/50"
           onClick={handleSaveClick}
@@ -94,9 +93,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
 
       {/* Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className='flex justify-between items-start'>
+        <div className='flex justify-between'>
           <div className="flex-1">
-            <Badge variant="secondary" className="mb-2">
+            <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
               {listing.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
             </Badge>
             <h3 className="truncate text-xl font-bold dark:text-white" title={listing.cultPassType}>
@@ -118,7 +117,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         </div>
 
         {/* Seller Info & Location/Distance */}
-        <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-800">
+        <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-700">
           <a
             href={`/profile/${listing.seller._id}`}
             onClick={(e) => e.stopPropagation()}
@@ -142,10 +141,10 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
 
         {/* Action Buttons */}
         <div className="flex justify-around gap-2 mt-6">
-          <Button className="w-auto flex-1 bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800/30 dark:text-blue-300 dark:hover:bg-blue-800/50" size="sm" onClick={onClick}>
+          <Button className="w-auto flex-1 bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800/30 dark:text-blue-300 dark:hover:bg-blue-800/50" size="sm" onClick={onClick}>
             <NotebookText className="mr-2 h-4 w-4" /> View Details
           </Button>
-          <Button className="w-auto flex-1 bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50" size="sm" onClick={handleContactSeller}>
+          <Button className="w-auto flex-1 bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50" size="sm" onClick={handleContactSeller}>
             <MessageCircle className="mr-2 h-4 w-4" /> Contact
           </Button>
         </div>

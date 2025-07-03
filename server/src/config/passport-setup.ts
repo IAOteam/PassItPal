@@ -16,18 +16,18 @@ passport.use(
       scope: ['profile', 'email'], // Scopes you requested in Google Console
     },
     async (accessToken: string, refreshToken: string | undefined, profile: Profile, done: VerifyCallback) => {
-        console.log(`[Passport Google Strategy] Received callback at: ${new Date().toISOString()}`);
+        // console.log(`[Passport Google Strategy] Received callback at: ${new Date().toISOString()}`);
         console.time("GoogleStrategyVerifyCallback"); // Start timer for the whole callback
 
       try {
         // Log the profile to see what Google returns
-        console.log('[Passport Google Strategy] Profile received from Google:', JSON.stringify(profile, null, 2));
+        // console.log('[Passport Google Strategy] Profile received from Google:', JSON.stringify(profile, null, 2));
 
         if (!profile.id) {
           return done(new Error('No Google profile ID received'), undefined);
         }
         if (!profile.emails || profile.emails.length === 0 || !profile.emails[0].value) {
-            console.error('[Passport Google Strategy] Missing profile ID or email from Google.');
+            // console.error('[Passport Google Strategy] Missing profile ID or email from Google.');
             console.timeEnd("GoogleStrategyVerifyCallback");
             return done(new Error('No email received from Google'), undefined);
         }
@@ -35,14 +35,14 @@ passport.use(
         const googleId = profile.id;
         const email = profile.emails[0].value;
         const isEmailVerifiedByGoogle = profile.emails[0].verified === true //|| profile.emails[0].verified === 'true';
-        console.log(`[Passport Google Strategy] Processing for googleId: ${googleId}, email: ${email} at: ${new Date().toISOString()}`);
+        // console.log(`[Passport Google Strategy] Processing for googleId: ${googleId}, email: ${email} at: ${new Date().toISOString()}`);
         console.time("FindUserByGoogleId");
         // 1. Try to find user by googleId
         let user = await User.findOne({ googleId: googleId });
         console.timeEnd("FindUserByGoogleId");
         if (user) {
           // User found with this Google ID
-          console.log(`[Passport Google Strategy] User found by googleId: ${user.email}`);
+          // console.log(`[Passport Google Strategy] User found by googleId: ${user.email}`);
           // Optionally update user fields like profilePictureUrl if they've changed in Google
           if (profile.photos && profile.photos.length > 0 && user.profilePictureUrl !== profile.photos[0].value) {
             user.profilePictureUrl = profile.photos[0].value;
@@ -61,14 +61,14 @@ passport.use(
         }
 
         // 2. If no user by googleId, try to find by email to link accounts
-        console.log(`[Passport Google Strategy] No user by googleId. Trying email: ${email} at: ${new Date().toISOString()}`);
+        // console.log(`[Passport Google Strategy] No user by googleId. Trying email: ${email} at: ${new Date().toISOString()}`);
         console.time("FindUserByEmailGoogle");
         user = await User.findOne({ email: email });
         console.timeEnd("FindUserByEmailGoogle");
 
         if (user) {
           // User found by email - link Google ID to this existing account
-          console.log(`[Passport Google Strategy] User found by email. Linking googleId for ${user.email} at: ${new Date().toISOString()}`);
+          // console.log(`[Passport Google Strategy] User found by email. Linking googleId for ${user.email} at: ${new Date().toISOString()}`);
           user.googleId = googleId;
           user.isEmailVerified = true; // Trust Google's email verification
           if (profile.photos && profile.photos.length > 0 && (!user.profilePictureUrl || user.profilePictureUrl.includes('default_avatar'))) {
@@ -96,7 +96,7 @@ passport.use(
         }
 
         // 3. If no user by googleId or email, create a new user
-        console.log(`[Passport Google Strategy] No existing user. Creating new user for ${email} at: ${new Date().toISOString()}`);
+        // console.log(`[Passport Google Strategy] No existing user. Creating new user for ${email} at: ${new Date().toISOString()}`);
         let newUsername = profile.displayName || email.split('@')[0];
         console.time("CheckNewUsernameGoogle");
         const existingUsername = await User.findOne({ username: newUsername });
@@ -123,7 +123,7 @@ passport.use(
         console.time("SaveNewUserGoogle");
         await newUser.save();
         console.timeEnd("SaveNewUserGoogle");
-        console.log(`[Passport Google Strategy] New user created: ${newUser.email} at: ${new Date().toISOString()}`);
+        // console.log(`[Passport Google Strategy] New user created: ${newUser.email} at: ${new Date().toISOString()}`);
         console.timeEnd("GoogleStrategyVerifyCallback");
         return done(null, newUser);
 

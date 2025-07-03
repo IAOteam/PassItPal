@@ -84,7 +84,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null); // Reject queued requests
         isRefreshing = false;
-        console.error('Token refresh failed:', refreshError);
+        // console.error('Token refresh failed:', refreshError);
         // If refresh fails, clear user data and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');

@@ -7,7 +7,7 @@ const getBaseUrl = (urlWithApiPath: string | undefined): string => {
     const url = new URL(urlWithApiPath);
     return `${url.protocol}//${url.host}`; // Returns http://localhost:5001
   } catch (e) {
-    console.error("[SocketService] Error parsing VITE_BACKEND_URL for base socket URL, defaulting.", e);
+    // console.error("[SocketService] Error parsing VITE_BACKEND_URL for base socket URL, defaulting.", e);
     return 'http://localhost:5001';
   }
 };
@@ -15,7 +15,7 @@ const getBaseUrl = (urlWithApiPath: string | undefined): string => {
 const backendApiUrl = import.meta.env.VITE_BACKEND_URL;
 const SOCKET_SERVER_URL = getBaseUrl(backendApiUrl);
 
-console.log('[SocketService] Initializing socket with URL:', SOCKET_SERVER_URL);
+// console.log('[SocketService] Initializing socket with URL:', SOCKET_SERVER_URL);
 
 // Create a single socket instance, but don't connect automatically.
 // We'll manage connection/disconnection and auth token via AuthContext.

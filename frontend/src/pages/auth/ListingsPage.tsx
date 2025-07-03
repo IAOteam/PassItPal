@@ -49,22 +49,7 @@ const ListingsPage: React.FC = () => {
 
   const location = useLocation();
 
-  if (totalPages === 0 && (locationTerm || searchTerm)) {
-        // ...show a message and then fetch the default view.
-        alert("No listings found for your specific search. Showing all listings instead.");
-        // Clear the specific filters but keep others like price/sort
-        setLocationTerm('');
-        setSearchTerm('');
-        // We'll trigger a re-fetch in the handleClearFilters function
-        // For now, we can just clear the search params that yielded no results
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('locationName');
-        newParams.delete('cultPassType');
-        setSearchParams(newParams, { replace: true });
-        // The component will re-render and could trigger a new fetch.
-        // A more robust way is to have a separate function call,   here.
-        return;
-    }
+  
 
   const { ready, value, suggestions, setValue, clearSuggestions  ,init} = usePlacesAutocomplete({
     initOnMount: false,

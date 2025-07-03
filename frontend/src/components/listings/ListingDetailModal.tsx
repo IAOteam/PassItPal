@@ -114,17 +114,38 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
               {/* ---  Colored prices --- */}
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
                 <div className="text-gray-700 dark:text-gray-300"><span className="text-xs">Original Price</span><p className="line-through text-red-500">₹{listing.originalPrice.toLocaleString('en-IN')}</p></div>
-                <div className="text-right text-gray-700 dark:text-gray-300"><span className="text-xs font-semibold">Offered Price</span><p className="text-2xl font-bold text-green-500">₹{listing.askingPrice.toLocaleString('en-IN')}</p></div>
+                <div className="text-right"><span className="text-xs font-semibold">Offered Price</span><p className="text-2xl font-bold text-green-500">₹{listing.askingPrice.toLocaleString('en-IN')}</p></div>
+              </div>
+
+              <div className="pt-4 border-t dark:border-neutral-700">
+                  <h3 className="text-sm font-semibold text-gray-500 mb-2">DESCRIPTION</h3>
+                  <p className="text-gray-800 dark:text-gray-300 whitespace-pre-wrap">
+                      {listing.description}
+                  </p>
               </div>
 
               {/* Map view from --- */}
-              {isLoaded && listing.latitude && listing.longitude ? (
-                <div className="mt-4">
-                  <GoogleMap mapContainerStyle={mapContainerStyle} center={{ lat: listing.latitude, lng: listing.longitude }} zoom={14}>
-                    <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
-                  </GoogleMap>
-                </div>
-              ) : <div className="text-sm dark:text-white">Loading map...</div>}
+              <div className="mt-4">
+                  {isAuthenticated ? (
+                      isLoaded && listing.latitude && listing.longitude ? (
+                          <GoogleMap
+                              mapContainerStyle={mapContainerStyle}
+                              center={{ lat: listing.latitude, lng: listing.longitude }}
+                              zoom={14}
+                          >
+                              <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
+                          </GoogleMap>
+                      ) : (
+                          <div className="h-[200px] w-full flex items-center justify-center bg-gray-200 rounded-lg">
+                              <p>Loading map...</p>
+                          </div>
+                      )
+                  ) : (
+                      <div className="h-[200px] w-full flex items-center justify-center bg-gray-200 rounded-lg text-center p-4">
+                          <p className="text-gray-600">"Map view is available only when logged in."</p>
+                      </div>
+                  )}
+              </div>
 
               {listing.availableCredits && (<p className="text-sm text-gray-600 dark:text-gray-400">Available Credits: <span className="font-semibold">{listing.availableCredits}</span></p>)}
               

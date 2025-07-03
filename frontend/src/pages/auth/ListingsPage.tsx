@@ -45,7 +45,24 @@ const ListingsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(0);
 
-  const { ready, value, suggestions, setValue, clearSuggestions, init } = usePlacesAutocomplete({
+  if (totalPages === 0 && (locationTerm || searchTerm)) {
+        // ...show a message and then fetch the default view.
+        alert("No listings found for your specific search. Showing all listings instead.");
+        // Clear the specific filters but keep others like price/sort
+        setLocationTerm('');
+        setSearchTerm('');
+        // We'll trigger a re-fetch in the handleClearFilters function
+        // For now, we can just clear the search params that yielded no results
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('locationName');
+        newParams.delete('cultPassType');
+        setSearchParams(newParams, { replace: true });
+        // The component will re-render and could trigger a new fetch.
+        // A more robust way is to have a separate function call,   here.
+        return;
+    }
+
+  const { ready, value, suggestions, setValue, clearSuggestions  ,init} = usePlacesAutocomplete({
     initOnMount: false,
     // requestOptions: { componentRestrictions: { country: 'in' } },
     debounce: 300,
@@ -116,9 +133,9 @@ const ListingsPage: React.FC = () => {
     setValue(''); // Also clear autocomplete input
     setPriceRange([0, 50000]);
     setSortBy('createdAt_desc');
-    // setSearchParams({}); // Clear URL params
-    if (currentPage === 1) {
-      fetchListings(1);
+    setSearchParams({}); // Clear URL params
+     if (currentPage === 1) {
+        fetchListings(1);
     } else {
       setCurrentPage(1);
     }

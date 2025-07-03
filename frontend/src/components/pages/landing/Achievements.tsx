@@ -1,24 +1,44 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Handshake, TrendingUp, Users } from 'lucide-react';
+import api from '@/lib/api';
 
-const achievementsItems=[
+
+const Achievements: React.FC = () => {
+  const [stats, setStats] = useState({
+    activeListings: '2,450+',
+    moneySaved: '₹1.2L+',
+    successfulDeals: '5,600+',
+  });
+
+  useEffect(() => {
+    api.get('/listings/stats/public').then(res => {
+      const { activeListings, moneySaved, successfulDeals } = res.data;
+      setStats({
+        activeListings: activeListings.toLocaleString('en-IN'),
+        moneySaved: `₹${(moneySaved / 1000).toFixed(1)}k+`, // Format as 'k' or 'L' as you prefer
+        successfulDeals: successfulDeals.toLocaleString('en-IN'),
+      });
+    }).catch(console.error);
+  }, []);
+
+  const achievementsItems=[
     {
         icon: <Users/>,
-        figure: "2,450+",
+        figure: stats.activeListings,
         title: "Active Listings"
     },
     {
         icon: <TrendingUp/>,
-        figure: "₹1.2L+",
+        figure: stats.moneySaved,
         title: "Money Saved"
     },
     {
         icon: <Handshake/>,
-        figure: "5,600+",
+        figure: stats.successfulDeals,
         title: "Successful Deals"
     }
 ]
-const Achievements : React.FC = () => {
+
   return (
     <div className='flex justify-evenly pb-4 bg-gradient-to-b from-blue-300 to-violet-300 '>
         {

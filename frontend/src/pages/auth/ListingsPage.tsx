@@ -191,7 +191,7 @@ const ListingsPage: React.FC = () => {
   // };
 
   const SkeletonGrid = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 md:mt-2">
       {Array.from({ length: 8 }).map((_, index) => (
         <ListingCardSkeleton key={index} />
       ))}
@@ -246,7 +246,7 @@ const ListingsPage: React.FC = () => {
               <SelectTrigger className="w-full rounded-full text-black dark:text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-neutral-800">
+              <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
                 <SelectItem value="createdAt_desc">Newest First</SelectItem>
                 <SelectItem value="price_asc">Price: Low to High</SelectItem>
                 <SelectItem value="price_desc">Price: High to Low</SelectItem>
@@ -282,7 +282,7 @@ const ListingsPage: React.FC = () => {
       ) : error ? (
         <div className="text-center py-10 text-red-500">{error}</div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-10 mt-6 md:mt-2">
           {/* Promoted Listings Section */}
           {promotedListings.length > 0 && (
             <section>

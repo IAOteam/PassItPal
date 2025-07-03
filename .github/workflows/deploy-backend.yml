@@ -5,14 +5,16 @@ name: Deploy Backend to Render
 # This workflow runs on pushes to the 'main' branch
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     # Only run if there are changes in the 'server/' directory
     paths:
       - 'server/**'
       - '.github/workflows/deploy-backend.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -40,6 +42,7 @@ jobs:
       - name: Run Tests
         run: npm test
       - name: Trigger Render Deploy Hook
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         # This step sends a request to the Render Deploy Hook URL.
         # Render then pulls the latest code from your 'main' branch and redeploys the service.
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

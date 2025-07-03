@@ -32,6 +32,10 @@ import AdvertisePage from './pages/auth/AdvertisePage';
 import ManageAds from "./components/admin/ManageAds.tsx";
 import AdPaymentPage from "./components/payments/AdPaymentPage.tsx";
 import AboutPage from "./pages/auth/AboutPage.tsx";
+import HelpPage from "./pages/auth/HelpPage.tsx";
+import TermsPage from "./pages/auth/TermsPage.tsx";
+import PrivacyPolicyPage from "./pages/auth/PrivacyPolicyPage.tsx";
+import ContactPage from "./pages/auth/ContactPage.tsx";
 
 
 function App() {
@@ -88,6 +92,10 @@ function App() {
           <Route path="/auth/google/success" element={<GoogleAuthCallbackPage />} />
           <Route path="/ad-payment/:adId" element={<AdPaymentPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Catch-all 404 Not Found page */}
           <Route path="*" element={

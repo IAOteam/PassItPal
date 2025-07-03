@@ -68,3 +68,21 @@ export interface IListing {
     reviewCount?: number;
   };
 }
+
+export interface ChatMessage {
+  _id: string;
+  conversation: string;
+  sender: {
+    _id: string;
+    username?: string;
+    profilePictureUrl?: string;
+  };
+  text: string;
+  createdAt: string;
+}
+
+export interface Participant {
+  _id: string;
+  username: string;
+  profilePictureUrl?: string;
+}

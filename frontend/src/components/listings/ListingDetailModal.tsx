@@ -114,7 +114,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
               {/* ---  Colored prices --- */}
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
                 <div className="text-gray-700 dark:text-gray-300"><span className="text-xs">Original Price</span><p className="line-through text-red-500">₹{listing.originalPrice.toLocaleString('en-IN')}</p></div>
-                <div className="text-right"><span className="text-xs font-semibold">Offered Price</span><p className="text-2xl font-bold text-green-500">₹{listing.askingPrice.toLocaleString('en-IN')}</p></div>
+                <div className="text-right text-gray-700 dark:text-gray-300"><span className="text-xs font-semibold">Offered Price</span><p className="text-2xl font-bold text-green-500">₹{listing.askingPrice.toLocaleString('en-IN')}</p></div>
               </div>
 
               {/* Map view from --- */}
@@ -124,7 +124,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                     <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
                   </GoogleMap>
                 </div>
-              ) : <div>Loading map...</div>}
+              ) : <div className="text-sm dark:text-white">Loading map...</div>}
 
               {listing.availableCredits && (<p className="text-sm text-gray-600 dark:text-gray-400">Available Credits: <span className="font-semibold">{listing.availableCredits}</span></p>)}
               

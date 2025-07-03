@@ -108,7 +108,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
     );
 
     if (!isParticipant) {
-      console.log(`[Auth Failure] User ${req.user._id} is not a participant in conversation ${conversationId}.`);
+      // console.log(`[Auth Failure] User ${req.user._id} is not a participant in conversation ${conversationId}.`);
       return res.status(403).json({ message: 'Not authorized to view this conversation.' });
     }
 

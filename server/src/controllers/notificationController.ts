@@ -22,7 +22,7 @@ export const createAndEmitNotification = async (
 
     // Emit notification via Socket.IO to the recipient if they are online
     io.to(recipientId).emit('newNotification', notification);
-    console.log(`Notification emitted to ${recipientId}: ${message}`);
+    // console.log(`Notification emitted to ${recipientId}: ${message}`);
     return notification;
   } catch (error) {
     console.error('Error creating or emitting notification:', error);

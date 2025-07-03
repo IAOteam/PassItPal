@@ -28,7 +28,7 @@ interface MyOrder {
 
 const BuyerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
-  const { cancelOrder, loading: authLoading ,getOrCreateConversation} = useAuth(); 
+  const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuth();
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ const BuyerDashboardContent: React.FC = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm("Are you sure you want to cancel this order request?")) return;
-    
+
     try {
       const message = await cancelOrder(orderId);
       alert(message);
@@ -86,20 +86,20 @@ const BuyerDashboardContent: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">My Orders</h3>
-        <Button variant="outline" onClick={() => navigate('/listings')}>
+    <div className='my-10'>
+      <div className="flex justify-between items-center mb-10 dark:text-white">
+        <h3 className="text-xl font-semibold">My Orders</h3>
+        <Button className='bg-gradient-to-br from-blue-400 to-purple-400 ' onClick={() => navigate('/listings')}>
           Browse More Passes
         </Button>
       </div>
 
-      {loading && <p className="text-center text-gray-500">Loading your orders...</p>}
+      {loading && <p className="text-center text-gray-500 ">Loading your orders...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
-      
+
       {!loading && !error && (
         orders.length > 0 ? (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg dark:text-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -146,9 +146,9 @@ const BuyerDashboardContent: React.FC = () => {
             </Table>
           </div>
         ) : (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg">
-            <h4 className="text-lg font-medium">You haven't placed any orders yet.</h4>
-            <p className="text-gray-500 mt-1">Start by browsing passes available for sale!</p>
+          <div className="text-center py-12 dark:text-white">
+            <h4 className="text-md font-medium">You haven't placed any orders yet.</h4>
+            <p className="mt-1 text-sm">Start by browsing passes available for sale!</p>
           </div>
         )
       )}

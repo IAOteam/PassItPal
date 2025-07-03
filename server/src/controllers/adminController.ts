@@ -18,7 +18,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const users = await User.find({}).select('-password -refreshToken -otp -otpExpiry -otpPurpose -passwordResetToken -passwordResetExpires');
     res.json(users);
   } catch (error: any) {
-    console.error('Error fetching all users:', error.message);
+    // console.error('Error fetching all users:', error.message);
     res.status(500).send('Server error: Could not fetch users.');
   }
 };
@@ -59,7 +59,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
     res.json({ message: `User role updated to ${role}.`, user });
   } catch (error: any) {
-    console.error('Error updating user role:', error.message);
+    // console.error('Error updating user role:', error.message);
     if (error.kind === 'ObjectId') {
       return res.status(400).json({ message: 'Invalid user ID.' });
     }

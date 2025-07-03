@@ -49,22 +49,7 @@ const ListingsPage: React.FC = () => {
 
   const location = useLocation();
 
-  if (totalPages === 0 && (locationTerm || searchTerm)) {
-        // ...show a message and then fetch the default view.
-        alert("No listings found for your specific search. Showing all listings instead.");
-        // Clear the specific filters but keep others like price/sort
-        setLocationTerm('');
-        setSearchTerm('');
-        // We'll trigger a re-fetch in the handleClearFilters function
-        // For now, we can just clear the search params that yielded no results
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('locationName');
-        newParams.delete('cultPassType');
-        setSearchParams(newParams, { replace: true });
-        // The component will re-render and could trigger a new fetch.
-        // A more robust way is to have a separate function call,   here.
-        return;
-    }
+  
 
   const { ready, value, suggestions, setValue, clearSuggestions  ,init} = usePlacesAutocomplete({
     initOnMount: false,
@@ -282,12 +267,14 @@ const ListingsPage: React.FC = () => {
       ) : error ? (
         <div className="text-center py-10 text-red-500">{error}</div>
       ) : (
+
         <div className="space-y-10 mt-6 md:mt-2">
+
           {/* Promoted Listings Section */}
           {promotedListings.length > 0 && (
             <section>
-              <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">Featured Passes</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <h2 className="text-2xl font-semibold mb-10 border-b border-black dark:border-white text-black dark:text-white">Featured Passes</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {promotedListings.map(listing => (
                   <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />
                 ))}
@@ -297,7 +284,7 @@ const ListingsPage: React.FC = () => {
 
           {/* Regular Listings Section */}
           <section>
-            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">All Passes</h2>}
+            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-10 border-b border-black dark:border-white text-black dark:text-white">All Passes</h2>}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {/* {regularListings.map(listing => (
                 <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />

@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Safe to use side effect here because we computed newUserState
       if (newUserState) {
-        console.log('[AuthContext] Updating localStorage with new user data.');
+        // console.log('[AuthContext] Updating localStorage with new user data.');
         localStorage.setItem('user', JSON.stringify(newUserState));
       } else {
         localStorage.removeItem('user');
@@ -195,12 +195,12 @@ const unsaveListing = async (listingId: string) => {
       setLoading(true);
       // Fetch initial notifications
       try {
-        console.log("[AuthContext] Fetching initial notifications...");
+        // console.log("[AuthContext] Fetching initial notifications...");
         const res = await api.get('/notifications/me'); // Axios adds the token
         const fetchedNotifications: Notification[] = res.data || [];
         setNotifications(fetchedNotifications);
         setUnreadCount(fetchedNotifications.filter(n => !n.read).length);
-        console.log(`[AuthContext] Fetched ${fetchedNotifications.length} notifications, ${fetchedNotifications.filter(n => !n.read).length} unread.`);
+        // console.log(`[AuthContext] Fetched ${fetchedNotifications.length} notifications, ${fetchedNotifications.filter(n => !n.read).length} unread.`);
       } catch (err) {
         console.error("Failed to fetch initial notifications:", err);
         setError("Could not load notifications.");
@@ -211,7 +211,7 @@ const unsaveListing = async (listingId: string) => {
         try {
           setUserState(JSON.parse(storedUserJson));
         } catch (e) {
-          console.error("Failed to parse user from localStorage", e);
+          // console.error("Failed to parse user from localStorage", e);
           setUser(null); setToken(null);
         }
       }
@@ -257,11 +257,11 @@ const unsaveListing = async (listingId: string) => {
     if (token && userState) {
       // If the global socket is not connected, OR if its auth token is stale
       if (!globalSocketInstance.connected || (globalSocketInstance.auth as {token?:string}).token !== token) {
-        console.log('[AuthContext Socket Effect] Conditions met to connect/reconnect.');
+        // console.log('[AuthContext Socket Effect] Conditions met to connect/reconnect.');
         // If it's already trying to connect (but not yet connected), don't issue another .connect()
         // The 'auth' property might not be updated until after a disconnect/connect cycle if token changed.
         if (globalSocketInstance.connected && (globalSocketInstance.auth as {token?:string}).token !== token) {
-            console.log('[AuthContext Socket Effect] Token changed. Disconnecting global socket to reconnect with new token.');
+            // console.log('[AuthContext Socket Effect] Token changed. Disconnecting global socket to reconnect with new token.');
             globalSocketInstance.disconnect(); // Disconnect first if token changed
         }
         
@@ -269,11 +269,11 @@ const unsaveListing = async (listingId: string) => {
         globalSocketInstance.auth = { token };
         
         if (!globalSocketInstance.connected) { // Check again after potential disconnect
-            console.log('[AuthContext Socket Effect] Calling globalSocketInstance.connect()');
+            // console.log('[AuthContext Socket Effect] Calling globalSocketInstance.connect()');
             globalSocketInstance.connect();
         }
       } else {
-        console.log('[AuthContext Socket Effect] Global socket already connected with the current token.');
+        // console.log('[AuthContext Socket Effect] Global socket already connected with the current token.');
         // Ensure context state reflects the global instance if it's connected
         if (socketContextState !== globalSocketInstance) {
             setSocketContextState(globalSocketInstance);
@@ -282,7 +282,7 @@ const unsaveListing = async (listingId: string) => {
 
       // Define listeners (these will be added once)
       const handleConnect = () => {
-        console.log('[AuthContext] Global socket connected event. ID:', globalSocketInstance.id);
+        // console.log('[AuthContext] Global socket connected event. ID:', globalSocketInstance.id);
         setSocketContextState(globalSocketInstance);
       };
       const handleDisconnect = (reason: Socket.DisconnectReason) => {
@@ -295,7 +295,7 @@ const unsaveListing = async (listingId: string) => {
       };
       const handleReceiveMessage = (message: MessagePayload) => console.log('[AuthContext] Received message:', message);
       const handleNewNotification = (notification: Notification) => {
-        console.log('[AuthContext] Received new notification via socket:', notification);
+        // console.log('[AuthContext] Received new notification via socket:', notification);
         // Add the new notification to the top of the list
         setNotifications(prev => [notification, ...prev]);
         // Increment the unread count
@@ -311,7 +311,7 @@ const unsaveListing = async (listingId: string) => {
 
       // Cleanup: remove these specific listeners when token/user changes or component unmounts
       return () => {
-        console.log('[AuthContext Socket Effect] Cleanup: Removing listeners from global socket.');
+        // console.log('[AuthContext Socket Effect] Cleanup: Removing listeners from global socket.');
         globalSocketInstance.off('connect', handleConnect);
         globalSocketInstance.off('disconnect', handleDisconnect);
         globalSocketInstance.off('connect_error', handleConnectError);
@@ -324,7 +324,7 @@ const unsaveListing = async (listingId: string) => {
     } else {
       // No token or user, so if the global socket is connected, disconnect it.
       if (globalSocketInstance.connected) {
-        console.log('[AuthContext Socket Effect] No token/user. Disconnecting global socket.');
+        // console.log('[AuthContext Socket Effect] No token/user. Disconnecting global socket.');
         globalSocketInstance.disconnect();
       }
       // Ensure context state is also null
@@ -350,7 +350,7 @@ const unsaveListing = async (listingId: string) => {
     try {
       // Call the backend endpoint to update the database
       await api.put('/notifications/mark-all-read');
-      console.log("[AuthContext] Successfully marked all notifications as read on the server.");
+      // console.log("[AuthContext] Successfully marked all notifications as read on the server.");
     } catch (err) {
       console.error("Failed to mark notifications as read on server:", err);
       // If server update fails, revert the UI changes
@@ -367,16 +367,16 @@ const unsaveListing = async (listingId: string) => {
     if (err instanceof AxiosError) {
       const errorMessage = err.response?.data?.message || err.message || defaultMessage;
       setError(errorMessage);
-      console.error(`API Error: ${errorMessage}`, err.response?.data || err);
+      // console.error(`API Error: ${errorMessage}`, err.response?.data || err);
       return errorMessage;
     } else if (err instanceof Error) {
       const errorMessage = err.message || defaultMessage;
       setError(errorMessage);
-      console.error(`Error: ${errorMessage}`, err);
+      // console.error(`Error: ${errorMessage}`, err);
       return errorMessage;
     } else {
       setError(defaultMessage);
-      console.error(`Unexpected Error: ${defaultMessage}`, err);
+      // console.error(`Unexpected Error: ${defaultMessage}`, err);
       return defaultMessage;
     }
   };
@@ -456,18 +456,18 @@ const unsaveListing = async (listingId: string) => {
 
   const refetchUser = useCallback(async () => {
     if (!token) {
-      console.warn("[refetchUser] No token available, cannot refetch.");
+      // console.warn("[refetchUser] No token available, cannot refetch.");
       return;
     }
-    console.log("[refetchUser] Refetching user data from /api/users/me");
+    // console.log("[refetchUser] Refetching user data from /api/users/me");
     try {
       const res = await api.get('/users/me');
       if (res.data && res.data.user) {
         setUser(res.data.user); // This updates the global state and localStorage
-        console.log("[refetchUser] Successfully refetch and updated user state.");
+        // console.log("[refetchUser] Successfully refetch and updated user state.");
       }
     } catch (err) {
-      console.error("Failed to refetch user data:", err);
+      // console.error("Failed to refetch user data:", err);
       handleApiError(err, "Could not refresh user session.");
     }
   }, [token, setUser]); // Depends on token and the stable setUser function
@@ -524,7 +524,7 @@ const unsaveListing = async (listingId: string) => {
       setUnreadCount(0);
     } catch (err) {
       // Even if backend logout fails, proceed to clear client-side state
-      console.error("Error calling backend logout, proceeding with client-side logout:", err);
+      // console.error("Error calling backend logout, proceeding with client-side logout:", err);
       handleApiError(err, 'Logout failed on server, but client cleared.');
     } finally {
       
@@ -533,12 +533,12 @@ const unsaveListing = async (listingId: string) => {
       localStorage.removeItem('user');
 
       if (globalSocketInstance.connected) { // Disconnect socket on logout
-        console.log("Frontend: Disconnecting socket on logout.");
+        // console.log("Frontend: Disconnecting socket on logout.");
         globalSocketInstance.disconnect();
         setSocketContextState(null);
       }
       // No need to manually clear refresh token cookie from client-side JS, it's HttpOnly
-      console.log("Logged out from client-side.");
+      // console.log("Logged out from client-side.");
       setLoading(false);
       // Optional: Redirect to home or login page
       // window.location.href = '/login'; // Or use useNavigate if within Router context
@@ -575,7 +575,7 @@ const unsaveListing = async (listingId: string) => {
   const sendSocketMessage = useCallback((data: { conversationId: string; text: string; recipientId: string }) => {
     if (socketContextState && socketContextState.connected) {
       socketContextState.emit('sendMessage', data);
-      console.log("Emitted sendMessage via socket:", data);
+      // console.log("Emitted sendMessage via socket:", data);
     } else {
       console.error("Socket not connected. Cannot send message.");
       // Optionally, you could queue the message or show an error to the user.

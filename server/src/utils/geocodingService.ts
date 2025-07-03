@@ -48,7 +48,7 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult |
       const cityComponent = addressComponents.find((comp: any) => comp.types.includes('locality'));
       const city = cityComponent ? cityComponent.long_name : '';
 
-      console.log(`[Geocoding] Successfully geocoded "${address}" to: ${lat}, ${lng}`);
+      // console.log(`[Geocoding] Successfully geocoded "${address}" to: ${lat}, ${lng}`);
       return { latitude: lat, longitude: lng, formattedAddress, city };
     } else {
       console.warn(`[Geocoding] No results found for address: "${address}". Status: ${response.data.status}`);
@@ -91,7 +91,7 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string |
       const cityComponent = addressComponents.find((comp: any) => comp.types.includes('locality'));
       
       const cityName = cityComponent ? cityComponent.long_name : response.data.results[0].formatted_address.split(',')[0];
-      console.log(`[Reverse Geocode] Found city: ${cityName}`);
+      // console.log(`[Reverse Geocode] Found city: ${cityName}`);
       return cityName;
     }
     return null;

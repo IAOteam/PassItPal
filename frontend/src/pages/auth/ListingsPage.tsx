@@ -264,12 +264,12 @@ const ListingsPage: React.FC = () => {
       ) : error ? (
         <div className="text-center py-10 text-red-500">{error}</div>
       ) : (
-        <div className="space-y-10">
+        <div className="mt-10 space-y-10">
           {/* Promoted Listings Section */}
           {promotedListings.length > 0 && (
             <section>
-              <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">Featured Passes</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <h2 className="text-2xl font-semibold mb-10 border-b border-black dark:border-white text-black dark:text-white">Featured Passes</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {promotedListings.map(listing => (
                   <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />
                 ))}
@@ -279,7 +279,7 @@ const ListingsPage: React.FC = () => {
 
           {/* Regular Listings Section */}
           <section>
-            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-black dark:border-white text-black dark:text-white">All Passes</h2>}
+            {promotedListings.length > 0 && displayItems.length > 0 && <h2 className="text-2xl font-semibold mb-10 border-b border-black dark:border-white text-black dark:text-white">All Passes</h2>}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {/* {regularListings.map(listing => (
                 <ListingCard key={listing._id} listing={listing} onClick={() => setSelectedListing(listing)} />

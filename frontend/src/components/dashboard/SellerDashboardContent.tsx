@@ -123,10 +123,10 @@ const SellerDashboardContent: React.FC = () => {
 
   return (
     <>
-    <div className="space-y-8">
+    <div className="flex flex-col lg:flex-row gap-8">
       {/* Section for managing incoming orders */}
-      <div>
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Incoming Orders</h3>
+      <div className='w-full lg:w-1/2 space-y-4 bg-white dark:bg-neutral-800 p-4 rounded-xl shadow'>
+        <h3 className="text-2xl font-semibold dark:text-white mb-4">Incoming Orders</h3>
         {loading && <p className="text-center text-gray-500">Loading orders...</p>}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && orders.length > 0 ? (
@@ -169,14 +169,14 @@ const SellerDashboardContent: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-        ) : !loading && <p className="text-center text-gray-500 py-8">You have no incoming orders.</p>}
+        ) : !loading && <p className="py-8 dark:text-white text-center">You have no incoming orders.</p>}
       </div>
 
       {/* Section for managing own listings */}
-      <div>
+      <div className='w-full lg:w-1/2 space-y-4 bg-white dark:bg-neutral-800 p-4 rounded-xl shadow'>
         <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">My Listings</h3>
-            <Button onClick={() => navigate('/seller/create-listing')}>
+            <h3 className="text-2xl font-semibold dark:text-white">My Listings</h3>
+            <Button className='bg-gradient-to-br from-blue-400 to-purple-400 dark:text-white' onClick={() => navigate('/seller/create-listing')}>
                 Create New Listing
             </Button>
         </div>
@@ -231,7 +231,7 @@ const SellerDashboardContent: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-        ) : !loading && <p className="text-center text-gray-500 py-8">You have no listings.</p>}
+        ) : !loading && <p className="text-center dark:text-white py-8">You have no listings.</p>}
       </div>
     </div>
     <PromotionPaymentModal

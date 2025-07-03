@@ -47,24 +47,24 @@ return <div>Not authenticated.</div>;
 }
 
 return (
-        <div className="container mx-auto p-4 md:p-8">
-    <div className="flex border-b mb-6">
+        <div className="container mx-auto mt-12 p-4 md:p-8 bg-neutral-200 dark:bg-neutral-900">
+    <div className="flex border-b dark:border-white dark:text-white mb-6">
         {user?.role === 'buyer' && (
-            <button onClick={() => setActiveTab('buyer')} className={`py-2 px-4 ${activeTab === 'buyer' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+            <button onClick={() => setActiveTab('buyer')} className={`py-2 px-4 ${activeTab === 'buyer' ? 'border-b-2 dark:border-white dark:text-white' : 'text-muted-foreground text-neutral-700 dark:text-neutral-400'}`}>
                 My Orders
             </button>
         )}
         {user?.role === 'seller' && (
-            <button onClick={() => setActiveTab('seller')} className={`py-2 px-4 ${activeTab === 'seller' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+            <button onClick={() => setActiveTab('seller')} className={`py-2 px-4 ${activeTab === 'seller' ? 'border-b-2 dark:border-white dark:text-white' : 'text-muted-foreground text-neutral-700 dark:text-neutral-400'}`}>
                 My Listings & Offers
             </button>
         )}
-        <button onClick={() => setActiveTab('saved')} className={`py-2 px-4 ${activeTab === 'saved' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}>
+        <button onClick={() => setActiveTab('saved')} className={`py-2 px-4 ${activeTab === 'saved' ? 'border-b-2 dark:border-white dark:text-white' : 'text-muted-foreground text-neutral-700 dark:text-neutral-400'}`}>
             Saved Items
         </button>
     </div>
 
-    <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-lg p-6 w-full">
+    <div className="w-full mb-10">
         {activeTab === 'buyer' && <BuyerDashboardContent />}
         {activeTab === 'seller' && <SellerDashboardContent />}
         {activeTab === 'saved' && <SavedListingsContent />}

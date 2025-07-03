@@ -86,20 +86,20 @@ const BuyerDashboardContent: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">My Orders</h3>
-        <Button variant="outline" onClick={() => navigate('/listings')}>
+    <div className='my-10 p-8 bg-white dark:bg-neutral-800 rounded-lg shadow-lg'>
+      <div className="flex justify-between items-center mb-10 dark:text-white">
+        <h3 className="text-2xl font-semibold">My Orders</h3>
+        <Button className='bg-gradient-to-br from-blue-400 to-purple-400 '  onClick={() => navigate('/listings')}>
           Browse More Passes
         </Button>
       </div>
 
-      {loading && <p className="text-center text-gray-500">Loading your orders...</p>}
+      {loading && <p className="text-center text-gray-500 ">Loading your orders...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
       
       {!loading && !error && (
         orders.length > 0 ? (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg dark:text-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -146,9 +146,9 @@ const BuyerDashboardContent: React.FC = () => {
             </Table>
           </div>
         ) : (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <div className="text-center py-12 border-2 border-dashed rounded-lg dark:text-white">
             <h4 className="text-lg font-medium">You haven't placed any orders yet.</h4>
-            <p className="text-gray-500 mt-1">Start by browsing passes available for sale!</p>
+            <p className="mt-1">Start by browsing passes available for sale!</p>
           </div>
         )
       )}

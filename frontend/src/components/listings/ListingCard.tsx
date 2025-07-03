@@ -1,5 +1,4 @@
-// frontend/src/components/listings/ListingCard.tsx
-
+// src/components/listings/ListingCard.tsx
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { type IListing } from '@/types';
@@ -14,31 +13,31 @@ import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Star, Bookmark, CalendarDays, MapPin, NotebookText, MessageCircle } from 'lucide-react';
 
-
 interface ListingCardProps {
   listing: IListing;
-  onClick: () => void; // This will be used for the "View Details" button
+  onClick: () => void;
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
-  // --- CONSOLIDATED HOOKS AND VARIABLES ---
-  // All hooks and variables are declared only ONCE here.
   const navigate = useNavigate();
-  const { user, isAuthenticated, getOrCreateConversation, saveListing, unsaveListing } = useAuth();
-  const isSaved = user?.savedListings?.includes(listing._id);
-  const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(listing.cultPassType)}`;
+  const {
+    user,
+    isAuthenticated,
+    getOrCreateConversation,
+    saveListing,
+    unsaveListing,
+  } = useAuth();
 
-  // --- HANDLER FUNCTIONS ---
+  const isSaved = user?.savedListings?.includes(listing._id);
+  const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(
+    listing.cultPassType
+  )}`;
+
   const handleContactSeller = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the main card click
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/listings/${listing?._id}` } });
-      return;
-    }
-    if (user?._id === listing.seller._id) {
-      alert("You cannot contact yourself.");
-      return;
-    }
+    e.stopPropagation();
+    if (!isAuthenticated) return navigate('/login', { state: { from: `/listings/${listing._id}` } });
+    if (user?._id === listing.seller._id) return alert("You cannot contact yourself.");
+
     try {
       const conversationId = await getOrCreateConversation(listing.seller._id);
       navigate(`/messages/${conversationId}`);
@@ -47,42 +46,42 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     }
   };
 
-  const handleSaveClick = (e: React.MouseEvent) => {
+  const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated) {
-        navigate('/login');
-        return;
-    }
-    if (isSaved) {
-      unsaveListing(listing._id);
-    } else {
-      saveListing(listing._id);
+    if (!isAuthenticated) return navigate('/login');
+
+    try {
+      if (isSaved) {
+        await unsaveListing(listing._id);
+      } else {
+        await saveListing(listing._id);
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
     }
   };
 
   return (
     <div
       onClick={onClick}
-
-      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg  bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
-
+      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
     >
-      {/* Smart Save/Bookmark Button */}
+      {/* Save Button */}
       <Button
-          size="icon"
-          className="absolute top-2 right-2 z-10 bg-black/30 text-white rounded-full hover:bg-black/50"
-          onClick={handleSaveClick}
-        >
-          <Bookmark fill={isSaved ? 'white' : 'none'} />
-        </Button>
+        size="icon"
+        className="absolute top-2 right-2 z-10 bg-black/30 text-white rounded-full hover:bg-black/50"
+        onClick={handleSaveClick}
+        aria-label={isSaved ? 'Unsave Listing' : 'Save Listing'}
+      >
+        <Bookmark fill={isSaved ? 'white' : 'none'} />
+      </Button>
 
-      {/* Image Container */}
+      {/* Image */}
       <div className="relative overflow-hidden">
         <div
           className="h-48 w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
           style={{ backgroundImage: `url(${listing.adImageUrl || placeholderImage})` }}
         />
-        
         {listing.isPromoted && (
           <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-blue-400 px-2 py-1 text-xs font-bold text-neutral-900">
             <Star className="h-3 w-3" fill="currentColor" />
@@ -91,32 +90,32 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         )}
       </div>
 
-      {/* Content */}
+      {/* Details */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className='flex justify-between'>
+        <div className="flex justify-between items-start">
           <div className="flex-1">
             <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
               {listing.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
             </Badge>
-            <h3 className="truncate text-xl font-bold dark:text-white" title={listing.cultPassType}>
+            <h3 className="truncate text-xl font-bold dark:text-white mt-1" title={listing.cultPassType}>
               {listing.cultPassType}
             </h3>
-            <div className='mt-2 flex items-center text-xs font-medium text-gray-500 gap-1'>
+            <div className="mt-2 flex items-center text-xs font-medium text-gray-500 gap-1">
               <CalendarDays className="h-3 w-3" />
               <span>Expires: {new Date(listing.expiryDate).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className='mt-2 text-right flex-shrink-0 ml-2'>
+          <div className="ml-4 text-right whitespace-nowrap">
             <p className="line-through text-xs font-medium text-gray-500">
               ₹{listing.originalPrice.toLocaleString('en-IN')}
             </p>
-            <p className="mt-1 text-lg font-bold text-green-600">
+            <p className="text-lg font-bold text-green-600 mt-1">
               ₹{listing.askingPrice.toLocaleString('en-IN')}
             </p>
           </div>
         </div>
 
-        {/* Seller Info & Location/Distance */}
+        {/* Seller Info & Distance */}
         <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-700">
           <a
             href={`/profile/${listing.seller._id}`}
@@ -128,7 +127,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
               {listing.seller.username}
             </span>
           </a>
-          <div className='flex items-center gap-1 text-xs font-medium text-gray-500'>
+          <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
             <MapPin className="h-3 w-3" />
             <p>{listing.city}</p>
             {user?.latitude && user?.longitude && (
@@ -139,12 +138,20 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Buttons */}
         <div className="flex justify-around gap-2 mt-6">
-          <Button className="w-auto flex-1 bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800/30 dark:text-blue-300 dark:hover:bg-blue-800/50" size="sm" onClick={onClick}>
+          <Button
+            className="flex-1 bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800/30 dark:text-blue-300 dark:hover:bg-blue-800/50"
+            size="sm"
+            onClick={onClick}
+          >
             <NotebookText className="mr-2 h-4 w-4" /> View Details
           </Button>
-          <Button className="w-auto flex-1 bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50" size="sm" onClick={handleContactSeller}>
+          <Button
+            className="flex-1 bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800/30 dark:text-green-300 dark:hover:bg-green-800/50"
+            size="sm"
+            onClick={handleContactSeller}
+          >
             <MessageCircle className="mr-2 h-4 w-4" /> Contact
           </Button>
         </div>

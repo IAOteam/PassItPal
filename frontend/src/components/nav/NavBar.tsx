@@ -323,6 +323,28 @@ export function NavBar() {
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
+
+            <Button
+              variant="outline"
+              className="hidden md:flex"
+              onClick={() => {
+                if (isAuthenticated) {
+                  // If a seller, go to create page. If not, maybe guide them to switch roles.
+                  if (user?.role === 'seller') {
+                    navigate('/seller/create-listing');
+                  } else {
+                    alert("Please switch to a seller account from your profile to create a listing.");
+                    navigate('/profile');
+                  }
+                } else {
+                  // If not logged in, redirect to login but remember where they wanted to go
+                  navigate('/login', { state: { from: '/seller/create-listing' } });
+                }
+              }}
+              >
+              + Create Listing
+            </Button>
+
             
             {isAuthenticated ? (
               <div className="flex items-center gap-3 md:gap-4">

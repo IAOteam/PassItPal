@@ -41,9 +41,10 @@ export const createListing = async (req: Request, res: Response) => {
     if (!req.user.isEmailVerified) {
         return res.status(403).json({ message: 'Seller email must be verified to create listings.' });
     }
-    if (!req.user.isMobileVerified) {
+    /*if (!req.user.isMobileVerified) {
       return res.status(403).json({ message: 'Seller mobile number must be verified to create listings.' });
-    }
+    }*/ 
+   // TODO: Re-enable mobile verification once Twilio subscription is active.
 
     // Geocode locationName
     const geocodeResult = await geocodeAddress(locationName);

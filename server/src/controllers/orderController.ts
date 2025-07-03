@@ -230,7 +230,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             order.buyer.toString(),
             'transaction', // or a more specific 'order_accepted' type
             `Your offer for "${order.listing?.cultPassType}" was accepted by the seller!`,
-            `/order/${order._id.toString()}` // Link to the order details
+            `/order/${order._id.toString()}` // Link to their dashboard where a "Pay Now" button will appear
         );
 
     } else if (status === 'rejected') {

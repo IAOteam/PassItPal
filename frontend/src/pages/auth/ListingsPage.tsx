@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import ListingCard from '@/components/listings/ListingCard'; // Import the new card component
 import ListingDetailModal from '@/components/listings/ListingDetailModal'; // Import the new modal component
 import AdCard, { type IAd } from '@/components/listings/AdCard';
+import { useLocation } from 'react-router-dom'
 import { DualRangeSlider } from "@/components/ui/slider"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,8 @@ const ListingsPage: React.FC = () => {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
   const [totalPages, setTotalPages] = useState(0);
+
+  const location = useLocation();
 
   if (totalPages === 0 && (locationTerm || searchTerm)) {
         // ...show a message and then fetch the default view.
@@ -95,11 +98,22 @@ const ListingsPage: React.FC = () => {
     setSearchParams(params, { replace: true });
 
     api.get(`/listings?${params.toString()}`).then(response => {
-      setPromotedListings(response.data.promotedListings || []);
-      setRegularListings(response.data.regularListings || []);
-      setAds(response.data.ads || []);
-      setCurrentPage(response.data.currentPage || 1);
-      setTotalPages(response.data.totalPages || 0);
+
+        setPromotedListings(response.data.promotedListings || []);
+        setRegularListings(response.data.regularListings || []);
+        setAds(response.data.ads || []);
+        setCurrentPage(response.data.currentPage || 1);
+        setTotalPages(response.data.totalPages || 0);
+        
+        const { totalCount } = response.data;
+        if (location.state?.fromHomepage && totalCount === 0) {
+        alert(`No listings found for "${locationTerm}". Showing all available listings.`);
+        // Reset the location filter and search params to show the default view
+        setLocationTerm('');
+        setSearchParams({}); // This will trigger a re-fetch via useEffect
+        return; // Stop processing this response
+    }
+
     }).catch(err => {
       setError(err.response?.data?.message || 'Failed to fetch listings.');
     }).finally(() => {

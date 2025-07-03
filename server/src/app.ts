@@ -63,7 +63,9 @@ app.use(helmet()); // Add Helmet to set various HTTP headers for security
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: [ process.env.CLIENT_URL || 'http://localhost:5173',
+  'https://www.passitpal.com',                        // Your new production domain
+  'https://passitpal.com',  ],    
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true 
 }));

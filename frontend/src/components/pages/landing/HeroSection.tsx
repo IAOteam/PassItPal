@@ -14,7 +14,7 @@ const HeroSection: React.FC = () => {
   const heroRef = useRef(null); // Ref for the entire hero section for scroll tracking
   const googleMapsApiKey = import.meta.env.VITE_Maps_API_KEY;
 
-  // --- MERGED ANIMATION LOGIC ---
+  // ---  ANIMATION LOGIC ---
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"], // Track scroll from the start of the hero section
@@ -22,7 +22,7 @@ const HeroSection: React.FC = () => {
   // Transform to move the content up as the user scrolls down
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "-40%"]);
 
-  // --- AUTOCOMPLETE LOGIC (from the newer version) ---
+  // --- AUTOCOMPLETE LOGIC  ---
   const {
     ready,
     value,
@@ -72,12 +72,13 @@ const HeroSection: React.FC = () => {
       console.warn("VITE_Maps_API_KEY is not set. Location autocomplete will not work.");
     }
   }, [googleMapsApiKey, initializeAutocomplete]);*/
-
-  const handleSelectSuggestion = (description: string) => {
+  
+   const handleSelectSuggestion = (description: string) => {
     setValue(description, false);
     clearSuggestions();
-    navigate(`/listings?locationName=${encodeURIComponent(description)}`);
-  };
+    // Add `fromHomepage=true` to the navigation state
+    navigate(`/listings?locationName=${encodeURIComponent(description)}`, { state: { fromHomepage: true } });
+};
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

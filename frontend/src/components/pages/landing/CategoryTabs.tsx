@@ -7,8 +7,8 @@ const categories = [
   { name: 'Fitness', value: 'GYM_MEMBERSHIP' },
   { name: 'Events', value: 'EVENT_TICKET' },
   { name: 'Courses', value: 'ONLINE_COURSE' },
-  { name: 'Trending Now', value: 'trending' }, // 'trending' can be a special filter on the backend
-  { name: 'Short-Term Passes', value: 'short-term' }, // Another potential special filter
+  { name: 'Trending Now', value: 'trending' }, 
+  { name: 'Short-Term Passes', value: 'short-term' },
 ];
 
 const CategoryTabs: React.FC = () => {

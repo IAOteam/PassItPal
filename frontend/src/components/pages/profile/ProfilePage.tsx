@@ -1,14 +1,17 @@
 // frontend/src/pages/profile/ProfilePage.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth'; 
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge"
 import api from '@/lib/api'; // To fetch reviews
 import StarRating from '@/components/ui/StarRating'; //Our star component
 import { Avatar } from 'antd'; // For reviewer avatars
 import { UserOutlined } from '@ant-design/icons';
+import { Mail, Phone, MapPin, Edit3, Save, X, Shield, Settings, ChevronRight } from 'lucide-react';
+
 
 interface IReview {
   _id: string;
@@ -24,17 +27,17 @@ interface IReview {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, clearError, switchUserRole: switchUserRoleInContext,requestOtp /*setUser : setUserInContext*/ } = useAuth();
-  
+  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, clearError, switchUserRole: switchUserRoleInContext, requestOtp /*setUser : setUserInContext*/ } = useAuth();
+
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [city, setCity] = useState('');
   // const [profilePictureUrl, setProfilePictureUrl] = useState(''); 
-//to implement file upload feature
+  //to implement file upload feature
   const [profileUpdateLoading, setProfileUpdateLoading] = useState<boolean>(false);
   const [roleChangeLoading, setRoleChangeLoading] = useState<boolean>(false);
-  const [otpRequestLoading, setOtpRequestLoading] = useState<boolean>(false); 
+  const [otpRequestLoading, setOtpRequestLoading] = useState<boolean>(false);
 
   const [message, setMessage] = useState<string | null>(null); // Unified message state
   const [isError, setIsError] = useState<boolean>(false);
@@ -65,7 +68,7 @@ const ProfilePage: React.FC = () => {
       setCity(user.city || ''); // User object in AuthContext should have city directly
       // setProfilePictureUrl(user.profilePictureUrl || '');
       // Clear previous action messages when user data changes (e.g., after successful update from context)
-      setMessage(null); 
+      setMessage(null);
       setIsError(false);
       clearError();
     }
@@ -82,11 +85,11 @@ const ProfilePage: React.FC = () => {
 
   const handleEditToggle = () => {
     if (!isEditing && user) { // Entering edit mode
-        // Reset form fields to current user state from context
-        setUsername(user.username || '');
-        setMobileNumber(user.mobileNumber || '');
-        setCity(user.city || '');
-        // setProfilePictureUrl(user.profilePictureUrl || '');
+      // Reset form fields to current user state from context
+      setUsername(user.username || '');
+      setMobileNumber(user.mobileNumber || '');
+      setCity(user.city || '');
+      // setProfilePictureUrl(user.profilePictureUrl || '');
     }
     setIsEditing(!isEditing);
     setMessage(null); // Clear messages when toggling edit mode
@@ -100,7 +103,7 @@ const ProfilePage: React.FC = () => {
     setProfileUpdateLoading(true);
 
     const profileData: { username?: string; mobileNumber?: string; city?: string; } = {};
-    
+
     if (username !== (user?.username || '')) profileData.username = username;
     // Send mobile number if it's changed OR if it's empty and was previously set (to clear it)
     if (mobileNumber !== (user?.mobileNumber || '')) {
@@ -161,7 +164,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-   const handleRequestMobileOtp = async () => {
+  const handleRequestMobileOtp = async () => {
     if (!user?.email) {
       setMessage('User email not found. Cannot request OTP.');
       setIsError(true);
@@ -194,117 +197,283 @@ const ProfilePage: React.FC = () => {
   if (!user) {
     return <div className="flex items-center justify-center min-h-[calc(100vh-80px)]"><h2 className="text-xl font-bold text-red-500">User not found. Please log in.</h2></div>;
   }
-  
+
   const defaultProfilePicture = '/sharing.svg';
 
- return (
-   <div className="bg-neutral-900 min-h-screen text-white">
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Profile Card */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="bg-black border border-neutral-800 rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 text-white text-center">
-              {isEditing ? "Edit Profile" : "My Profile"}
-            </h2>
-            {/* ... rest of the profile card ... */}
-             {message && (
-              <div className={`p-3 text-sm rounded border mb-4 ${isError ? 'bg-red-900/50 border-red-700 text-red-300' : 'bg-green-900/50 border-green-700 text-green-300'}`}>
-                {message}
-              </div>
-            )}
+  const [activeTab, setActiveTab] = useState<'profile'>('profile');
 
-            <div className="flex justify-center mb-4">
-              <img src={user.profilePictureUrl || defaultProfilePicture} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+
+  return (
+    <div className="mt-12 min-h-screen flex">
+      {/* Sidebar */}
+      <aside className="w-1/4 bg-white dark:bg-neutral-900 dark:text-white p-6 pt-10">
+
+        {/* Tab Navigation */}
+        <nav className="space-y-2">
+          <Button
+            className="w-full justify-between bg-neutral-200 dark:bg-neutral-800"
+
+            onClick={() => setActiveTab('profile')}
+          >
+            My Profile
+            <ChevronRight />
+          </Button>
+
+          <Button
+            className="w-full justify-between"
+            onClick={() => navigate('/dashboard')}
+          >
+            Go to Dashboard
+            <ChevronRight />
+          </Button>
+
+          <Button
+            className="w-full justify-between"
+            onClick={() => navigate('/change-password')}
+          >
+            Change Password
+            <ChevronRight />
+          </Button>
+
+          {user.role !== 'admin' && (
+            <div>
+              {user.role === 'buyer' ? (
+                <>
+                  <Button
+                    className="w-full justify-between"
+                    onClick={() => handleSwitchRole('seller')}
+                    disabled={roleChangeLoading || authLoadingGlobal}>
+                    Switch to Seller
+                    <ChevronRight />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-between"
+                    onClick={() => handleSwitchRole('buyer')}
+                    disabled={roleChangeLoading || authLoadingGlobal}
+                  >
+                    Switch to Buyer
+                    <ChevronRight />
+                  </Button>
+                </>
+              )}
             </div>
+          )}
+        </nav>
 
-            {isEditing ? (
-              <form onSubmit={handleProfileSave} className="space-y-4">
-                {/* ... Edit form is unchanged ... */}
-                 <div><Label htmlFor="username">Username</Label><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
-                 <div><Label htmlFor="email">Email (cannot be changed)</Label><Input id="email" value={user.email} readOnly disabled /></div>
-                 <div><Label htmlFor="mobileNumber">Mobile Number</Label><Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="10-digit number" /></div>
-                 <div><Label htmlFor="city">City</Label><Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" /></div>
-                 <div className="flex justify-end gap-2 mt-4"><Button type="button" variant="secondary" onClick={handleEditToggle}>Cancel</Button><Button type="submit" disabled={profileUpdateLoading}>Save Changes</Button></div>
-              </form>
-            ) : (
-              <div className="space-y-3">
-                 {/* ... View mode is unchanged ... */}
-                <div><span className="font-semibold text-neutral-400">Username:</span> {user.username || 'N/A'}</div>
-                <div><span className="font-semibold text-neutral-400">Email:</span> {user.email} {user.isEmailVerified && <span className="text-green-400 text-xs">(Verified)</span>}</div>
-                <div className="flex items-center justify-between"><div><span className="font-semibold text-neutral-400">Mobile:</span> {user.mobileNumber || 'N/A'} {user.mobileNumber && (user.isMobileVerified ? <span className="text-green-400 text-xs">(Verified)</span> : <span className="text-red-400 text-xs">(Not Verified)</span>)}</div>{user.mobileNumber && !user.isMobileVerified && (<Button size="sm" variant="link" onClick={handleRequestMobileOtp} disabled={otpRequestLoading}>Verify</Button>)}</div>
-                <div><span className="font-semibold text-neutral-400">Role:</span> <span className="capitalize">{user.role}</span></div>
-                <div><span className="font-semibold text-neutral-400">City:</span> {user.city || 'N/A'}</div>
-                <div className="pt-4 space-y-2"><Button variant="outline" className="w-full" onClick={() => navigate('/change-password')}>Change Password</Button><Button className="w-full" onClick={handleEditToggle}>Edit Profile</Button></div>
-              </div>
-            )}
-          </div>
-           {/* Role Change Section */}
-           {!isEditing && user.role !== 'admin' && (
-                <div className="bg-black border border-neutral-800 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-3">Switch Account Type</h3>
-                    {user.role === 'buyer' ? (
-                        <div>
-                            <p className="text-sm text-neutral-400 mb-3">Become a seller to list your own passes.</p>
-                            <Button className="w-full" onClick={() => handleSwitchRole('seller')} disabled={roleChangeLoading || authLoadingGlobal}>Switch to Seller</Button>
-                        </div>
-                    ) : (
-                        <div>
-                            <p className="text-sm text-neutral-400 mb-3">Switch back to a buyer account.</p>
-                            <Button className="w-full" variant="secondary" onClick={() => handleSwitchRole('buyer')} disabled={roleChangeLoading || authLoadingGlobal}>Switch to Buyer</Button>
-                        </div>
-                    )}
+      </aside>
+
+      {/* Right Content */}
+      <main className="w-3/4 p-10 bg-neutral-300 dark:bg-neutral-800">
+        {activeTab === 'profile' && (
+          <>
+            <div className="p-6 bg-neutral-100 dark:bg-neutral-700 rounded-lg shadow-lg dark:text-white">
+
+              {message && (
+                <div className={`p-3 text-sm rounded border mb-4 ${isError ? 'bg-red-900/50 border-red-700 text-red-300' : 'bg-green-900/50 border-green-700 text-green-300'}`}>
+                  {message}
                 </div>
-            )}
-        </div>
+              )}
 
-        {/* Right Column: Reputation & Reviews */}
-        <div className="lg:col-span-2">
-            {/* NEW: Reputation Summary */}
-            <div className="bg-black border border-neutral-800 rounded-lg p-6 mb-8">
-                <h3 className="text-2xl font-bold mb-4">Your Reputation</h3>
-                <div className="flex items-center space-x-4">
-                    <StarRating rating={user.averageRating || 0} size={28} />
-                    <div className="text-neutral-300">
-                        <span className="font-bold text-white text-xl">{(user.averageRating || 0).toFixed(1)}</span>
-                        <span className="ml-1">out of 5</span>
-                    </div>
-                    <div className="text-neutral-400 text-lg">
-                        ({user.reviewCount || 0} reviews)
-                    </div>
-                </div>
-            </div>
+              {isEditing ? (
 
-            {/* NEW: Reviews List */}
-            <div className="bg-black border border-neutral-800 rounded-lg p-6">
-                <h3 className="text-2xl font-bold mb-6">What Others Are Saying</h3>
-                {reviewsLoading ? (
-                    <p className="text-neutral-400">Loading reviews...</p>
-                ) : reviews.length > 0 ? (
-                    <div className="space-y-6">
-                        {reviews.map(review => (
-                            <div key={review._id} className="border-b border-neutral-800 pb-6 last:border-b-0 last:pb-0">
-                                <div className="flex items-center mb-2">
-                                    <Avatar src={review.reviewer.profilePictureUrl} icon={<UserOutlined />} size={40} />
-                                    <div className="ml-4">
-                                        <p className="font-semibold text-white">{review.reviewer.username}</p>
-                                        <p className="text-xs text-neutral-500">{new Date(review.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <StarRating rating={review.rating} size={16} className="my-2" />
-                                <p className="text-neutral-300">{review.comment}</p>
+                <form onSubmit={handleProfileSave} className=" space-y-6  ">
+                  <div>
+                    <h2 className="text-2xl font-semibold flex items-center gap-2 mb-4">
+                      <Edit3 className="w-5 h-5" />
+                      Edit Profile
+                    </h2>
+                  </div>
+
+                  {/* Grid layout for fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className='space-y-2'>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="email">Email (cannot be changed)</Label>
+                      <Input
+                        id="email"
+                        value={user.email}
+                        readOnly
+                        disabled
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="mobileNumber">Mobile Number</Label>
+                      <Input
+                        id="mobileNumber"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        placeholder="10-digit number"
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="Your city"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={handleEditToggle}>
+                      Cancel
+                    </Button>
+                    <Button className='bg-black dark:bg-white text-white dark:text-black' type="submit" disabled={profileUpdateLoading}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </div>
+                </form>
+
+
+              ) :
+
+                (
+
+                  <div className="flex flex-col md:flex-row justify-center md:items-start gap-20">
+                    <div className="relative">
+                      <img
+                        src={user.profilePictureUrl || defaultProfilePicture}
+                        alt="Profile"
+                        className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md"
+                      />
+                      <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
+                        <Shield className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex-1 text-center md:text-left">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                          <h1 className="text-3xl font-bold">{user.username}</h1>
+                          <div className="flex items-center gap-2">
+                            <Badge  className="capitalize bg-neutral-300 dark:bg-neutral-800">
+                              {user.role}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 text-muted-foreground">
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                            <Mail className="w-4 h-4" />
+                            <span>{user.email}</span>
+                            {user.isEmailVerified && (
+                              <Badge variant="outline" className="text-green-600 border-green-600">
+                                Verified
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                            <Phone className="w-4 h-4" />
+                            <span>{user.mobileNumber || "Not provided"}</span>
+                            {user.mobileNumber &&
+                              (user.isMobileVerified ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                  Verified
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs">
+                                  Unverified
+                                </Badge>
+                              ))}
+                          </div>
+
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{user.city || "Not specified"}</span>
+                          </div>
+
+
+                        </div>
+
+                        <div className="mt-6 flex flex-col sm:flex-row justify-between gap-16">
+                          <div className="flex items-center gap-4">
+                            <StarRating rating={user.averageRating} size={20} />
+                            <div>
+                              <span className="font-bold text-xl">{(user.averageRating || 0).toFixed(1)}</span>
+                              <span className="ml-1">out of 5</span>
                             </div>
-                        ))}
+                          </div>
+
+                          <Button className='bg-black dark:bg-white text-white dark:text-black' onClick={handleEditToggle} variant={isEditing ? "outline" : "default"}>
+                            {isEditing ? (
+                              <>
+                                <X className="w-4 h-4 mr-2" />
+                                Cancel
+                              </>
+                            ) : (
+                              <>
+                                <Edit3 className="w-4 h-4 mr-2" />
+                                Edit Profile
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                ) : (
-                    <p className="text-neutral-400">You have not received any reviews yet.</p>
+                  </div>
                 )}
             </div>
-        </div>
-      </div>
+
+
+            <div className='mt-10'>
+              <div className='flex items-center space-x-4'>
+                <h3 className="text-2xl font-bold dark:text-white">Reviews</h3>
+                <p className="dark:text-neutral-300 text-lg">({user.reviewCount || 0} reviews)</p>
+              </div>
+              {reviewsLoading ? (
+                <p className="text-neutral-400">Loading reviews...</p>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review: any) => (
+                    <div key={review._id}>
+                      <div className="mt-6 p-6 bg-neutral-100 dark:bg-neutral-700 rounded-lg shadow-lg dark:text-white">
+                        <div className="flex items-start gap-4">
+                          <Avatar src={review.reviewer.profilePictureUrl} icon={<UserOutlined />} size={40} />
+
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold">{review.reviewer.username}</h4>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(review.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            <StarRating rating={review.rating} size={16} />
+
+                            <p className="mt-2 text-muted-foreground">{review.comment}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-neutral-400">You have not received any reviews yet.</p>
+              )}
+            </div>
+
+          </>
+        )}
+      </main>
     </div>
-   </div>
   );
 };
 

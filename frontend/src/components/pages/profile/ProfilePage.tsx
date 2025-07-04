@@ -204,9 +204,9 @@ const ProfilePage: React.FC = () => {
 
 
   return (
-    <div className="mt-12 min-h-screen flex">
+    <div className="min-h-screen flex">
       {/* Sidebar */}
-      <aside className="w-1/4 bg-white dark:bg-neutral-900 dark:text-white p-6 pt-10">
+      <aside className="w-1/4 p-6 pt-20 bg-white dark:bg-neutral-900 dark:text-white">
 
         {/* Tab Navigation */}
         <nav className="space-y-2">
@@ -266,7 +266,7 @@ const ProfilePage: React.FC = () => {
       </aside>
 
       {/* Right Content */}
-      <main className="w-3/4 p-10 bg-neutral-300 dark:bg-neutral-800">
+      <main className="w-3/4 p-10 pt-20 bg-neutral-300 dark:bg-neutral-800">
         {activeTab === 'profile' && (
           <>
             <div className="p-6 bg-neutral-100 dark:bg-neutral-700 rounded-lg shadow-lg dark:text-white">
@@ -389,9 +389,15 @@ const ProfilePage: React.FC = () => {
                                   Verified
                                 </Badge>
                               ) : (
+                                <>
                                 <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs">
                                   Unverified
                                 </Badge>
+                                {user.mobileNumber && !user.isMobileVerified && (
+                                  <Button className='ml-4 dark:text-white' size="sm" variant="link" 
+                                  onClick={handleRequestMobileOtp} disabled={otpRequestLoading}>Verify
+                                  </Button>)}
+                                  </>
                               ))}
                           </div>
 

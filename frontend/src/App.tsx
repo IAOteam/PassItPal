@@ -36,10 +36,18 @@ import HelpPage from "./pages/auth/HelpPage.tsx";
 import TermsPage from "./pages/auth/TermsPage.tsx";
 import PrivacyPolicyPage from "./pages/auth/PrivacyPolicyPage.tsx";
 import ContactPage from "./pages/auth/ContactPage.tsx";
-
+import { Toaster } from 'react-hot-toast';
+import BlogPage from "./pages/auth/BlogPage.tsx";
+import HowItWorksPage from "./pages/auth/HowItWorksPage.tsx";
+import SafetyGuidePage from "./pages/auth/SafetyGuidePage.tsx";
+import BlogPostSafetyTips from "./pages/blogs/BlogPostSafetyTips.tsx";
+import BlogPostGymPass from "./pages/blogs/BlogPostGymPass.tsx";
+import BlogPostAiSub from "./pages/blogs/BlogPostAiSub.tsx";
 
 function App() {
   return (
+    <>
+    <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
     <Router>
       <AuthProvider>
         <Routes>
@@ -96,7 +104,12 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/contact" element={<ContactPage />} />
-
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/safety-guide" element={<SafetyGuidePage />} />
+          <Route path="/blog/5-tips-for-safe-transactions" element={<BlogPostSafetyTips />} />
+          <Route path="/blog/how-to-sell-your-gym-pass" element={<BlogPostGymPass />} />
+          <Route path="/blog/how-to-sell-ai-subscription" element={<BlogPostAiSub />} />
           {/* Catch-all 404 Not Found page */}
           <Route path="*" element={
             <div className="flex items-center justify-center h-screen">
@@ -106,6 +119,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </>
   );
 }
 //add a game in 404 page 

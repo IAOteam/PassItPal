@@ -251,14 +251,14 @@ export const getListingById = async (req: Request, res: Response) => {
     // 1. Check cache first
     const cachedListing = await redis.get(cacheKey);
     if (cachedListing) {
-      console.log(`[Cache HIT] for ${cacheKey}`);
+      // console.log(`[Cache HIT] for ${cacheKey}`);
       const listing = JSON.parse(cachedListing);
       // We still increment views, but don't wait for it
       Listing.updateOne({ _id: listingId }, { $inc: { views: 1 } }).exec();
       return res.json(listing);
     }
 
-    console.log(`[Cache MISS] for ${cacheKey}`);
+    // console.log(`[Cache MISS] for ${cacheKey}`);
     // 2. If not in cache, get from DB
     const listing = await Listing.findById(listingId).populate('seller', 'username profilePictureUrl averageRating reviewCount');
     if (!listing) {
@@ -493,7 +493,7 @@ export const promoteListing = async (req: Request, res: Response) => {
     // In a real application, you would integrate a payment gateway like Razorpay or Stripe here.
     // The logic would only proceed after confirming a successful payment.
     // For now, we'll assume payment was successful.
-    console.log(`[Promote Listing] Simulating successful payment for listing: ${id}`);
+    // console.log(`[Promote Listing] Simulating successful payment for listing: ${id}`);
 
     // Update the listing's promotion status
     listing.isPromoted = true;

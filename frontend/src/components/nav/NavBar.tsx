@@ -326,7 +326,7 @@ export function NavBar() {
 
             <Button
               variant="outline"
-              className="hidden md:flex"
+              className="hidden md:flex dark:text-black/80 dark:bg-white dark:hover:bg-white/90 dark:hover:text-black transition-colors duration-300"
               onClick={() => {
                 if (isAuthenticated) {
                   // If a seller, go to create page. If not, maybe guide them to switch roles.

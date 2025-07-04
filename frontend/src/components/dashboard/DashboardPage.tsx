@@ -1,26 +1,37 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+// frontend/src/components/dashboard/BuyerDashboardContent.tsx
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent';
-import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent';
-import SavedListingsContent from '@/components/dashboard/SavedListingsContent';
-import { Avatar } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import api from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Settings, LogOut, Plus, ChevronRight } from 'lucide-react';
 
-const DashboardPage: React.FC = () => {
-    const { user, loading, logout } = useAuth();
-    const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'orders' | 'listings' | 'saved'>('orders');
 
-    if (loading) return <div>Loading dashboard...</div>;
-    if (!user) return <div>Not authenticated.</div>;
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/');
-    };
+// Define a type for the order object from the /api/orders/me endpoint
+interface MyOrder {
+  _id: string;
+  listing: {
+    _id: string;
+    cultPassType: string;
+    adImageUrl?: string;
+  };
+  seller: {
+    _id: string;
+    username?: string;
+  };
+  offerPrice: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+const BuyerDashboardContent: React.FC = () => {
+  const navigate = useNavigate();
+  const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuth();
+  const [orders, setOrders] = useState<MyOrder[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
 
     return (
         <div className="flex min-h-screen">
@@ -81,31 +92,101 @@ const DashboardPage: React.FC = () => {
                         </Button>
 
 
-                    </nav>
-                </div>
-                <div className='space-y-4'>
-                    {user.role === 'seller' && (
-                        <Button className='w-full bg-gradient-to-br from-blue-400 to-purple-400 dark:text-white' onClick={() => navigate('/seller/create-listing')}>
-                            <Plus />Create New Listing
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to cancel this order request?")) return;
+
+    try {
+      const message = await cancelOrder(orderId);
+      alert(message);
+      // Refresh the list to show the updated status
+      fetchMyOrders();
+    } catch (err: any) {
+      alert(err.message || "An error occurred while cancelling the order.");
+    }
+  };
+
+
+  const getStatusBadgeVariant = (status: MyOrder['status']) => {
+    switch (status) {
+      case 'pending': return 'outline';
+      case 'accepted': return 'success';
+      case 'completed': return 'default';
+      case 'rejected':
+      case 'cancelled':
+        return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  return (
+    <div className='my-10'>
+      <div className="flex justify-between items-center mb-10 dark:text-white">
+        <h3 className="text-xl font-semibold">My Orders</h3>
+        <Button className='bg-gradient-to-br from-blue-400 to-purple-400 ' onClick={() => navigate('/listings')}>
+          Browse More Passes
+        </Button>
+      </div>
+
+      {loading && <p className="text-center text-gray-500 ">Loading your orders...</p>}
+      {error && <p className="text-center text-red-500">{error}</p>}
+
+      {!loading && !error && (
+        orders.length > 0 ? (
+          <div className="border rounded-lg dark:text-white">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Listing</TableHead>
+                  <TableHead>Seller</TableHead>
+                  <TableHead>Your Offer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order._id}>
+                    <TableCell className="font-medium">{order.listing.cultPassType}</TableCell>
+                    <TableCell>{order.seller.username || 'N/A'}</TableCell>
+                    <TableCell>₹{order.offerPrice.toLocaleString('en-IN')}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {order.status !== 'cancelled' && order.status !== 'rejected' && (
+                        <Button variant="outline" size="sm" onClick={() => handleContactSeller(order.seller._id)} disabled={authLoading}>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Contact Seller
                         </Button>
-                    )}
-                    <Button variant="outline" className="text-red-500 w-full" onClick={handleLogout}>
-                        <LogOut className="h-4 w-4 mr-2" /> Logout
-                    </Button>
-                </div>
-
-            </aside>
-
-            {/* Right Content Area */}
-            <main className="w-4/5 p-8 bg-neutral-300 dark:bg-neutral-800">
-                {user.role === 'buyer' && activeTab === 'orders' && <BuyerDashboardContent />}
-                {user.role === 'seller' && activeTab === 'orders' && <SellerDashboardContent section="orders" />}
-                {user.role === 'seller' && activeTab === 'listings' && <SellerDashboardContent section="listings" />}
-                {activeTab === 'saved' && <SavedListingsContent />}
-            </main>
-
-        </div>
-    );
+                      )}
+                      {order.status === 'pending' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelOrder(order._id)}
+                          disabled={authLoading} // Disable if auth context is busy
+                        >
+                          {authLoading ? 'Cancelling...' : 'Cancel'}
+                        </Button>
+                      )}
+                      {/* Placeholder for "Contact Seller" or "View Details" */}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-12 dark:text-white">
+            <h4 className="text-md font-medium">You haven't placed any orders yet.</h4>
+            <p className="mt-1 text-sm">Start by browsing passes available for sale!</p>
+          </div>
+        )
+      )}
+    </div>
+  );
 };
 
-export default DashboardPage;
+export default BuyerDashboardContent;

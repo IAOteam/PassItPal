@@ -1,24 +1,34 @@
-// frontend/src/pages/messaging/MessagingLayout.tsx
-import ConversationsListPage from '@/pages/auth/ConversationsListPage';
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-
+import { Outlet, useParams } from 'react-router-dom';
+import ConversationsListPage from '@/pages/auth/ConversationsListPage';
 
 const MessagingLayout: React.FC = () => {
+  const { conversationId } = useParams();
+
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-120px)]">
-      <div className="flex h-full border rounded-lg shadow-md bg-white dark:bg-black dark:border-neutral-800 overflow-hidden">
+    <div className="mt-10 h-[calc(100vh-120px)] w-full overflow-hidden">
+      <div className="flex h-full w-full md:border md:rounded-lg shadow-md dark:border-neutral-800 bg-white dark:bg-black">
+
+        {/* Show conversation list always on desktop, only on mobile if no active chat */}
+        <div
+          className={`
+            w-full md:w-1/3 h-full border-r dark:border-neutral-800 overflow-y-auto
+            ${conversationId ? 'hidden md:block' : 'block'}
+          `}
+        >
+          <ConversationsListPage />
+        </div>
+
+        {/* Chat view */}
+        <div
+          className={`
+            w-full h-full flex-col overflow-hidden
+            ${conversationId ? 'flex' : 'hidden md:flex'}
+          `}
+        >
+          <Outlet />
+        </div>
         
-        {/* Left Panel: Conversation List */}
-        <div className="w-full md:w-1/3 border-r dark:border-neutral-800 overflow-hidden">
-          <ConversationsListPage /> {/* <-- REPLACE PLACEHOLDER WITH THIS */}
-        </div>
-
-        {/* Right Panel: Active Chat Window */}
-        <div className="hidden md:flex flex-1 flex-col">
-            <Outlet />
-        </div>
-
       </div>
     </div>
   );

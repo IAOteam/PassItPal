@@ -89,7 +89,7 @@ export const initiateOrder = async (req: Request, res: Response) => {
         </div>
       `;
       await sendEmail(seller.email, emailSubject, `You have a new offer for ${listing.cultPassType}.`, emailHtml);
-      console.log(`[Email Notification] New order email sent to seller: ${seller.email}`);
+      // console.log(`[Email Notification] New order email sent to seller: ${seller.email}`);
     } catch (emailError) {
       console.error("[Email Notification] Failed to send new order email:", emailError);
       // We don't block the main API response if the email fails, but we log the error.

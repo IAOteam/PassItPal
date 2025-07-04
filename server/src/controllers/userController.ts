@@ -73,7 +73,7 @@ export const getMyProfile = async (req: Request, res: Response) => {
 // @desc    Update user profile (only logged in user can update their own)
 // @access  Private
 export const updateMyProfile = async (req: Request, res: Response) => {
-  console.log(`[UpdateProfileController] START - Request body:`, JSON.stringify(req.body));
+  // console.log(`[UpdateProfileController] START - Request body:`, JSON.stringify(req.body));
 
   const { username, email: newEmailInput, mobileNumber: newMobileInputFromReq, city, latitude, longitude, profilePictureBase64 } = req.body;
 
@@ -84,7 +84,7 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     }
 
     const userId = req.user._id;
-    console.log(`[UpdateProfileController] Authenticated userId: ${userId}`);
+    // console.log(`[UpdateProfileController] Authenticated userId: ${userId}`);
     
     const user = await User.findById(userId);
 
@@ -92,16 +92,16 @@ export const updateMyProfile = async (req: Request, res: Response) => {
       console.error(`[UpdateProfileController] Error: User with ID ${userId} not found in DB.`);
       return res.status(404).json({ message: 'User not found.' });
     }
-    console.log(`[UpdateProfileController] User found. Current mobile: ${user.mobileNumber}, city: ${user.location?.city}`);
+    // console.log(`[UpdateProfileController] User found. Current mobile: ${user.mobileNumber}, city: ${user.location?.city}`);
 
     let changesMade = false;
 
     // Username update
     if (username !== undefined && username !== user.username) {
-      console.log(`[UpdateProfileController] Updating username to: ${username}`);
+      // console.log(`[UpdateProfileController] Updating username to: ${username}`);
       const existingUsername = await User.findOne({ username, _id: { $ne: userId } });
       if (existingUsername) {
-        console.log(`[UpdateProfileController] Error: Username '${username}' already taken.`);
+        // console.log(`[UpdateProfileController] Error: Username '${username}' already taken.`);
         return res.status(400).json({ message: 'Username already taken.' });
       }
       user.username = username;
@@ -110,10 +110,10 @@ export const updateMyProfile = async (req: Request, res: Response) => {
 
     // Email update (careful with re-verification flow)
     if (newEmailInput !== undefined && newEmailInput !== user.email) {
-      console.log(`[UpdateProfileController] Updating email to: ${newEmailInput}`);
+      // console.log(`[UpdateProfileController] Updating email to: ${newEmailInput}`);
       const existingEmail = await User.findOne({ email: newEmailInput, _id: { $ne: userId } });
       if (existingEmail) {
-        console.log(`[UpdateProfileController] Error: Email '${newEmailInput}' already in use.`);
+        // console.log(`[UpdateProfileController] Error: Email '${newEmailInput}' already in use.`);
         return res.status(400).json({ message: 'Email already in use by another account.' });
       }
       user.email = newEmailInput;
@@ -123,36 +123,36 @@ export const updateMyProfile = async (req: Request, res: Response) => {
 
     // Mobile Number Update
     if (newMobileInputFromReq !== undefined) {
-      console.log(`[UpdateProfileController] Mobile input received: '${newMobileInputFromReq}'`);
+      // console.log(`[UpdateProfileController] Mobile input received: '${newMobileInputFromReq}'`);
       if (newMobileInputFromReq === "" || newMobileInputFromReq === null) {
         if (user.mobileNumber) { // Only change if it was previously set
-            console.log(`[UpdateProfileController] Removing mobile number.`);
+            // console.log(`[UpdateProfileController] Removing mobile number.`);
             user.mobileNumber = undefined;
             user.isMobileVerified = false;
             changesMade = true;
         }
       } else {
         const normalizedNewMobile = normalizeIndianMobileNumber(newMobileInputFromReq);
-        console.log(`[UpdateProfileController] Normalized new mobile: '${normalizedNewMobile}'`);
+        // console.log(`[UpdateProfileController] Normalized new mobile: '${normalizedNewMobile}'`);
         if (!normalizedNewMobile) {
-          console.log(`[UpdateProfileController] Error: Invalid mobile format for input: '${newMobileInputFromReq}'`);
+          // console.log(`[UpdateProfileController] Error: Invalid mobile format for input: '${newMobileInputFromReq}'`);
           return res.status(400).json({ message: 'Invalid mobile number format. Please provide a 10-digit Indian mobile number.' });
         }
 
         const currentStoredNormalizedMobile = user.mobileNumber ? normalizeIndianMobileNumber(user.mobileNumber) : null;
         if (normalizedNewMobile !== currentStoredNormalizedMobile) {
-          console.log(`[UpdateProfileController] New mobile '${normalizedNewMobile}' different from current '${currentStoredNormalizedMobile}'. Checking uniqueness.`);
+          // console.log(`[UpdateProfileController] New mobile '${normalizedNewMobile}' different from current '${currentStoredNormalizedMobile}'. Checking uniqueness.`);
           const existingMobileUser = await User.findOne({ mobileNumber: normalizedNewMobile, _id: { $ne: userId } });
           if (existingMobileUser) {
-            console.log(`[UpdateProfileController] Error: Mobile number '${normalizedNewMobile}' already registered.`);
+            // console.log(`[UpdateProfileController] Error: Mobile number '${normalizedNewMobile}' already registered.`);
             return res.status(400).json({ message: 'This mobile number is already registered with another account.' });
           }
           user.mobileNumber = normalizedNewMobile;
           user.isMobileVerified = false;
           changesMade = true;
-          console.log(`[UpdateProfileController] Mobile updated to: ${user.mobileNumber}, unverified.`);
+          // console.log(`[UpdateProfileController] Mobile updated to: ${user.mobileNumber}, unverified.`);
         } else {
-            console.log(`[UpdateProfileController] Mobile number '${normalizedNewMobile}' is same as current, or input was invalid and resulted in no change.`);
+            // console.log(`[UpdateProfileController] Mobile number '${normalizedNewMobile}' is same as current, or input was invalid and resulted in no change.`);
              // Ensure stored version is the normalized one if it somehow wasn't (e.g. old data)
             if (user.mobileNumber !== normalizedNewMobile) {
                  user.mobileNumber = normalizedNewMobile;
@@ -164,18 +164,18 @@ export const updateMyProfile = async (req: Request, res: Response) => {
 
     // Location (City only, no coordinates as per request)
     if (city !== undefined) {
-      console.log(`[UpdateProfileController] Processing city update. Current city: '${user.location?.city}', New city input: '${city}'`);
+      // console.log(`[UpdateProfileController] Processing city update. Current city: '${user.location?.city}', New city input: '${city}'`);
       // Initialize user.location if it's missing (shouldn't happen for Google-created users if defaults are set)
       if (!user.location) {
-        console.log('[UpdateProfileController] Initializing user.location object.');
+        // console.log('[UpdateProfileController] Initializing user.location object.');
         user.location = { type: 'Point', coordinates: [0,0], city: '' }; // Default structure
       }
       if (city !== user.location.city) {
         user.location.city = city;
         changesMade = true;
-        console.log(`[UpdateProfileController] City updated in memory to: '${user.location.city}'`);
+        // console.log(`[UpdateProfileController] City updated in memory to: '${user.location.city}'`);
       } else {
-        console.log(`[UpdateProfileController] City is the same, no update needed.`);
+        // console.log(`[UpdateProfileController] City is the same, no update needed.`);
       }
     }
     // Latitude/Longitude are not processed from request body based on new requirement.
@@ -183,7 +183,7 @@ export const updateMyProfile = async (req: Request, res: Response) => {
 
     // Profile Picture update
     if (profilePictureBase64) {
-      console.log('[UpdateProfileController] Attempting to upload profile picture...');
+      // console.log('[UpdateProfileController] Attempting to upload profile picture...');
       try {
           const uploadResponse = await cloudinary.uploader.upload(profilePictureBase64, {
               upload_preset: 'passitpal_profiles', folder: 'profile_pictures'
@@ -192,7 +192,7 @@ export const updateMyProfile = async (req: Request, res: Response) => {
             user.profilePictureUrl = uploadResponse.secure_url;
             changesMade = true;
           }
-          console.log('[UpdateProfileController] Profile picture processed. New URL:', user.profilePictureUrl);
+          // console.log('[UpdateProfileController] Profile picture processed. New URL:', user.profilePictureUrl);
       } catch (uploadError: any) {
           console.error('[UpdateProfileController] Cloudinary upload error:', uploadError.message);
           // Not returning error here, just logging. Profile update can proceed without picture update.
@@ -200,7 +200,7 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     }
 
     if (!changesMade) {
-        console.log('[UpdateProfileController] No actual changes detected. Sending back current user data.');
+        // console.log('[UpdateProfileController] No actual changes detected. Sending back current user data.');
         // Send back the current user data without saving if no changes
         const noChangeUserResponse = { /* ... construct response user object as below ... */ 
             _id: user._id, username: user.username, email: user.email, mobileNumber: user.mobileNumber, role: user.role,
@@ -210,9 +210,9 @@ export const updateMyProfile = async (req: Request, res: Response) => {
         return res.json({ message: 'No changes to update.', user: noChangeUserResponse });
     }
 
-    console.log('[UpdateProfileController] Attempting to save user document...');
+    // console.log('[UpdateProfileController] Attempting to save user document...');
     await user.save(); // This triggers Mongoose validation from schema
-    console.log('[UpdateProfileController] User document saved successfully.');
+    // console.log('[UpdateProfileController] User document saved successfully.');
 
     const responseUser = createFrontendUserObject(user);
 
@@ -412,7 +412,7 @@ export const switchUserRole = async (req: Request, res: Response) => {
     user.roleReviewNotes = undefined;
 
     await user.save();
-    console.log(`User ${user.email} successfully switched role from ${oldRole} to ${newRole}.`);
+    // console.log(`User ${user.email} successfully switched role from ${oldRole} to ${newRole}.`);
 
     // Notify user of the successful role change
     await createAndEmitNotification(

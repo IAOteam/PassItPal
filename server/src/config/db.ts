@@ -10,7 +10,7 @@ const connectDB = async () => {
       throw new Error('MongoDB URI not found in environment variables.');
     }
     await mongoose.connect(mongoURI);
-    console.log('MongoDB Connected...');
+    // console.log('MongoDB Connected...');
   } catch (err: any) {
     console.error(err.message);
     // Exit process with failure

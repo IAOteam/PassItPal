@@ -44,7 +44,7 @@ export const submitAdForReview = async (req: Request, res: Response) => {
         res.status(201).json({ message: 'Ad submitted for review successfully. We will contact you shortly.' });
 
     } catch (error: any) {
-        console.error('Error submitting ad for review:', error);
+        // console.error('Error submitting ad for review:', error);
         res.status(500).json({ message: 'Server error while submitting your ad.' });
     }
 };

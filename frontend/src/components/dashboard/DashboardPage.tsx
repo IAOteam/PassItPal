@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from 'lucide-react';
+import { Settings, LogOut, Plus, ChevronRight } from 'lucide-react';
+
 
 
 // Define a type for the order object from the /api/orders/me endpoint
@@ -33,31 +32,65 @@ const BuyerDashboardContent: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMyOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/orders/me');
-      setOrders(response.data.orders || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch your orders.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    fetchMyOrders();
-  }, [fetchMyOrders]);
+    return (
+        <div className="flex min-h-screen">
+            {/* Left Sidebar */}
+            <aside className="w-1/5 bg-neutral-100 dark:bg-neutral-900 dark:text-white p-6 pt-20 flex flex-col justify-between">
+                <div>
+                    <div className="flex flex-col items-center mb-8">
+                        <Avatar src={user.profilePictureUrl} icon={<UserOutlined />} size={64} />
+                        <h2 className="text-xl font-semibold mt-2">{user.username}</h2>
+                        <p className="text-sm text-neutral-500">{user.email}</p>
+                        <Button
+                            className="mt-4 bg-blue-300 hover:bg-blue-400 dark:bg-blue-400 dark:hover:bg-blue-500 dark:text-white w-full "
+                            onClick={() => navigate('/profile')}
+                        >
+                            <Settings className="h-4 w-4 mr-2" /> Profile Settings
+                        </Button>
+                    </div>
+                    <nav className="space-y-4">
+                        {user.role === 'seller' && (
+                            <>
+                                <Button
+                                    className={`w-full justify-between ${activeTab === 'orders' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                        }`}
+                                    onClick={() => setActiveTab('orders')}
+                                >
+                                    Incoming Orders
+                                    <ChevronRight />
+                                </Button>
+                                <Button
+                                    className={`w-full justify-between ${activeTab === 'listings' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                        }`}
+                                    onClick={() => setActiveTab('listings')}
+                                >
+                                    My Listings
+                                    <ChevronRight />
+                                </Button>
+                            </>
+                        )}
 
-  const handleContactSeller = async (sellerId: string) => {
-    try {
-      const conversationId = await getOrCreateConversation(sellerId);
-      navigate(`/messages/${conversationId}`);
-    } catch (err: any) {
-      alert(err.message || "Could not start chat.");
-    }
-  };
+                        {user.role === 'buyer' && (
+                            <Button
+                                className={`w-full justify-between ${activeTab === 'orders' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                    }`}
+                                onClick={() => setActiveTab('orders')}
+                            >
+                                My Orders
+                                <ChevronRight />
+                            </Button>
+                        )}
+
+                        <Button
+                            className={`w-full justify-between ${activeTab === 'saved' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                }`}
+                            onClick={() => setActiveTab('saved')}
+                        >
+                            Saved Listings
+                            <ChevronRight />
+                        </Button>
+
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm("Are you sure you want to cancel this order request?")) return;

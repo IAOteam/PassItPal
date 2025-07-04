@@ -18,8 +18,8 @@ const GoogleAuthCallbackPage: React.FC = () => {
       try {
         const userData: User = JSON.parse(userString);
         
-        console.log('[GoogleCallback] Received token:', token);
-        console.log('[GoogleCallback] Received user data:', userData);
+        // console.log('[GoogleCallback] Received token:', token);
+        // console.log('[GoogleCallback] Received user data:', userData);
 
         // Update AuthContext and localStorage
         setToken(token); // This function should handle localStorage for token
@@ -33,15 +33,15 @@ const GoogleAuthCallbackPage: React.FC = () => {
           localStorage.setItem('user', JSON.stringify(userData)); // Manually set user in localStorage
         }
         
-        console.log('[GoogleCallback] Authentication successful. Redirecting to dashboard.');
+        // console.log('[GoogleCallback] Authentication successful. Redirecting to dashboard.');
         navigate('/dashboard', { replace: true });
 
       } catch (error) {
-        console.error('[GoogleCallback] Error parsing user data or processing callback:', error);
+        // console.error('[GoogleCallback] Error parsing user data or processing callback:', error);
         navigate('/login?error=google_auth_processing_failed', { replace: true });
       }
     } else {
-      console.error('[GoogleCallback] Token or user data missing in query parameters.');
+      // console.error('[GoogleCallback] Token or user data missing in query parameters.');
       navigate('/login?error=google_auth_missing_params', { replace: true });
     }
   }, [location, navigate, setToken, setUser]); // Add setUser to dependency array

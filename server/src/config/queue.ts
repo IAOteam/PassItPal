@@ -9,7 +9,7 @@ const connection = new IORedis(process.env.REDIS_URL!, {
 });
 
 if (!process.env.REDIS_URL) {
-  console.error("CRITICAL: REDIS_URL not found in environment variables.");
+  // console.error("CRITICAL: REDIS_URL not found in environment variables.");
   process.exit(1);
 }
 
@@ -22,7 +22,7 @@ export const createEmailWorker = (processor: (job: any) => Promise<void>) => {
   const worker = new Worker('email-notification-queue', processor, { connection });
 
   worker.on('completed', job => {
-    console.log(`[Worker] Job ${job.id} has completed!`);
+    // console.log(`[Worker] Job ${job.id} has completed!`);
   });
 
   worker.on('failed', (job, err) => {
@@ -32,4 +32,4 @@ export const createEmailWorker = (processor: (job: any) => Promise<void>) => {
   return worker;
 };
 
-console.log("BullMQ Queue and Worker configured.");
+// console.log("BullMQ Queue and Worker configured.");

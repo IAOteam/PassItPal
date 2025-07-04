@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard'); // Or any protected route you want to redirect to
+      navigate('/dashboard'); 
     }
   }, [isAuthenticated, navigate]);
 

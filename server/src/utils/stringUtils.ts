@@ -31,6 +31,6 @@ export const normalizeIndianMobileNumber = (mobileNumber: string | null | undefi
     return cleaned;
   }
   
-  console.log(`[NormalizeMobile] Original: '${mobileNumber}', Cleaned: '${cleaned}', Final Result: null (does not match 10 digits)`);
+  // console.log(`[NormalizeMobile] Original: '${mobileNumber}', Cleaned: '${cleaned}', Final Result: null (does not match 10 digits)`);
   return null;
 };

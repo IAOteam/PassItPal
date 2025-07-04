@@ -185,7 +185,7 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 export const refreshAccessToken = async (req: Request, res: Response) => {
-  console.log('[Refresh Token Endpoint] req.cookies:', req.cookies);
+  // console.log('[Refresh Token Endpoint] req.cookies:', req.cookies);
   const incomingRefreshToken = req.cookies.refreshToken;
 
   if (!incomingRefreshToken) {
@@ -208,11 +208,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Your account has been blocked.' });
     }
     
-    console.log(`[Refresh Token Endpoint] Incoming RF Token: ${incomingRefreshToken}`);
-    console.log(`[Refresh Token Endpoint] Stored RF Token on User: ${user.refreshToken}`);
+    // console.log(`[Refresh Token Endpoint] Incoming RF Token: ${incomingRefreshToken}`);
+    // console.log(`[Refresh Token Endpoint] Stored RF Token on User: ${user.refreshToken}`);
 
     if (user.refreshToken !== incomingRefreshToken) {
-      console.warn(`[Refresh Token Endpoint] Mismatch for user ${user.email}. Denying refresh. Possible token reuse or session invalidation.`);
+      // console.warn(`[Refresh Token Endpoint] Mismatch for user ${user.email}. Denying refresh. Possible token reuse or session invalidation.`);
       // Security measure: If a potentially compromised or old refresh token is used,
       // invalidate all refresh tokens for this user by clearing the stored one.
       // user.refreshToken = undefined; 
@@ -615,7 +615,7 @@ export const changePassword = async (req: Request, res: Response) => {
 };
 
 export const googleOAuthCallbackController = async (req: Request, res: Response) => {
-  console.log(`[Google Callback Controller] Entered at: ${new Date().toISOString()}`);
+  // console.log(`[Google Callback Controller] Entered at: ${new Date().toISOString()}`);
   if (!req.user) {
     console.error('[Google Callback] User not found in req.user after Google auth.');
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_auth_failed`);
@@ -644,7 +644,7 @@ export const googleOAuthCallbackController = async (req: Request, res: Response)
     };
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const queryParams = new URLSearchParams({ token: accessToken, user: JSON.stringify(frontendUserData) }).toString();
-    console.log(`[Google Callback] Redirecting to: ${clientUrl}/auth/google/success with token and user data.`);
+    // console.log(`[Google Callback] Redirecting to: ${clientUrl}/auth/google/success with token and user data.`);
     res.redirect(`${clientUrl}/auth/google/success?${queryParams}`);
   } catch (error: any) { console.error('[Google Callback] Error processing Google OAuth callback:', error); res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_callback_processing_error`); }
 };

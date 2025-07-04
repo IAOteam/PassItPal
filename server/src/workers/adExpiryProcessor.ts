@@ -3,7 +3,7 @@
 import Ad from '../models/Ad';
 
 const adExpiryProcessor = async () => {
-  console.log(`[Cron - AdExpiry] Running job at ${new Date().toISOString()}`);
+  // console.log(`[Cron - AdExpiry] Running job at ${new Date().toISOString()}`);
   try {
     const now = new Date();
     const expiredAds = await Ad.find({
@@ -12,7 +12,7 @@ const adExpiryProcessor = async () => {
     });
 
     if (expiredAds.length === 0) {
-      console.log('[Cron - AdExpiry] No active ads to expire.');
+      // console.log('[Cron - AdExpiry] No active ads to expire.');
       return;
     }
 
@@ -23,7 +23,7 @@ const adExpiryProcessor = async () => {
       { $set: { isActive: false } }
     );
 
-    console.log(`[Cron - AdExpiry] Successfully expired ${result.modifiedCount} ads.`);
+    // console.log(`[Cron - AdExpiry] Successfully expired ${result.modifiedCount} ads.`);
 
   } catch (error) {
     console.error('[Cron - AdExpiry] Error running ad expiry job:', error);

@@ -13,7 +13,7 @@ const emailProcessor = async (job: Job<EmailJobData>) => {
   const { recipientId, senderName, messageText } = job.data;
   
   try {
-    console.log(`[Worker] Processing job ${job.id} for recipient ${recipientId}`);
+    // console.log(`[Worker] Processing job ${job.id} for recipient ${recipientId}`);
     
     const recipient = await User.findById(recipientId);
 
@@ -45,7 +45,7 @@ const emailProcessor = async (job: Job<EmailJobData>) => {
     // Send the email
     await sendEmail(recipient.email, subject, text, html);
 
-    console.log(`[Worker] Successfully sent email for job ${job.id} to ${recipient.email}`);
+    // console.log(`[Worker] Successfully sent email for job ${job.id} to ${recipient.email}`);
   } catch (error: any) {
     console.error(`[Worker] Error processing job ${job.id}:`, error.message);
     // Throwing the error here will cause BullMQ to retry the job according to your queue's settings

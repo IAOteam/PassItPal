@@ -41,7 +41,7 @@ connectDB();
 // --- INITIALIZE THE EMAIL WORKER ---
 // This starts the worker, and it begins listening for jobs in the queue.
 const emailWorker = createEmailWorker(emailProcessor);
-console.log("Email worker initialized and listening for jobs.");
+// console.log("Email worker initialized and listening for jobs.");
 // ------------------------------------
 
 // --- SCHEDULE CRON JOBS ---
@@ -50,12 +50,12 @@ cron.schedule('0 0 * * *', adExpiryProcessor, {
   //scheduled: true,
   timezone: "Asia/Kolkata" // Set to your target timezone
 });
-console.log("Scheduled ad expiry job to run daily at midnight.");
+// console.log("Scheduled ad expiry job to run daily at midnight.");
 cron.schedule('5 0 * * *', listingExpiryProcessor, { // Runs at 12:05 AM daily
   //scheduled: true,
   timezone: "Asia/Kolkata"
 });
-console.log("Scheduled listing expiry job to run daily.");
+// console.log("Scheduled listing expiry job to run daily.");
 
 // Security Middleware
 app.use(helmet()); // Add Helmet to set various HTTP headers for security
@@ -152,7 +152,7 @@ io.on('connection', (socket: Socket) => {
 
       // Correctly check if the sender is a participant in the conversation.
       if (!conversation || !conversation.participants.some(p => p.user.equals(sender._id))) {
-        console.error(`User ${sender._id} not authorized for conversation ${conversationId}.`);
+        // console.error(`User ${sender._id} not authorized for conversation ${conversationId}.`);
         // Optionally, emit an error back to the sender's client
         socket.emit('sendMessageError', { conversationId, message: "Authorization error." });
         return;
@@ -192,7 +192,7 @@ io.on('connection', (socket: Socket) => {
       const isRecipientOnline = connectedUsers.has(recipientId);
 
       if (!isRecipientOnline) {
-        console.log(`[Queue] Recipient ${recipientId} is offline. Scheduling an email notification.`);
+        // console.log(`[Queue] Recipient ${recipientId} is offline. Scheduling an email notification.`);
         
         // Add a job to the queue to send an email in 15 minutes
         await emailQueue.add(
@@ -217,7 +217,7 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('disconnect', () => {
     if (user && user.email) {
-      console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
+      // console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
       connectedUsers.delete(user._id.toString());
     }
   });
@@ -231,8 +231,8 @@ io.on('connection', (socket: Socket) => {
 const PORT = parseInt(process.env.PORT || '5001', 10);
 
 httpServer.listen(PORT, "0.0.0.0",() => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Socket.IO listening on port ${PORT}`);
+  // console.log(`Server running on port ${PORT}`);
+  // console.log(`Socket.IO listening on port ${PORT}`);
 });
 
 //  404 Not Found Middleware - MUST be placed AFTER all routes

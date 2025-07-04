@@ -7,7 +7,7 @@ import SavedListingsContent from '@/components/dashboard/SavedListingsContent';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Button } from '@/components/ui/button';
-import { Settings, LogOut, Plus } from 'lucide-react';
+import { Settings, LogOut, Plus, ChevronRight } from 'lucide-react';
 
 const DashboardPage: React.FC = () => {
     const { user, loading, logout } = useAuth();
@@ -42,38 +42,42 @@ const DashboardPage: React.FC = () => {
                         {user.role === 'seller' && (
                             <>
                                 <Button
-                                    variant={activeTab === 'orders' ? 'outline' : 'ghost'}
-                                    className="w-full justify-start"
+                                    className={`w-full justify-between ${activeTab === 'orders' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                        }`}
                                     onClick={() => setActiveTab('orders')}
                                 >
                                     Incoming Orders
+                                    <ChevronRight />
                                 </Button>
                                 <Button
-                                    variant={activeTab === 'listings' ? 'outline' : 'ghost'}
-                                    className="w-full justify-start"
+                                    className={`w-full justify-between ${activeTab === 'listings' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                        }`}
                                     onClick={() => setActiveTab('listings')}
                                 >
                                     My Listings
+                                    <ChevronRight />
                                 </Button>
                             </>
                         )}
 
                         {user.role === 'buyer' && (
                             <Button
-                                variant={activeTab === 'orders' ? 'outline' : 'ghost'}
-                                className="w-full justify-start"
+                                className={`w-full justify-between ${activeTab === 'orders' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                    }`}
                                 onClick={() => setActiveTab('orders')}
                             >
                                 My Orders
+                                <ChevronRight />
                             </Button>
                         )}
 
                         <Button
-                            variant={activeTab === 'saved' ? 'outline' : 'ghost'}
-                            className="w-full justify-start"
+                            className={`w-full justify-between ${activeTab === 'saved' ? 'bg-neutral-200 dark:bg-neutral-700' : 'text-neutral-500'
+                                }`}
                             onClick={() => setActiveTab('saved')}
                         >
                             Saved Listings
+                            <ChevronRight />
                         </Button>
 
 

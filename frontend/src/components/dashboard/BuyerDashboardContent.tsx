@@ -1,14 +1,15 @@
 // frontend/src/components/dashboard/BuyerDashboardContent.tsx
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { MessageSquare } from 'lucide-react';
 
+
+// Define a type for the order object from the /api/orders/me endpoint
 interface MyOrder {
   _id: string;
   listing: {
@@ -54,20 +55,23 @@ const BuyerDashboardContent: React.FC = () => {
       const conversationId = await getOrCreateConversation(sellerId);
       navigate(`/messages/${conversationId}`);
     } catch (err: any) {
-      alert(err.message || 'Could not start chat.');
+      alert(err.message || "Could not start chat.");
     }
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!window.confirm('Are you sure you want to cancel this order request?')) return;
+    if (!window.confirm("Are you sure you want to cancel this order request?")) return;
+
     try {
       const message = await cancelOrder(orderId);
       alert(message);
+      // Refresh the list to show the updated status
       fetchMyOrders();
     } catch (err: any) {
-      alert(err.message || 'An error occurred while cancelling the order.');
+      alert(err.message || "An error occurred while cancelling the order.");
     }
   };
+
 
   const getStatusBadgeVariant = (status: MyOrder['status']) => {
     switch (status) {
@@ -75,29 +79,27 @@ const BuyerDashboardContent: React.FC = () => {
       case 'accepted': return 'success';
       case 'completed': return 'default';
       case 'rejected':
-      case 'cancelled': return 'destructive';
+      case 'cancelled':
+        return 'destructive';
       default: return 'secondary';
     }
   };
 
   return (
-    <div className="my-6 px-4 md:px-8">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h3 className="text-xl font-semibold dark:text-white">My Orders</h3>
-        <Button
-          className="w-full md:w-auto bg-gradient-to-br from-blue-400 to-purple-400"
-          onClick={() => navigate('/listings')}
-        >
+    <div className='my-10'>
+      <div className="flex justify-between items-center mb-10 dark:text-white">
+        <h3 className="text-xl font-semibold">My Orders</h3>
+        <Button className='bg-gradient-to-br from-blue-400 to-purple-400 ' onClick={() => navigate('/listings')}>
           Browse More Passes
         </Button>
       </div>
 
-      {loading && <p className="text-center text-gray-500">Loading your orders...</p>}
+      {loading && <p className="text-center text-gray-500 ">Loading your orders...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
       {!loading && !error && (
         orders.length > 0 ? (
-          <div className="border rounded-lg overflow-x-auto dark:text-white">
+          <div className="border rounded-lg dark:text-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -119,15 +121,9 @@ const BuyerDashboardContent: React.FC = () => {
                         {order.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-y-1">
+                    <TableCell className="text-right">
                       {order.status !== 'cancelled' && order.status !== 'rejected' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleContactSeller(order.seller._id)}
-                          disabled={authLoading}
-                          className="w-full mb-1"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleContactSeller(order.seller._id)} disabled={authLoading}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           Contact Seller
                         </Button>
@@ -137,12 +133,12 @@ const BuyerDashboardContent: React.FC = () => {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleCancelOrder(order._id)}
-                          disabled={authLoading}
-                          className="w-full"
+                          disabled={authLoading} // Disable if auth context is busy
                         >
                           {authLoading ? 'Cancelling...' : 'Cancel'}
                         </Button>
                       )}
+                      {/* Placeholder for "Contact Seller" or "View Details" */}
                     </TableCell>
                   </TableRow>
                 ))}

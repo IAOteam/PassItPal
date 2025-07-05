@@ -1,15 +1,20 @@
-// frontend/src/components/dashboard/BuyerDashboardContent.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Trash2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-
-// Define a type for the order object from the /api/orders/me endpoint
 interface MyOrder {
   _id: string;
   listing: {
@@ -30,7 +35,7 @@ const BuyerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
   const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuth();
   const [orders, setOrders] = useState<MyOrder[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMyOrders = useCallback(async () => {
@@ -61,17 +66,14 @@ const BuyerDashboardContent: React.FC = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm("Are you sure you want to cancel this order request?")) return;
-
     try {
       const message = await cancelOrder(orderId);
       alert(message);
-      // Refresh the list to show the updated status
       fetchMyOrders();
     } catch (err: any) {
       alert(err.message || "An error occurred while cancelling the order.");
     }
   };
-
 
   const getStatusBadgeVariant = (status: MyOrder['status']) => {
     switch (status) {
@@ -79,80 +81,122 @@ const BuyerDashboardContent: React.FC = () => {
       case 'accepted': return 'success';
       case 'completed': return 'default';
       case 'rejected':
-      case 'cancelled':
-        return 'destructive';
+      case 'cancelled': return 'destructive';
       default: return 'secondary';
     }
   };
 
   return (
-    <div className='my-10'>
-      <div className="flex justify-between items-center mb-10 dark:text-white">
-        <h3 className="text-xl font-semibold">My Orders</h3>
-        <Button className='bg-gradient-to-br from-blue-400 to-purple-400 ' onClick={() => navigate('/listings')}>
-          Browse More Passes
-        </Button>
-      </div>
+    <TooltipProvider>
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+          <h2 className="text-2xl font-bold text-neutral-800 dark:text-white">My Orders</h2>
+          <Button
+            className="bg-gradient-to-br from-blue-500 to-purple-500 text-white hover:opacity-90 transition"
+            onClick={() => navigate('/listings')}
+          >
+            Browse More Passes
+          </Button>
+        </div>
 
-      {loading && <p className="text-center text-gray-500 ">Loading your orders...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
+        {loading && (
+          <div className="text-center text-sm text-neutral-500 dark:text-neutral-400">Loading your orders...</div>
+        )}
 
-      {!loading && !error && (
-        orders.length > 0 ? (
-          <div className="border rounded-lg dark:text-white">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Listing</TableHead>
-                  <TableHead>Seller</TableHead>
-                  <TableHead>Your Offer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order._id}>
-                    <TableCell className="font-medium">{order.listing.cultPassType}</TableCell>
-                    <TableCell>{order.seller.username || 'N/A'}</TableCell>
-                    <TableCell>₹{order.offerPrice.toLocaleString('en-IN')}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {order.status !== 'cancelled' && order.status !== 'rejected' && (
-                        <Button variant="outline" size="sm" onClick={() => handleContactSeller(order.seller._id)} disabled={authLoading}>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Contact Seller
-                        </Button>
-                      )}
-                      {order.status === 'pending' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleCancelOrder(order._id)}
-                          disabled={authLoading} // Disable if auth context is busy
-                        >
-                          {authLoading ? 'Cancelling...' : 'Cancel'}
-                        </Button>
-                      )}
-                      {/* Placeholder for "Contact Seller" or "View Details" */}
-                    </TableCell>
+        {error && (
+          <div className="text-center text-red-500 font-medium">{error}</div>
+        )}
+
+        {!loading && !error && (
+          orders.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm">
+              <Table className="min-w-full text-sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left">Listing</TableHead>
+                    <TableHead className="text-left">Seller</TableHead>
+                    <TableHead className="text-left">Your Offer</TableHead>
+                    <TableHead className="text-left">Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-12 dark:text-white">
-            <h4 className="text-md font-medium">You haven't placed any orders yet.</h4>
-            <p className="mt-1 text-sm">Start by browsing passes available for sale!</p>
-          </div>
-        )
-      )}
-    </div>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow
+                      key={order._id}
+                      className="hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
+                    >
+                      <TableCell className="font-medium text-neutral-900 dark:text-white truncate max-w-[160px]">
+                        {order.listing.cultPassType}
+                      </TableCell>
+                      <TableCell className="text-neutral-700 dark:text-neutral-300 truncate max-w-[120px]">
+                        {order.seller.username || 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-neutral-800 dark:text-neutral-200">
+                        ₹{order.offerPrice.toLocaleString('en-IN')}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {(order.status !== 'cancelled' && order.status !== 'rejected') && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleContactSeller(order.seller._id)}
+                                disabled={authLoading}
+                                className="rounded-full"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Contact Seller</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        {order.status === 'pending' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => handleCancelOrder(order._id)}
+                                disabled={authLoading}
+                                className="rounded-full"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Cancel Order</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <h4 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300">
+                No orders placed yet.
+              </h4>
+              <p className="text-sm text-neutral-500 mt-1">
+                Start exploring passes and make your first offer!
+              </p>
+            </div>
+          )
+        )}
+      </section>
+    </TooltipProvider>
   );
 };
 

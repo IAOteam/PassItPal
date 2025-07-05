@@ -9,7 +9,8 @@ import {
   updateMe,
   switchUserRole,
   addSavedListing, 
-  removeSavedListing
+  removeSavedListing,
+  getMyPopulatedProfile,
 } from '../controllers/userController';
 import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
@@ -101,5 +102,5 @@ router.put(
   validate,
   updateMyProfile
 );
-
+router.get('/me/profile/populated', protect, getMyPopulatedProfile);
 export default router;

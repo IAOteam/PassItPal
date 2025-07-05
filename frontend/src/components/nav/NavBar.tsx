@@ -80,7 +80,7 @@ export function NavBar() {
             {!notif.read && <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></div>}
             <div className="flex-grow">
               <p className="text-sm text-gray-800 dark:text-gray-200">{notif.message}</p>
-              <p className="text-xs text-gray-800 dark:text-gray-400">{timeSince(notif.createdAt)}</p>
+              <p className="text-xs text-gray-800 dark:text-gray-200">{timeSince(notif.createdAt)}</p>
             </div>
           </div>
         ),
@@ -118,16 +118,16 @@ export function NavBar() {
           <div className="flex items-center gap-2 md:gap-4">
             <Button variant="ghost" size="icon" onClick={toggleTheme}>
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 dark:text-white" />
               <span className="sr-only">Toggle Theme</span>
             </Button>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link to="/messages" className="text-neutral-700 dark:text-neutral-300"><MessageSquare size={20} /></Link>
+                <Link to="/messages" className="dark:text-white"><MessageSquare size={16} /></Link>
                 <Dropdown menu={{ items: notificationMenuItems }} placement="bottomRight" arrow trigger={['click']} onOpenChange={(open) => open && unreadCount > 0 && markNotificationsAsRead()}>
                   <Badge count={unreadCount} size="small">
-                    <BellOutlined className="cursor-pointer text-lg text-neutral-700 dark:text-neutral-300" />
+                    <BellOutlined size={20} className="cursor-pointer text-lg dark:text-white" />
                   </Badge>
                 </Dropdown>
                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>

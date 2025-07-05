@@ -46,12 +46,15 @@ const SavedListingsContent: React.FC = () => {
     }
 
     return (
-        <div className='my-10 p-8 bg-white dark:bg-neutral-800 rounded-lg shadow-lg'>
-            <div className='flex justify-between'>
-                <h3 className="text-2xl font-semibold dark:text-white mb-10">Your Saved Items</h3>
-                <Button className='bg-gradient-to-br from-blue-400 to-purple-400 dark:text-white'  onClick={() => navigate('/listings')}>
-          Browse More Passes
-        </Button>
+        <div className='className="w-full h-full my-10 overflow-y-auto"'>
+            <div className="flex justify-between items-center mb-10">
+                <h3 className="text-xl font-semibold dark:text-white">Your Saved Listings</h3>
+                <Button
+                    className="bg-gradient-to-br from-blue-400 to-purple-400 dark:text-white"
+                    onClick={() => navigate('/listings')}
+                >
+                    Browse More Passes
+                </Button>
             </div>
             {savedListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -60,9 +63,9 @@ const SavedListingsContent: React.FC = () => {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-12 border-2 border-dashed rounded-lg dark:text-white">
-                    <h4 className="text-lg font-medium">You haven't saved any listings yet.</h4>
-                    <p className="mt-1">Click the heart icon on any listing to save it for later!</p>
+                <div className="text-center py-12 text-neutral-700 dark:text-neutral-300">
+                    <h4 className="text-md font-medium">You haven't saved any listings yet.</h4>
+                    <p className="mt-1 text-sm">Click the heart icon on any listing to save it for later!</p>
                 </div>
             )}
              <ListingDetailModal 

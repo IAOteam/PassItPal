@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import StarRating from '@/components/ui/StarRating';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { EditIcon, FileEditIcon } from 'lucide-react';
 
 interface IReview {
   _id: string;
@@ -44,6 +45,7 @@ const ProfilePage: React.FC = () => {
   const [isError, setIsError] = useState(false);
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
 
   useEffect(() => {
     if (user?._id) {
@@ -87,18 +89,37 @@ const ProfilePage: React.FC = () => {
     clearError();
   };
 
+  const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        setNewProfilePic(e.target.files[0]);
+    }
+  };
+
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setIsError(false);
     clearError();
     setProfileUpdateLoading(true);
-
+    
     const profileData: { username?: string; mobileNumber?: string; city?: string } = {};
+    let profilePictureBase64: string | undefined;
     if (username !== user?.username) profileData.username = username;
     if (mobileNumber !== user?.mobileNumber) profileData.mobileNumber = mobileNumber;
     if (city !== user?.city) profileData.city = city;
 
+    const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    });
+
+    if (newProfilePic) {
+        profilePictureBase64 = await toBase64(newProfilePic); // toBase64 is a helper you'll create
+    }
+    await updateProfile({ ...profileData, profilePictureBase64 });
+    
     if (Object.keys(profileData).length === 0) {
       setMessage('No changes to save.');
       setIsError(false);
@@ -219,28 +240,35 @@ const ProfilePage: React.FC = () => {
               </div>
 
               {isEditing ? (
-                <form onSubmit={handleProfileSave} className="space-y-4">
-                  <div>
-                    <Label htmlFor="username">Username</Label>
-                    <Input id="username" className="w-full" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" className="w-full" value={user.email} readOnly disabled />
-                  </div>
-                  <div>
-                    <Label htmlFor="mobile">Mobile Number</Label>
-                    <Input id="mobile" className="w-full" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" className="w-full" value={city} onChange={(e) => setCity(e.target.value)} />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="secondary" type="button" onClick={handleEditToggle}>Cancel</Button>
-                    <Button type="submit" disabled={profileUpdateLoading}>Save</Button>
-                  </div>
-                </form>
+                <>
+                  <label htmlFor="picture-upload" className="absolute ... cursor-pointer">
+                      <FileEditIcon/>
+                  </label>
+                  <input id="picture-upload" type="file" className="hidden" onChange={handlePictureChange} accept="image/*" />
+    
+                  <form onSubmit={handleProfileSave} className="space-y-4">
+                    <div>
+                      <Label htmlFor="username">Username</Label>
+                      <Input id="username" className="w-full" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" className="w-full" value={user.email} readOnly disabled />
+                    </div>
+                    <div>
+                      <Label htmlFor="mobile">Mobile Number</Label>
+                      <Input id="mobile" className="w-full" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input id="city" className="w-full" value={city} onChange={(e) => setCity(e.target.value)} />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" type="button" onClick={handleEditToggle}>Cancel</Button>
+                      <Button type="submit" disabled={profileUpdateLoading}>Save</Button>
+                    </div>
+                  </form>
+                </>
               ) : (
                 <div className="space-y-3 break-words">
                   <div><span className="font-medium text-neutral-500">Username:</span> {user.username}</div>

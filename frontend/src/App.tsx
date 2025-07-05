@@ -43,6 +43,7 @@ import SafetyGuidePage from "./pages/auth/SafetyGuidePage.tsx";
 import BlogPostSafetyTips from "./pages/blogs/BlogPostSafetyTips.tsx";
 import BlogPostGymPass from "./pages/blogs/BlogPostGymPass.tsx";
 import BlogPostAiSub from "./pages/blogs/BlogPostAiSub.tsx";
+import NotFoundPage from "./pages/NotFoundPage.tsx";
 
 function App() {
   return (
@@ -113,7 +114,7 @@ function App() {
           {/* Catch-all 404 Not Found page */}
           <Route path="*" element={
             <div className="flex items-center justify-center h-screen">
-              <h1 className="text-center text-3xl text-red-500">404 - Page Not Found</h1>
+              <NotFoundPage />
             </div>
           } />
         </Routes>

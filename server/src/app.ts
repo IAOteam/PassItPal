@@ -182,7 +182,7 @@ io.on('connection', (socket: Socket) => {
           recipientId,
           'message',
           `New message from ${user.username || user.email}: ${text.substring(0, 50)}...`,
-          `/chat/${conversationId}`,
+          { type: 'chat', id: conversationId },
           user._id.toString()
         );
       }

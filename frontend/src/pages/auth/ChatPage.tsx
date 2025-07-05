@@ -200,7 +200,7 @@ const ChatPage: React.FC = () => {
           className="flex-grow bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700"
         />
         <Button type="submit" disabled={!newMessage.trim()} size="icon">
-          <Send className="h-5 w-5" />
+          <Send className="h-5 w-5 text-white dark:text-green-500 " />
         </Button>
       </form>
     </div>

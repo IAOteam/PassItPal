@@ -78,7 +78,8 @@ const ConversationsListPage: React.FC = () => {
             {conversations.length > 0 ? (
               <ul>
                 {conversations.map((convo) => {
-                  const other = convo.participants.find(p => p._id !== user?._id) as Participant;
+                  const otherParticipant = convo.participants.find(p => p._id !== user?._id) as Participant;
+                  if (!otherParticipant) return null;
                   const active = activeConvId === convo._id;
                   return (
                     <li
@@ -92,14 +93,14 @@ const ConversationsListPage: React.FC = () => {
                       )}
                     >
                       <Avatar
-                        src={other?.profilePictureUrl}
+                        src={otherParticipant?.profilePictureUrl}
                         icon={<UserOutlined />}
                         size={48}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center">
                           <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 truncate">
-                            {other?.username || 'Unknown User'}
+                            {otherParticipant?.username || 'User'}
                           </p>
                           <span className="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0 ml-2">
                             {timeSince(convo.updatedAt)}

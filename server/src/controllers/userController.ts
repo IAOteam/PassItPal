@@ -419,7 +419,7 @@ export const switchUserRole = async (req: Request, res: Response) => {
       userId.toString(),
       'admin_announcement', // Or a new type like 'role_changed'
       `Your role has been successfully updated to ${newRole}.`,
-      '/profile'
+      { type: 'profile', id: userId.toString() }
     );
 
     // Send back the updated user fields related to role request
@@ -459,4 +459,29 @@ export const removeSavedListing = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({ message: 'Server error while unsaving listing.' });
   }
+};
+
+// @route   GET /api/users/me/profile/populated
+// @desc    Get current user's profile with populated savedListings
+// @access  Private
+export const getMyPopulatedProfile = async (req: Request, res: Response) => {
+    try {
+        if (!req.user?._id) return res.status(401).json({ message: 'Not authorized' });
+
+        const user = await User.findById(req.user._id)
+            .select('-password -otp') // Exclude sensitive fields
+            .populate({
+                path: 'savedListings',
+                model: 'Listing', // Explicitly tell Mongoose which model to use
+                populate: { // Nested populate to get seller info for the card
+                    path: 'seller',
+                    select: 'username profilePictureUrl'
+                }
+            });
+
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error fetching profile.' });
+    }
 };

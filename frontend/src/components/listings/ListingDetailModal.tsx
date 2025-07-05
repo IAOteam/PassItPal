@@ -135,7 +135,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
             <div className="p-4 space-y-3">
               {/* Compact Title & Location Row */}
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{listing.cultPassType}</h2>
+                <h2 className="truncate text-lg font-semibold text-gray-900 dark:text-white">{listing.cultPassType}</h2>
                 <div className="flex items-center text-xs text-gray-600 gap-2">
                   <MapPin className="h-4 w-4" /> {listing.city}
                 </div>
@@ -178,7 +178,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                   )
                 ) : (
                   <div className="h-[150px] flex items-center justify-center bg-gray-200 rounded-md text-center text-gray-600 p-3">
-                    Map view available when logged in.
+                      Login to view maps
                   </div>
                 )}
               </div>

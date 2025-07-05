@@ -7,10 +7,27 @@ export const createAndEmitNotification = async (
   recipientId: string,
   type: INotification['type'],
   message: string,
-  link?: string,
+  linkTarget?: { type: 'listing' | 'chat' | 'profile'; id: string }, 
   senderId?: string
 ) => {
-  try {
+    try {
+    let link: string | undefined;
+    // --- Standardized Link Generation ---
+    if (linkTarget) {
+        switch (linkTarget.type) {
+            case 'listing':
+                // This  matches the modal-opening logic on your listings page
+                link = `/listings?listingId=${linkTarget.id}`;
+                break;
+            case 'chat':
+                link = `/messages/${linkTarget.id}`;
+                break;
+            case 'profile':
+                link = `/profile/${linkTarget.id}`;
+                break;
+        }
+    }
+
     const newNotification = new Notification({
       recipient: recipientId,
       sender: senderId,

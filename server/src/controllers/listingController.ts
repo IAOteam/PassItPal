@@ -89,7 +89,7 @@ export const createListing = async (req: Request, res: Response) => {
         req.user._id.toString(),
         'listing_update',
         `Your listing "${listing.cultPassType}" was created successfully.`,
-        `/listing/${listing._id.toString()}`
+        { type: 'listing', id: listing._id.toString() }
       );
     }
 
@@ -119,7 +119,7 @@ export const getListings = async (req: Request, res: Response) => {
     // --- AGGREGATION PIPELINE FOR ADVANCED SEARCH ---
     const pipeline: mongoose.PipelineStage[] = [];
 
-    // ** STAGE 1: $search (Fuzzy Search for Location and Pass Type) **
+    // **  $search (Fuzzy Search for Location and Pass Type) **
     if (locationName || cultPassType) {
       const searchStage: any = {
         $search: {
@@ -130,14 +130,21 @@ export const getListings = async (req: Request, res: Response) => {
       };
 
       if (locationName && typeof locationName === 'string') {
-        searchStage.$search.compound.must.push({
-          text: {
-            query: locationName,
-            path: 'city',
-            fuzzy: { maxEdits: 1, prefixLength: 2 }
-          }
+    const geocodeResult = await geocodeAddress(locationName);
+    if (geocodeResult) {
+        pipeline.push({
+            $geoNear: {
+                near: {
+                    type: 'Point',
+                    coordinates: [geocodeResult.longitude, geocodeResult.latitude]
+                },
+                distanceField: 'distance', 
+                maxDistance: 50000, // 50km radius, to do : dinamically can adjust this
+                spherical: true
+            }
         });
-      }
+    }
+}
       if (cultPassType && typeof cultPassType === 'string') {
         searchStage.$search.compound.must.push({
           text: {
@@ -150,7 +157,7 @@ export const getListings = async (req: Request, res: Response) => {
       pipeline.push(searchStage);
     }
 
-    // ** STAGE 2: $match (Standard Filtering after search) **
+    // ** $match (Standard Filtering after search) **
     const matchStage: any = { isAvailable: true };
     if (minPrice || maxPrice) {
       matchStage.askingPrice = {};
@@ -164,7 +171,7 @@ export const getListings = async (req: Request, res: Response) => {
     }
     pipeline.push({ $match: matchStage });
 
-    // ** STAGE 3: $sort (Sorting Logic) **
+    // **  $sort (Sorting Logic) **
     const sortStage: any = {};
     switch (sortBy) {
         case 'price_asc': sortStage.askingPrice = 1; break;
@@ -173,7 +180,7 @@ export const getListings = async (req: Request, res: Response) => {
     }
     pipeline.push({ $sort: sortStage });
 
-    // ** STAGE 4: Pagination and Data Fetching **
+    // **  Pagination and Data Fetching **
     const countPipeline = [...pipeline, { $count: 'total' }];
     const dataPipeline = [
         ...pipeline,
@@ -396,7 +403,7 @@ export const updateListing = async (req: Request, res: Response) => {
         req.user._id.toString(),
         'listing_update',
         `Your listing "${listing.cultPassType}" was updated.`,
-        `/listing/${listing._id.toString()}`
+        { type: 'listing', id: listing._id.toString() }
       );
     }
 
@@ -450,7 +457,7 @@ export const deleteListing = async (req: Request, res: Response) => {
         req.user._id.toString(),
         'listing_update',
         `Your listing "${listing.cultPassType}" was deleted.`,
-        `/my-listings`
+        { type: 'profile', id: req.user._id.toString() }
       );
     }
 
@@ -507,7 +514,7 @@ export const promoteListing = async (req: Request, res: Response) => {
       listing.seller.toString(),
       'promoted_listing',
       `Your listing "${listing.cultPassType}" has been successfully promoted for ${promotionDurationInDays} days!`,
-      `/listing/${listing._id.toString()}`
+      { type: 'listing', id: listing._id.toString() }
     );
 
     res.status(200).json({

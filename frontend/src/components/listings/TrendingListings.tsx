@@ -6,6 +6,7 @@ import ListingCard from '@/components/listings/ListingCard';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
 import { Button } from '@/components/ui/button';
 import type { IListing } from '@/types';
+import ListingCardSkeleton from './ListingCardSkeleton';
 
 
 const TrendingListings: React.FC = () => {
@@ -43,7 +44,9 @@ const TrendingListings: React.FC = () => {
         </div>
 
         {loading ? (
-          <p className="text-center text-neutral-800 dark:text-white">Loading listings...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={i} />)}
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {listings.map((listing) => (

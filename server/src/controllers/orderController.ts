@@ -106,7 +106,7 @@ export const initiateOrder = async (req: Request, res: Response) => {
       listing.seller.toString(),
       'new_order',
       `You have a new offer of ₹${offerPrice} for your listing "${listing.cultPassType}".`,
-      `/order/${order._id.toString()}` // Link to the new order details page (future)
+      { type: 'listing', id: order._id.toString() } // Link to the new order details page (future)
     );
 
     res.status(201).json({
@@ -230,7 +230,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             order.buyer.toString(),
             'transaction', // or a more specific 'order_accepted' type
             `Your offer for "${order.listing?.cultPassType}" was accepted by the seller!`,
-            `/order/${order._id.toString()}` // Link to their dashboard where a "Pay Now" button will appear
+            { type: 'listing', id: order._id.toString() } // Link to the order details page
         );
 
     } else if (status === 'rejected') {
@@ -243,7 +243,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             order.buyer.toString(),
             'transaction', // or 'order_rejected'
             `Your offer for "${order.listing?.cultPassType}" was rejected by the seller.`,
-            `/order/${order._id.toString()}`
+            { type: 'listing', id: order._id.toString() }
         );
 
     } else if (status === 'completed') {
@@ -264,7 +264,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             order.buyer.toString(),
             'transaction', // or 'order_completed'
             `Your transaction for "${order.listing?.cultPassType}" is completed!`,
-            `/order/${order._id.toString()}`
+            { type: 'listing', id: order._id.toString() }
         );
     }
 
@@ -320,7 +320,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
       order.seller.toString(),
       'order_cancelled',
       `An order for "<span class="math-inline">\{order\.listing\.cultPassType\}" \(Offer\: ₹</span>{order.offerPrice}) has been cancelled by the buyer.`,
-      `/order/${order._id.toString()}` // Link to the order details
+      { type: 'listing', id: order._id.toString() } // Link to the order details
     );
 
     res.status(200).json({ message: 'Order cancelled successfully.', order });

@@ -100,7 +100,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
         listing.seller.toString(),
         'promoted_listing',
         `Your listing "${listing.cultPassType}" has been successfully promoted!`,
-        `/listings?listingId=${listing._id}`
+        { type: 'listing', id: listing._id.toString() }
     );
     
     // NEW: Send success email

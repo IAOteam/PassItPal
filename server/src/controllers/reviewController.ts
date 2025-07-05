@@ -76,7 +76,7 @@ export const submitReview = async (req: Request, res: Response) => {
       revieweeId.toString(),
       'message', // or a new 'new_review' type
       `You have received a new ${rating}-star review from ${req.user?.username}.`,
-      `/profile/${revieweeId.toString()}` // Link to their own profile to see the review
+      { type: 'profile', id: revieweeId.toString() } // Link object as required by notification system
     );
 
     res.status(201).json({ message: 'Review submitted successfully!', review: newReview });

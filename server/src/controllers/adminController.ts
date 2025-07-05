@@ -54,7 +54,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
       user._id.toString(),
       'admin_announcement',
       `Your role has been updated to "${role}".`,
-      `/profile`
+      { type: 'profile', id: user._id.toString() }
     );
 
     res.json({ message: `User role updated to ${role}.`, user });
@@ -102,7 +102,7 @@ export const toggleUserBlock = async (req: Request, res: Response) => {
       user._id.toString(),
       'admin_announcement',
       `Your account has been ${blockStatus} by an administrator.`,
-      `/`
+      { type: 'profile', id: user._id.toString() }
     );
     res.json({ message: `User ${user.email} ${blockStatus}.`, user: user.toObject({ transform: (doc, ret) => { delete ret.password; delete ret.refreshToken; return ret; }}) });
  
@@ -153,7 +153,7 @@ export const toggleListingPromotion = async (req: Request, res: Response) => {
       listing.seller.toString(),
       'promoted_listing',
       `Your listing "${listing.cultPassType}" has been ${promotionStatus} by an administrator.`,
-      `/listing/${listing._id.toString()}`
+      { type: 'listing', id: listing._id.toString() }
     );
 
   } catch (error: any) {
@@ -184,7 +184,7 @@ export const deleteListingAdmin = async (req: Request, res: Response) => {
       listing.seller.toString(),
       'listing_update',
       `Your listing "${listing.cultPassType}" was deleted by an administrator.`,
-      `/my-listings`
+      { type: 'profile', id: listing.seller.toString() }
     );
 
   } catch (error: any) {
@@ -394,7 +394,7 @@ export const updateReport = async (req: Request, res: Response) => {
       report.reporter.toString(),
       'admin_announcement',
       `Your report regarding a ${report.reportedContentType} has been updated to "${status}".`,
-      `/profile` // A neutral link for now
+      { type: 'profile', id: report.reporter.toString() } // A neutral link for now
     );
 
     res.status(200).json(updatedReport);

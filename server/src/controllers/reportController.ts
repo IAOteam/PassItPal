@@ -54,7 +54,7 @@ export const submitReport = async (req: Request, res: Response) => {
           admin._id.toString(),
           'admin_alert', // A specific type for admin notifications
           `New report submitted for ${contentType} by ${req.user?.username}. Reason: ${reason}`,
-          `/admin/reports/${newReport._id}` // Future link to the specific report in the admin panel
+          { type: 'profile', id: admin._id.toString() } // Link object as required by notification system
         )
       );
       await Promise.all(notificationPromises);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -12,7 +13,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
   if (totalPages <= 1) {
     return null;
   }
-
+  console.log(currentPage)
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
@@ -29,8 +30,9 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
 
   return (
     <div className="flex justify-center items-center gap-2 dark:text-white">
-      {/* Corrected: Previous button goes backward */}
-      <Button onClick={handlePrevious} disabled={currentPage === 1}>
+      {/*  Previous button goes backward */}
+       <Button onClick={handleNext} disabled={currentPage === totalPages}>
+      <ChevronLeft className="h-4 w-4 mr-2" />
         Previous
       </Button>
 
@@ -45,9 +47,11 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
         </Button>
       ))}
 
-      {/* Corrected: Next button goes forward */}
-      <Button onClick={handleNext} disabled={currentPage === totalPages}>
+      {/*  Next button goes forward */}
+     
+      <Button onClick={handlePrevious} disabled={currentPage === 1}>
         Next
+        <ChevronRight className="h-4 w-4 ml-2" />
       </Button>
     </div>
   );

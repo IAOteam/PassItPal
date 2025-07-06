@@ -4,6 +4,12 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}", // Scans all your source files
   ],
+  variants: {
+        extend: {
+          placeholderColor: ['dark'],
+          placeholderOpacity: ['dark'],
+        },
+      },
   theme: {
     extend: {
       // We are using CSS variables for theming from index.css,

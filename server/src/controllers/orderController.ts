@@ -333,3 +333,53 @@ export const cancelOrder = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error: Could not cancel order.' });
   }
 };
+
+// @route   POST /api/orders/:orderId/complete
+// @desc    Buyer confirms receipt, completing the transaction.
+// @access  Private (Buyer Only)
+export const completeOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const buyerId = req.user?._id;
+
+    const order = await Order.findById(orderId) as IOrder & { _id: Types.ObjectId };
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+    if (order.buyer.toString() !== buyerId?.toString()) {
+      return res.status(403).json({ message: 'You are not authorized to complete this order.' });
+    }
+    if (order.status !== 'accepted') {
+      return res.status(400).json({ message: `Cannot complete order with status: ${order.status}. Seller must accept it first.` });
+    }
+
+    // 1. Update Order status to 'completed'
+    order.status = 'completed';
+    order.paymentStatus = 'paid'; // We assume payment was handled directly
+    await order.save();
+
+    // 2. Update the associated Listing to be 'unavailable'
+    await Listing.findByIdAndUpdate(order.listing, { isAvailable: false });
+
+    // 3. Notify the Seller that the transaction is finalized
+    await createAndEmitNotification(
+      order.seller.toString(),
+      'transaction',
+      `The buyer has confirmed receipt for order #${order._id.toString().slice(-6)}. The deal is complete!`,
+      { type: 'listing', id: order._id.toString() }
+    );
+
+    // 4. For your manual payout system
+    // console.log(`--- PAYOUT DUE ---
+    //   Order ID: ${order._id}
+    //   Amount: ₹${order.offerPrice}
+    //   Pay to Seller ID: ${order.seller}
+    // --------------------`);
+
+    res.status(200).json({ message: 'Transaction completed successfully! Thank you for using Passitpal.' });
+
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error while completing order.' });
+  }
+};

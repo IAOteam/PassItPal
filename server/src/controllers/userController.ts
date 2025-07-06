@@ -19,6 +19,7 @@ export const createFrontendUserObject = (user: IUser) => {
   if (!user) return null;
   return {
     _id: user._id.toString(),
+    googleId: user.googleId,
     email: user.email,
     username: user.username,
     role: user.role,

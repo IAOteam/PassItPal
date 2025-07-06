@@ -33,6 +33,14 @@ import adExpiryProcessor from './workers/adExpiryProcessor';
 import listingExpiryProcessor from './workers/listingExpiryProcessor';
 import './config/passport-setup'; 
 
+// Cloudinary configuration
+import { v2 as cloudinary } from 'cloudinary';
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!
+});
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -139,7 +147,7 @@ io.on('connection', (socket: Socket) => {
   connectedUsers.set(user._id.toString(), socket.id);
   socket.join(user._id.toString()); // Join a room named after the user's ID
 
-  socket.on('sendMessage', async ({ conversationId, text, recipientId }) => {
+  socket.on('sendMessage', async ({ conversationId, text, recipientId , imageBase64 }) => {
     try {
       if (!user) {
         console.error('User not authenticated for sendMessage event.');
@@ -158,10 +166,21 @@ io.on('connection', (socket: Socket) => {
         return;
       }
 
+      let imageUrl: string | undefined;
+
+      if (imageBase64) {
+        const uploadResponse = await cloudinary.uploader.upload(imageBase64, {
+            folder: 'chat_images'
+        });
+        imageUrl = uploadResponse.secure_url;
+      }
+      if (!text && !imageUrl) return;
+
       const newMessage = new Message({
         conversation: conversationId,
         sender: sender._id,
-        text,
+        text: text || '',
+        imageUrl: imageUrl,
         readBy: [sender._id]
       }) as IMessage;
 
@@ -171,7 +190,8 @@ io.on('connection', (socket: Socket) => {
       conversation.updatedAt = new Date();
       await conversation.save();
 
-      const populatedMessage = await newMessage.populate('sender', 'username profilePictureUrl');
+      const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username profilePictureUrl');
+
 
       conversation.participants.forEach(participantId => {
         io.to(participantId.toString()).emit('receiveMessage', populatedMessage);

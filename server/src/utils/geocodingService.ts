@@ -5,17 +5,29 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 interface GeocodingResult {
+  city: string
   latitude: number;
   longitude: number;
-  formattedAddress: string;
-  city : string;
+  address: IAddress;
+  displayLocation: string;
 }
+
+interface IAddress {
+  street?: string;
+  suburb?: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode?: string;
+  fullAddress: string;
+}
+
 
 const Maps_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
-if (!Maps_API_KEY) {
-    console.warn("[Geocoding Service] WARNING: Maps_API_KEY is not set in .env. Geocoding will not work.");
-}
+// if (!Maps_API_KEY) {
+//     console.warn("[Geocoding Service] WARNING: Maps_API_KEY is not set in .env. Geocoding will not work.");
+// }
 
 /**
  * Geocodes an address using the Google Maps Geocoding API.
@@ -32,28 +44,32 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult |
   const url = `https://maps.googleapis.com/maps/api/geocode/json`;
 
   try {
-    const response = await axios.get(url, {
-      params: {
-        address: address,
-        key: Maps_API_KEY,
-      },
-    });
+        const response = await axios.get(url, { params: { address, key: Maps_API_KEY } });
+        if (response.data.status !== 'OK' || !response.data.results[0]) return null;
+        
+        const result = response.data.results[0];
+        const { lat, lng } = result.geometry.location;
+        
+        const addressComponents = result.address_components;
+        const componentMap = new Map(addressComponents.map((c: any) => [c.types[0], c.long_name]));
 
-    if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
-      const result = response.data.results[0];
-      const { lat, lng } = result.geometry.location;
-      const formattedAddress = result.formatted_address;
-      // Extract city from address_components
-      const addressComponents = result.address_components;
-      const cityComponent = addressComponents.find((comp: any) => comp.types.includes('locality'));
-      const city = cityComponent ? cityComponent.long_name : '';
+        const parsedAddress: IAddress = {
+            street: componentMap.get('street_number')
+                ? `${componentMap.get('street_number') as string} ${componentMap.get('route') as string}`
+                : (componentMap.get('route') as string | undefined),
+            suburb: (componentMap.get('sublocality_level_1') as string | undefined) || (componentMap.get('neighborhood') as string | undefined),
+            city: (componentMap.get('locality') as string | undefined) || (componentMap.get('administrative_area_level_2') as string),
+            state: componentMap.get('administrative_area_level_1') as string,
+            country: componentMap.get('country') as string,
+            postalCode: componentMap.get('postal_code') as string | undefined,
+            fullAddress: result.formatted_address,
+        };
+        
+        //  logic for a concise display name.
+        const displayLocation = parsedAddress.suburb || parsedAddress.city;
 
-      // console.log(`[Geocoding] Successfully geocoded "${address}" to: ${lat}, ${lng}`);
-      return { latitude: lat, longitude: lng, formattedAddress, city };
-    } else {
-      console.warn(`[Geocoding] No results found for address: "${address}". Status: ${response.data.status}`);
-      return null;
-    }
+        return { city: parsedAddress.city, latitude: lat, longitude: lng, address: parsedAddress, displayLocation };
+      
   } catch (error) {
     if (axios.isAxiosError(error)) {
         console.error('Error during geocoding API call:', error.response?.data || error.message);

@@ -74,6 +74,16 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+  input::placeholder,
+  textarea::placeholder {
+    color: theme('colors.gray.400'); /* or your custom muted foreground */
+    opacity: 0.5; /* makes it slightly transparent */
+  }
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: theme('colors.gray.500');
+    opacity: 0.5;
+  }
 }
 
 

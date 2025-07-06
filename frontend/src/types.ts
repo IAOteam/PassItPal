@@ -79,6 +79,8 @@ export interface ChatMessage {
   };
   text: string;
   createdAt: string;
+  imageUrl?: string;
+  status?: 'sending' | 'sent' | 'failed';
 }
 
 export interface Participant {

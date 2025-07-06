@@ -176,7 +176,7 @@ const OTPVerificationPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 py-12 sm:px-6 lg:px-8 bg-gray-50 dark:bg-neutral-950">
-      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-md dark:bg-neutral-900">
+      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-md dark:bg-neutral-600">
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
           Verify Your {type === 'email' ? 'Email' : 'Mobile'}
         </h2>

@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'; // To redirect after creation
 import { useAuth } from '@/hooks/useAuth';
 import { ImagePlus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
 interface FormErrors {
   cultPassType?: string;
@@ -24,7 +24,8 @@ interface FormErrors {
 const CreateListingPage: React.FC = () => {
   const { user,createListing, loading, error: apiError, clearError } = useAuth();
   const navigate = useNavigate();
-
+  const { ready, value: locationValue, suggestions: { status, data }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ initOnMount: false });
+  const [coords, setCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [cultPassType, setCultPassType] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [askingPrice, setAskingPrice] = useState('');
@@ -72,6 +73,19 @@ const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     };
     reader.readAsDataURL(file);
   };
+
+  const handleLocationSelect = async (address: string) => {
+    setLocationValue(address, false); // Update the input field text
+    clearSuggestions();
+    try {
+        const results = await getGeocode({ address });
+        const { lat, lng } = await getLatLng(results[0]);
+        setCoords({ lat, lng }); // Save the coordinates
+        setLocationName(address); // Also save the full address string
+    } catch (error) {
+        console.error("Error getting location coordinates:", error);
+    }
+};
 
 const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -233,10 +247,25 @@ const handleNumericInput = (setter: React.Dispatch<React.SetStateAction<string>>
             <Label htmlFor="availableCredits">Available Credits (Optional)</Label>
             <Input id="availableCredits" type="text" inputMode="numeric" value={availableCredits} onChange={(e) => handleNumericInput(setAvailableCredits, e.target.value)} placeholder="e.g., 50" />
           </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="locationName">Location / City</Label>
-            <Input id="locationName" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="e.g., Bengaluru" />
-            {errors.locationName && <p className="text-sm text-red-500 mt-1">{errors.locationName}</p>}
+          <div className="md:col-span-2 relative">
+              <Label htmlFor="locationName">Location / City</Label>
+              <Input
+                  id="locationName"
+                  value={locationValue}
+                  onChange={(e) => setLocationValue(e.target.value)}
+                  disabled={!ready}
+                  placeholder="Start typing your address..."
+                  required
+              />
+              {status === 'OK' && (
+                  <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg">
+                      {data.map(suggestion => (
+                          <li key={suggestion.place_id} onClick={() => handleLocationSelect(suggestion.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer">
+                              {suggestion.description}
+                          </li>
+                      ))}
+                  </ul>
+              )}
           </div>
         </div>
        

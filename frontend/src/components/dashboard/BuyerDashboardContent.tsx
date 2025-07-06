@@ -85,6 +85,18 @@ const BuyerDashboardContent: React.FC = () => {
       default: return 'secondary';
     }
   };
+  const handleConfirmReceipt = async (orderId: string) => {
+    if (!window.confirm("Please confirm only if you have received and verified the pass/ticket. This action is final and will complete the transaction.")) {
+        return;
+    }
+    try {
+        const response = await api.post(`/orders/${orderId}/complete`);
+        alert(response.data.message);
+        fetchMyOrders(); // Refresh the order list
+    } catch (err: any) {
+        alert(err.response?.data?.message || "Failed to confirm the order.");
+    }
+};
 
   return (
     <TooltipProvider>
@@ -140,6 +152,7 @@ const BuyerDashboardContent: React.FC = () => {
                           {order.status}
                         </Badge>
                       </TableCell>
+                      
                       <TableCell className="text-right space-x-2">
                         {(order.status !== 'cancelled' && order.status !== 'rejected') && (
                           <Tooltip>
@@ -178,6 +191,13 @@ const BuyerDashboardContent: React.FC = () => {
                             </TooltipContent>
                           </Tooltip>
                         )}
+
+                        {order.status === 'accepted' && (
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmReceipt(order._id)}>
+                                Confirm Receipt & Complete Deal
+                            </Button>
+                        )}
+
                       </TableCell>
                     </TableRow>
                   ))}

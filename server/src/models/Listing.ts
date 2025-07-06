@@ -4,6 +4,16 @@ interface IGeoPoint {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
 }
+
+interface IAddress {
+  street?: string;      // e.g., "123 Main St"
+  suburb?: string;      // e.g., "Kukatpally"
+  city: string;        // e.g., "Hyderabad"
+  state: string;       // e.g., "Telangana"
+  country: string;     // e.g., "India"
+  postalCode?: string;
+  fullAddress: string; // The full address returned by Google
+}
 export interface IListing extends Document {
   _id: Types.ObjectId; // Explicitly type _id as Mongoose ObjectId
   seller: Types.ObjectId ;
@@ -12,11 +22,13 @@ export interface IListing extends Document {
   expiryDate: Date;
   askingPrice: number;
   originalPrice: number;
+  displayLocation: string; // The concise location to show on the card, e.g., "Kukatpally"
+  address: IAddress;         // The full, structured address object
+  location: IGeoPoint;       // The GeoJSON coordinates for searching
   availableCredits?: number;
   city: string;
   latitude: number;
   longitude: number;
-  location: IGeoPoint;
   adImageUrl?: string;
   isAvailable: boolean ;
   isPromoted: boolean; // Added for admin controls
@@ -28,6 +40,17 @@ export interface IListing extends Document {
   updatedAt: Date;
 }
 
+const AddressSchema: Schema = new Schema({
+    street: { type: String },
+    suburb: { type: String },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    country: { type: String, required: true },
+    postalCode: { type: String },
+    fullAddress: { type: String, required: true },
+}, { _id: false });
+
+
 const ListingSchema: Schema = new Schema({
   seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   cultPassType: { type: String, required: true },
@@ -38,6 +61,8 @@ const ListingSchema: Schema = new Schema({
   city: { type: String, required: true },
   latitude: { type: Number, required: true },
   longitude: { type: Number, required: true },
+  displayLocation: { type: String, required: true },
+  address: { type: AddressSchema, required: true },
   location: { // GeoJSON Point for geospatial queries
     type: {
       type: String,

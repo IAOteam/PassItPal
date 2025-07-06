@@ -1,16 +1,18 @@
 // frontend/src/pages/profile/ProfilePage.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import api from '@/lib/api';
-import StarRating from '@/components/ui/StarRating';
-import { Avatar } from 'antd';
+import { Badge } from "@/components/ui/badge"
+import api from '@/lib/api'; // To fetch reviews
+import { toBase64 } from '@/lib/utils'
+import StarRating from '@/components/ui/StarRating'; //Our star component
+import { Avatar } from 'antd'; // For reviewer avatars
 import { UserOutlined } from '@ant-design/icons';
-import { Mail, Phone, MapPin, Edit, Save, X, FileEditIcon } from 'lucide-react';
+import { Mail, Phone, MapPin, Edit3, Save, X, Shield, Settings, ChevronRight, XCircle, CheckCircle2 } from 'lucide-react';
+
 
 interface IReview {
   _id: string;
@@ -24,137 +26,263 @@ interface IReview {
   createdAt: string;
 }
 
-// Helper function to convert a file to a base64 string
-const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-});
-
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, clearError, switchUserRole, requestOtp } = useAuth();
-  
+  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, clearError, switchUserRole: switchUserRoleInContext, requestOtp /*setUser : setUserInContext*/ } = useAuth();
+
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [city, setCity] = useState('');
-  const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
+  // const [profilePictureUrl, setProfilePictureUrl] = useState(''); 
+  //to implement file upload feature
   const [profileUpdateLoading, setProfileUpdateLoading] = useState<boolean>(false);
   const [roleChangeLoading, setRoleChangeLoading] = useState<boolean>(false);
   const [otpRequestLoading, setOtpRequestLoading] = useState<boolean>(false);
-
-  const [message, setMessage] = useState<string | null>(null);
+  const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
+  const [message, setMessage] = useState<string | null>(null); // Unified message state
   const [isError, setIsError] = useState<boolean>(false);
-
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-
   // Effect to fetch reviews for the current user
   useEffect(() => {
     if (user?._id) {
-      setReviewsLoading(true);
-      api.get(`/reviews/user/${user._id}`)
-        .then(res => setReviews(res.data || []))
-        .catch(err => console.error("Failed to fetch reviews:", err))
-        .finally(() => setReviewsLoading(false));
+      const fetchReviews = async () => {
+        setReviewsLoading(true);
+        try {
+          const res = await api.get(`/reviews/user/${user._id}`);
+          setReviews(res.data || []);
+        } catch (err) {
+          console.error("Failed to fetch reviews:", err);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+      fetchReviews();
     }
   }, [user?._id]);
-
-  // Effect to initialize or reset form fields from user context
+  // Effect to initialize form fields from user context
   useEffect(() => {
     if (user) {
       setUsername(user.username || '');
       setMobileNumber(user.mobileNumber || '');
-      setCity(user.city || '');
-      setPreviewUrl(user.profilePictureUrl || null);
+      setCity(user.city || ''); // User object in AuthContext should have city directly
+      // setProfilePictureUrl(user.profilePictureUrl || '');
+      // Clear previous action messages when user data changes (e.g., after successful update from context)
+      setMessage(null);
+      setIsError(false);
+      clearError();
     }
-    clearError();
-  }, [user, clearError, isEditing]); // Reset form when entering edit mode
+  }, [user, clearError]);
 
-  // Effect to display errors from AuthContext
+  // Effect to display errors coming from AuthContext (e.g., from a failed API call in AuthContext)
   useEffect(() => {
     if (authErrorFromContext) {
       setMessage(authErrorFromContext);
       setIsError(true);
+      // clearError(); // Clear immediately after displaying, or let user dismiss
     }
   }, [authErrorFromContext]);
 
   const handleEditToggle = () => {
+    if (!isEditing && user) { // Entering edit mode
+      // Reset form fields to current user state from context
+      setUsername(user.username || '');
+      setMobileNumber(user.mobileNumber || '');
+      setCity(user.city || '');
+      // setProfilePictureUrl(user.profilePictureUrl || '');
+    }
     setIsEditing(!isEditing);
-    setMessage(null);
+    setMessage(null); // Clear messages when toggling edit mode
     setIsError(false);
-    setNewProfilePic(null); // Clear any staged photo on cancel
+    clearError(); // Clear global auth error
   };
-  
+
   const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNewProfilePic(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Create a temporary URL for preview
+    if (e.target.files && e.target.files[0]) {
+        setNewProfilePic(e.target.files[0]);
     }
   };
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null);
-    setIsError(false);
+    setMessage(null); setIsError(false); clearError();
     setProfileUpdateLoading(true);
 
-    const profileData: { username?: string; mobileNumber?: string; city?: string; profilePictureBase64?: string } = {};
+    const profileData: { username?: string; mobileNumber?: string; city?: string; } = {};
 
-    if (username !== user?.username) profileData.username = username;
-    if (mobileNumber !== user?.mobileNumber) profileData.mobileNumber = mobileNumber;
-    if (city !== user?.city) profileData.city = city;
+    let profilePictureBase64: string | undefined;
     if (newProfilePic) {
-        profileData.profilePictureBase64 = await toBase64(newProfilePic);
+        profilePictureBase64 = await toBase64(newProfilePic); // toBase64 is a helper you'll create
     }
+    await updateProfile({ ...profileData, profilePictureBase64 });
+
+    if (username !== (user?.username || '')) profileData.username = username;
+    // Send mobile number if it's changed OR if it's empty and was previously set (to clear it)
+    if (mobileNumber !== (user?.mobileNumber || '')) {
+      profileData.mobileNumber = mobileNumber; // Backend will normalize
+    }
+    if (city !== (user?.city || '')) profileData.city = city;
+    if (mobileNumber === '' && user?.mobileNumber) profileData.mobileNumber = '';
 
     if (Object.keys(profileData).length === 0) {
-      setMessage('No changes to save.');
+      setMessage('No changes to save.'); setIsError(false);
       setIsEditing(false);
       setProfileUpdateLoading(false);
       return;
     }
 
     try {
-      const successMessage = await updateProfile(profileData);
+      const successMessage = await updateProfile(profileData); // This updates user in AuthContext
       setMessage(successMessage || 'Profile updated successfully!');
       setIsError(false);
       setIsEditing(false);
-      setNewProfilePic(null);
-    } catch (err: any) {
-      setMessage(err.message || 'Failed to update profile.');
+    } catch (err: unknown) {
+      // AuthContext's updateProfile re-throws error, handleApiError sets authErrorFromContext
+      // The useEffect for authErrorFromContext will display it.
+      // If direct display is needed:
+      setMessage((err as Error).message || 'Failed to update profile.');
       setIsError(true);
+      // Error is already set by useAuth hook if handleApiError is used correctly
     } finally {
-      setProfileUpdateLoading(false);
+      setProfileUpdateLoading(false); // CRITICAL: Reset local loading state
     }
   };
 
-  // ... handleSwitchRole and handleRequestMobileOtp functions remain the same as your 'main' branch ...
+  const handleSwitchRole = async (newRole: 'buyer' | 'seller') => {
+    setMessage(null); setIsError(false); clearError();
+    setRoleChangeLoading(true);
 
-  if (authLoadingGlobal && !user) return <div className="flex items-center justify-center min-h-screen">Loading profile...</div>;
-  if (!user) return <div className="flex items-center justify-center min-h-screen text-red-600 text-xl">User not found. Please log in.</div>;
-  
+    if (newRole === 'seller') {
+      if (!user?.mobileNumber) {
+        setMessage('Please add and save a mobile number to your profile first.');
+        setIsError(true); setRoleChangeLoading(false); setIsEditing(true); return;
+      }
+      if (!user?.isMobileVerified) {
+        setMessage('Please verify your mobile number first. (OTP for mobile verification TBD)');
+        setIsError(true); setRoleChangeLoading(false); return;
+      }
+    }
+
+    try {
+      const successMessage = await switchUserRoleInContext(newRole); // This updates user in AuthContext
+      setMessage(successMessage);
+      setIsError(false);
+    } catch (err) {
+      // Error handled by useEffect for authErrorFromContext or set directly
+      setMessage((err as Error).message || 'Role change request failed.');
+      setIsError(true);
+    } finally {
+      setRoleChangeLoading(false); // CRITICAL: Reset local loading state
+    }
+  };
+
+  const handleRequestMobileOtp = async () => {
+    if (!user?.email) {
+      setMessage('User email not found. Cannot request OTP.');
+      setIsError(true);
+      return;
+    }
+    setMessage(null); setIsError(false); clearError();
+    setOtpRequestLoading(true);
+    try {
+      const message = await requestOtp(user.email, 'mobile'); // Call the context function with type 'mobile'
+      alert(message); // Let user know OTP was sent
+      // Navigate to OTP page, passing necessary state
+      navigate('/verify-otp', {
+        state: {
+          email: user.email,
+          purpose: 'verification', // For mobile verification
+          type: 'mobile'
+        }
+      });
+    } catch (err) {
+      setMessage((err as Error).message || 'Failed to send OTP to mobile.');
+      setIsError(true);
+    } finally {
+      setOtpRequestLoading(false);
+    }
+  };
+
+  if (authLoadingGlobal && !user) {
+    return <div className="flex items-center justify-center min-h-[calc(100vh-80px)]"><p>Loading profile...</p></div>;
+  }
+  if (!user) {
+    return <div className="flex items-center justify-center min-h-[calc(100vh-80px)]"><h2 className="text-xl font-bold text-red-500">User not found. Please log in.</h2></div>;
+  }
+
   const defaultProfilePicture = '/sharing.svg';
 
+  const [activeTab, setActiveTab] = useState<'profile'>('profile');
+
+
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-black text-black dark:text-white">
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* --- MERGED: Left Column for Interactive Profile Card --- */}
-          <div className="lg:col-span-1 space-y-8">
-            <div className="bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl p-6 shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">{isEditing ? "Edit Profile" : "My Profile"}</h2>
-                <Button variant="ghost" size="icon" onClick={handleEditToggle} className="text-muted-foreground">
-                  {isEditing ? <X size={20} /> : <Edit size={20} />}
-                </Button>
-              </div>
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <aside className="w-1/4 p-6 pt-20 bg-white dark:bg-neutral-900 dark:text-white">
+
+        {/* Tab Navigation */}
+        <nav className="space-y-2">
+          <Button
+            className="w-full justify-between bg-neutral-200 dark:bg-neutral-800"
+
+            onClick={() => setActiveTab('profile')}
+          >
+            My Profile
+            <ChevronRight />
+          </Button>
+
+          <Button
+            className="w-full justify-between"
+            onClick={() => navigate('/dashboard')}
+          >
+            Go to Dashboard
+            <ChevronRight />
+          </Button>
+
+          <Button
+            className="w-full justify-between"
+            onClick={() => navigate('/change-password')}
+          >
+            Change Password
+            <ChevronRight />
+          </Button>
+
+          {user.role !== 'admin' && (
+            <div>
+              {user.role === 'buyer' ? (
+                <>
+                  <Button
+                    className="w-full justify-between"
+                    onClick={() => handleSwitchRole('seller')}
+                    disabled={roleChangeLoading || authLoadingGlobal}>
+                    Switch to Seller
+                    <ChevronRight />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-between"
+                    onClick={() => handleSwitchRole('buyer')}
+                    disabled={roleChangeLoading || authLoadingGlobal}
+                  >
+                    Switch to Buyer
+                    <ChevronRight />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+        </nav>
+
+      </aside>
+
+      {/* Right Content */}
+      <main className="w-3/4 p-10 pt-20 bg-neutral-300 dark:bg-neutral-800">
+        {activeTab === 'profile' && (
+          <>
+            <div className="p-6 bg-neutral-100 dark:bg-neutral-700 rounded-lg shadow-lg dark:text-white">
 
               {message && (
                 <div className={`p-3 text-sm rounded border mb-4 ${isError ? 'bg-red-900/50 border-red-700 text-red-300' : 'bg-green-900/50 border-green-700 text-green-300'}`}>
@@ -162,84 +290,226 @@ const ProfilePage: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex flex-col items-center">
-                <div className="relative mb-4">
-                  <Avatar src={previewUrl || defaultProfilePicture} size={96} icon={<UserOutlined />} />
-                  {isEditing && (
-                    <label htmlFor="picture-upload" className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-2 rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
-                      <FileEditIcon size={16} />
-                      <input id="picture-upload" type="file" className="hidden" onChange={handlePictureChange} accept="image/*" />
-                    </label>
-                  )}
-                </div>
-                {!isEditing && <h1 className="text-2xl font-bold">{user.username}</h1>}
-              </div>
-
               {isEditing ? (
-                <form onSubmit={handleProfileSave} className="space-y-4 mt-4">
-                  <div><Label htmlFor="username">Username</Label><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
-                  <div><Label htmlFor="mobileNumber">Mobile Number</Label><Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="10-digit number" /></div>
-                  <div><Label htmlFor="city">City</Label><Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" /></div>
-                  <Button type="submit" className="w-full" disabled={profileUpdateLoading}>
-                    <Save className="mr-2 h-4 w-4" /> {profileUpdateLoading ? 'Saving...' : 'Save Changes'}
-                  </Button>
+
+                <form onSubmit={handleProfileSave} className=" space-y-6  ">
+                  <div>
+                    <h2 className="text-2xl font-semibold flex items-center gap-2 mb-4">
+                      <Edit3 className="w-5 h-5" />
+                      Edit Profile
+                    </h2>
+                  </div>
+                  <label htmlFor="picture-upload" className="absolute ... cursor-pointer">
+                      {/* Edit Icon */}
+                  </label>
+                  <input id="picture-upload" type="file" className="hidden" onChange={handlePictureChange} accept="image/*" />
+                  {/* Grid layout for fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className='space-y-2'>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="email">Email (cannot be changed)</Label>
+                      <Input
+                        id="email"
+                        value={user.email}
+                        readOnly
+                        disabled
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="mobileNumber">Mobile Number</Label>
+                      <Input
+                        id="mobileNumber"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        placeholder="10-digit number"
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="Your city"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={handleEditToggle}>
+                      Cancel
+                    </Button>
+                    <Button className='bg-black dark:bg-white text-white dark:text-black' type="submit" disabled={profileUpdateLoading}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </div>
                 </form>
-              ) : (
-                <div className="space-y-3 mt-4 text-center">
-                  <p className="flex items-center justify-center gap-2 text-muted-foreground"><Mail size={16} /> {user.email} {user.isEmailVerified && <span className="text-green-500 text-xs">(Verified)</span>}</p>
-                  <p className="flex items-center justify-center gap-2 text-muted-foreground"><Phone size={16} /> {user.mobileNumber || 'Not provided'}</p>
-                  <p className="flex items-center justify-center gap-2 text-muted-foreground"><MapPin size={16} /> {user.city || 'Not specified'}</p>
-                </div>
-              )}
-            </div>
 
-            {/* --- MERGED: Separate Card for Account Actions --- */}
-            <div className="bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl p-6 shadow-lg space-y-2">
-                <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/change-password')}>Change Password</Button>
-                {user.role === 'buyer' ? (
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>Switch to Seller</Button>
-                ) : user.role === 'seller' && (
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => {}}>Switch to Buyer</Button>
-                )}
-            </div>
-          </div>
 
-          {/* --- MERGED: Right Column for Reputation and Reviews using UI Branch's style --- */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-bold mb-4">Your Reputation</h3>
-              <div className="flex items-center space-x-4">
-                <StarRating rating={user.averageRating || 0} size={28} />
-                <div>
-                  <div className="text-xl font-bold">{(user.averageRating || 0).toFixed(1)} / 5.0</div>
-                  <div className="text-muted-foreground">{user.reviewCount || 0} reviews</div>
-                </div>
-              </div>
-            </div>
+              ) :
 
-            <div className="bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-bold mb-6">What Others Are Saying</h3>
-              {reviewsLoading ? <p className="text-muted-foreground">Loading reviews...</p> : reviews.length > 0 ? (
-                <div className="space-y-6">
-                  {reviews.map(review => (
-                    <div key={review._id} className="border-b dark:border-neutral-800 pb-6 last:border-b-0 last:pb-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <Avatar src={review.reviewer.profilePictureUrl} icon={<UserOutlined />} size={40} />
-                        <div>
-                          <p className="font-semibold">{review.reviewer.username}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                (
+
+                  <div className="flex flex-col md:flex-row justify-center md:items-start gap-20">
+                    <div className="relative">
+                      <img
+                        src={user.profilePictureUrl || defaultProfilePicture}
+                        alt="Profile"
+                        className="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md"
+                      />
+                      <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
+                        <Shield className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex-1 text-center md:text-left">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                          <h1 className="text-3xl font-bold">{user.username}</h1>
+                          <div className="flex items-center gap-2">
+                            <Badge  className="capitalize bg-neutral-300 dark:bg-neutral-800">
+                              {user.role}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 text-muted-foreground">
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                            <Mail className="w-4 h-4" />
+                            <span>{user.email}</span>
+                             <span title={user.isEmailVerified ? "Verified" : "Not Verified"}></span>
+                                                    <span>
+                              {user.isEmailVerified ? (
+                                <CheckCircle2
+                                  className="w-4 h-4 text-green-600"
+                                  
+                                />
+                              ) : (
+                                <XCircle
+                                  className="w-4 h-4 text-red-600"
+                                  
+                                />
+                              )}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                              <Phone className="w-4 h-4" />
+                              <span>{user.mobileNumber || "Not provided"}</span>
+                                  {user.mobileNumber && (
+                                    <span title={user.isMobileVerified ? "Verified" : "Not Verified"}>
+                                      {user.isMobileVerified ? (
+                                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4 text-red-600" />
+                                      )}
+                                    </span>
+                                  )}
+                              
+                              {/* Mobile verify button if unverified */}
+                              {user.mobileNumber && !user.isMobileVerified && (
+                                <Button
+                                  className="ml-4 dark:text-white"
+                                  size="sm"
+                                  variant="link"
+                                  onClick={handleRequestMobileOtp}
+                                  disabled={otpRequestLoading}
+                                >
+                                  Verify
+                                </Button>
+                              )}
+                            </div>
+
+                          <div className="flex items-center justify-center md:justify-start gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{user.city || "Not specified"}</span>
+                          </div>
+
+
+                        </div>
+
+                        <div className="mt-6 flex flex-col sm:flex-row justify-between gap-16">
+                          <div className="flex items-center gap-4">
+                            <StarRating rating={user.averageRating} size={20} />
+                            <div>
+                              <span className="font-bold text-xl">{(user.averageRating || 0).toFixed(1)}</span>
+                              <span className="ml-1">out of 5</span>
+                            </div>
+                          </div>
+
+                          <Button className='bg-black dark:bg-white text-white dark:text-black' onClick={handleEditToggle} variant={isEditing ? "outline" : "default"}>
+                            {isEditing ? (
+                              <>
+                                <X className="w-4 h-4 mr-2" />
+                                Cancel
+                              </>
+                            ) : (
+                              <>
+                                <Edit3 className="w-4 h-4 mr-2" />
+                                Edit Profile
+                              </>
+                            )}
+                          </Button>
                         </div>
                       </div>
-                      <StarRating rating={review.rating} size={16} className="mb-2" />
-                      <p className="text-neutral-700 dark:text-neutral-300">{review.comment}</p>
+                    </div>
+                  </div>
+                )}
+            </div>
+
+
+            <div className='mt-10'>
+              <div className='flex items-center space-x-4'>
+                <h3 className="text-2xl font-bold dark:text-white">Reviews</h3>
+                <p className="dark:text-neutral-300 text-lg">({user.reviewCount || 0} reviews)</p>
+              </div>
+              {reviewsLoading ? (
+                <p className="text-neutral-400">Loading reviews...</p>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review: any) => (
+                    <div key={review._id}>
+                      <div className="mt-6 p-6 bg-neutral-100 dark:bg-neutral-700 rounded-lg shadow-lg dark:text-white">
+                        <div className="flex items-start gap-4">
+                          <Avatar src={review.reviewer.profilePictureUrl} icon={<UserOutlined />} size={40} />
+
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold">{review.reviewer.username}</h4>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(review.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            <StarRating rating={review.rating} size={16} />
+
+                            <p className="mt-2 text-muted-foreground">{review.comment}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-muted-foreground">No reviews yet.</p>}
+              ) : (
+                <p className="text-neutral-400">You have not received any reviews yet.</p>
+              )}
             </div>
-          </div>
-        </div>
-      </div>
+
+          </>
+        )}
+      </main>
     </div>
   );
 };

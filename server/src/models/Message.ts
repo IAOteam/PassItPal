@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   conversation: mongoose.Schema.Types.ObjectId;
   sender: mongoose.Schema.Types.ObjectId;
   text: string;
+  imageUrl?: string;
   readBy: mongoose.Schema.Types.ObjectId[];
   createdAt: Date;
 }
@@ -13,6 +14,7 @@ const MessageSchema: Schema = new Schema({
   conversation: { type: Schema.Types.ObjectId, ref: 'Conversation', required: true },
   sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   text: { type: String, required: true },
+  imageUrl: { type: String },
   readBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now }
 });

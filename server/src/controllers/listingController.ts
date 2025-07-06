@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Listing, { IListing } from '../models/Listing';
+import User from '../models/User';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { createAndEmitNotification } from './notificationController';
@@ -51,7 +52,8 @@ export const createListing = async (req: Request, res: Response) => {
     if (!geocodeResult) {
       return res.status(400).json({ message: 'Could not determine coordinates for the provided location name.' });
     }
-    const { latitude, longitude, formattedAddress, city } = geocodeResult;
+    const { latitude, longitude } = geocodeResult;
+    const city = (geocodeResult as any).city; // Access city if it exists, or update GeocodingResult type
 
     let adImageUrl: string | undefined;
 
@@ -72,9 +74,12 @@ export const createListing = async (req: Request, res: Response) => {
       askingPrice,
       originalPrice,
       availableCredits:availableCredits ? parseFloat(availableCredits) : undefined, // Assuming it should be a number
-      city: formattedAddress, // Use the formatted address from geocoding
+      city: city, // Use the city from geocoding
       latitude,
       longitude,
+      address: geocodeResult.address,
+      displayLocation: geocodeResult.displayLocation, // e.g., "Kukatpally"
+            
       location: { // to Populate the GeoJSON 'location' field
         type: 'Point',
         coordinates: [longitude, latitude] // GeoJSON is [longitude, latitude]
@@ -104,131 +109,97 @@ export const createListing = async (req: Request, res: Response) => {
 // @desc    Get all active Cult Fit pass listings (optionally by location or name)
 // @access  Public
 export const getListings = async (req: Request, res: Response) => {
-  try {
-    const { 
-      locationName, cultPassType,
-      minPrice, maxPrice,
-      minCredits, maxCredits, // Added credits filter
-      page = '1', limit = '12', sortBy = 'createdAt_desc'
-    } = req.query;
+    try {
+        const { locationName, cultPassType, minPrice, maxPrice, page = '1', limit = '12', sortBy = 'createdAt_desc' } = req.query;
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
 
-    // --- AGGREGATION PIPELINE FOR ADVANCED SEARCH ---
-    const pipeline: mongoose.PipelineStage[] = [];
+        // --- 1. Fetch Promoted Listings Separately (they ignore filters) ---
+        const promotedListings = await Listing.find({ isPromoted: true, isAvailable: true })
+            .populate('seller', 'username profilePictureUrl')
+            .limit(4);
 
-    // **  $search (Fuzzy Search for Location and Pass Type) **
-    if (locationName || cultPassType) {
-      const searchStage: any = {
-        $search: {
-          compound: {
-            must: []
-          }
+        // --- 2. Build the Aggregation Pipeline for Regular Listings ---
+        const pipeline: mongoose.PipelineStage[] = [];
+
+        // Stage A: Geospatial Search (if location is provided)
+        if (locationName && typeof locationName === 'string') {
+            const geocodeResult = await geocodeAddress(locationName);
+            if (geocodeResult) {
+                pipeline.push({
+                    $geoNear: {
+                        near: { type: 'Point', coordinates: [geocodeResult.longitude, geocodeResult.latitude] },
+                        distanceField: 'distance',
+                        maxDistance: 50 * 1000, // 50km radius
+                        spherical: true,
+                    },
+                });
+            }
         }
-      };
 
-      if (locationName && typeof locationName === 'string') {
-    const geocodeResult = await geocodeAddress(locationName);
-    if (geocodeResult) {
+        // Stage B: Main Filtering ($match)
+        const matchStage: any = { isAvailable: true, isPromoted: false }; // Always exclude promoted from this query
+        if (cultPassType) {
+            matchStage.$or = [
+                { cultPassType: { $regex: cultPassType, $options: 'i' } },
+                { description: { $regex: cultPassType, $options: 'i' } },
+                { category: { $regex: cultPassType, $options: 'i' } }
+            ];
+        }
+        if (minPrice || maxPrice) {
+            matchStage.askingPrice = {};
+            if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice as string);
+            if (maxPrice) matchStage.askingPrice.$lte = parseFloat(maxPrice as string);
+        }
+        pipeline.push({ $match: matchStage });
+
+        // Stage C: Sorting ($sort)
+        const sortStage: any = {};
+        if (sortBy === 'distance' && locationName) sortStage.distance = 1;
+        else if (sortBy === 'price_asc') sortStage.askingPrice = 1;
+        else if (sortBy === 'price_desc') sortStage.askingPrice = -1;
+        else sortStage.createdAt = -1; // Default
+        pipeline.push({ $sort: sortStage });
+
+        // Stage D: Faceted Search for Data and Count (very efficient)
         pipeline.push({
-            $geoNear: {
-                near: {
-                    type: 'Point',
-                    coordinates: [geocodeResult.longitude, geocodeResult.latitude]
-                },
-                distanceField: 'distance', 
-                maxDistance: 50000, // 50km radius, to do : dinamically can adjust this
-                spherical: true
+            $facet: {
+                listings: [
+                    { $skip: skip },
+                    { $limit: limitNum },
+                    { $lookup: { from: 'users', localField: 'seller', foreignField: '_id', as: 'seller' } },
+                    { $unwind: '$seller' },
+                    { $project: { 'seller.password': 0, 'seller.email': 0 } } // Exclude sensitive seller data
+                ],
+                totalCount: [
+                    { $count: 'count' }
+                ]
             }
         });
-    }
-}
-      if (cultPassType && typeof cultPassType === 'string') {
-        searchStage.$search.compound.must.push({
-          text: {
-            query: cultPassType,
-            path: 'cultPassType',
-            fuzzy: { maxEdits: 1 }
-          }
+
+        // --- 3. Execute the Pipeline ---
+        const results = await Listing.aggregate(pipeline);
+        const regularListings = results[0].listings;
+        const totalCount = results[0].totalCount[0]?.count || 0;
+        const totalPages = Math.ceil(totalCount / limitNum);
+
+        res.status(200).json({
+            message: 'Listings fetched successfully',
+            promotedListings,
+            regularListings,
+            totalPages,
+            currentPage: pageNum,
+            totalCount: totalCount + promotedListings.length
         });
-      }
-      pipeline.push(searchStage);
+
+    } catch (error: any) {
+        console.error('Error fetching listings:', error.message);
+        res.status(500).json({ message: 'Server error: Could not fetch listings.' });
     }
-
-    // ** $match (Standard Filtering after search) **
-    const matchStage: any = { isAvailable: true };
-    if (minPrice || maxPrice) {
-      matchStage.askingPrice = {};
-      if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice as string);
-      if (maxPrice) matchStage.askingPrice.$lte = parseFloat(maxPrice as string);
-    }
-    if (minCredits || maxCredits) {
-      matchStage.availableCredits = {};
-      if (minCredits) matchStage.availableCredits.$gte = parseFloat(minCredits as string);
-      if (maxCredits) matchStage.availableCredits.$lte = parseFloat(maxCredits as string);
-    }
-    pipeline.push({ $match: matchStage });
-
-    // **  $sort (Sorting Logic) **
-    const sortStage: any = {};
-    switch (sortBy) {
-        case 'price_asc': sortStage.askingPrice = 1; break;
-        case 'price_desc': sortStage.askingPrice = -1; break;
-        default: sortStage.createdAt = -1; break;
-    }
-    pipeline.push({ $sort: sortStage });
-
-    // **  Pagination and Data Fetching **
-    const countPipeline = [...pipeline, { $count: 'total' }];
-    const dataPipeline = [
-        ...pipeline,
-        { $skip: skip },
-        { $limit: limitNum },
-        { $lookup: { from: 'users', localField: 'seller', foreignField: '_id', as: 'sellerInfo' } },
-        { $unwind: '$sellerInfo' },
-        { $project: {
-            seller: { _id: '$sellerInfo._id', username: '$sellerInfo.username', profilePictureUrl: '$sellerInfo.profilePictureUrl' },
-            cultPassType: 1, askingPrice: 1, originalPrice: 1, city: 1, isPromoted: 1,
-            adImageUrl: 1, expiryDate: 1, availableCredits: 1, isAvailable: 1, createdAt: 1
-          }
-        }
-    ];
-
-    const countResult = await Listing.aggregate(countPipeline);
-    const totalCount = countResult.length > 0 ? countResult[0].total : 0;
-    
-    const allListings = await Listing.aggregate(dataPipeline);
-    const promotedListings = allListings.filter(l => l.isPromoted);
-    const regularListings = allListings.filter(l => !l.isPromoted);
-
-    const totalPages = Math.ceil(totalCount / limitNum);
-
-    // --- Ad Fetching ---
-    const adQuery: any = { isActive: true };
-    if (locationName) {
-      adQuery.$or = [{ locations: { $in: [new RegExp(locationName as string, 'i')] } }, { locations: { $size: 0 } }];
-    } else {
-      adQuery.locations = { $size: 0 };
-    }
-    const ads = await Ad.find(adQuery).sort({ priority: -1 }).limit(2);
-
-    res.status(200).json({
-      message: 'Listings fetched successfully',
-      totalCount: totalCount,
-      promotedListings,
-      regularListings,
-      ads,
-      totalPages,
-      currentPage: pageNum,
-    });
-
-  } catch (error: any) {
-    console.error('Error fetching listings with aggregation:', error);
-    res.status(500).json({ message: 'Server error: Could not fetch listings.' });
-  }
 };
+
 
 // @route   GET /api/listings/:id
 // @desc    Get a single Cult Fit pass listing by ID
@@ -371,7 +342,7 @@ export const updateListing = async (req: Request, res: Response) => {
       if (geocodeResult) {
         updatedFields.latitude = geocodeResult.latitude;
         updatedFields.longitude = geocodeResult.longitude;
-        updatedFields.city = geocodeResult.formattedAddress;
+        updatedFields.city = geocodeResult.city;
          updatedFields.location = { //  Update the GeoJSON 'location' field
           type: 'Point',
           coordinates: [geocodeResult.longitude, geocodeResult.latitude] // GeoJSON is [longitude, latitude]

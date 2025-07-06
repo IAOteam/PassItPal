@@ -5,7 +5,7 @@ export interface IUser extends Document {
   googleId?: string; 
   email: string;
   password?: string; // Optional because Google login might not have a local password
-  username?: string; // Buyer-specific
+  username: string; // Buyer-specific
   mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
   location: {

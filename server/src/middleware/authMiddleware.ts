@@ -6,7 +6,7 @@ import User,{ IUser }  from '../models/User';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    user?: IUser;
+    user: IUser;
   }
 }
 // Middleware to protect routes and verify JWT

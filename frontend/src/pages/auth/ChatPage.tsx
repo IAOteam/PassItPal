@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MessageSquare, ChevronLeft } from 'lucide-react';
+import { Send, MessageSquare, ChevronLeft, Paperclip, X, Clock, AlertCircle } from 'lucide-react';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import type { ChatMessage, Participant } from '@/types';
@@ -14,6 +14,8 @@ const ChatPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const { user, socket, sendSocketMessage } = useAuth();
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [recipient, setRecipient] = useState<Participant | null>(null);
@@ -114,14 +116,38 @@ const ChatPage: React.FC = () => {
     return () => observer.disconnect();
   }, [topRef, hasMore, fetchMessages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user || !recipient?._id) return;
 
-    sendSocketMessage({ conversationId, text: newMessage, recipientId: recipient._id });
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+// Helper to convert file to base64
+  const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if ((!newMessage.trim() && !imageFile) || !user || !recipient?._id) return;
+
+    const tempId = new Date().toISOString(); // Temporary ID for optimistic UI
+    let imagePreviewUrl: string | null = null;
+    let imageBase64: string | undefined;
+    if (imageFile) {
+        imagePreviewUrl = URL.createObjectURL(imageFile);
+        imageBase64 = await toBase64(imageFile);
+    }
 
     const optimisticMsg: ChatMessage = {
-      _id: new Date().toISOString(),
+      _id: tempId,
       conversation: conversationId,
       sender: {
         _id: user._id,
@@ -129,12 +155,29 @@ const ChatPage: React.FC = () => {
         profilePictureUrl: user.profilePictureUrl,
       },
       text: newMessage,
+      imageUrl: imagePreviewUrl ?? undefined,
       createdAt: new Date().toISOString(),
+      status: 'sending',
     };
 
     setMessages(prev => [...prev, optimisticMsg]);
     setNewMessage('');
+    setImageFile(null);
+    setImagePreview(null);
+
+    try {
+      // This assumes sendSocketMessage is now handled properly with acks or separate events
+      // to update message status from 'sending' to 'sent' or 'failed'
+      if (recipient) {
+        let imageBase64ToSend: string | undefined = imageBase64;
+        sendSocketMessage({ conversationId: conversationId!, text: newMessage, recipientId: recipient._id, imageBase64: imageBase64ToSend });
+      }
+    } catch (error) {
+      // Update the message status to 'failed' on error
+      setMessages(prev => prev.map(m => m._id === tempId ? { ...m, status: 'failed' } : m));
+    }
   };
+
   const isMobile = window.innerWidth < 768;
 
   if (loading && messages.length === 0) {
@@ -161,6 +204,7 @@ const ChatPage: React.FC = () => {
         )}
 
       {/* Messages */}
+
       <div className="flex-grow p-4 overflow-y-auto space-y-4">
         <div ref={topRef} className="h-1" />
         {messages.map(msg => {
@@ -168,16 +212,28 @@ const ChatPage: React.FC = () => {
           return (
             <div key={msg._id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-xs md:max-w-md p-3 rounded-2xl ${
-                  isOwn
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-800 dark:bg-neutral-800 dark:text-gray-200 rounded-bl-none'
-                }`}
+                className={`max-w-xs md:max-w-md rounded-2xl ${
+                  isOwn ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 dark:bg-neutral-800 dark:text-gray-200 rounded-bl-none'
+                } ${msg.imageUrl ? 'p-1' : 'p-3'}`} // Reduce padding if there's an image
               >
-                <p className="text-sm">{msg.text}</p>
-                <p className="text-xs opacity-75 mt-1 text-right">
+                {/* --- Image Rendering Logic --- */}
+                {msg.imageUrl && (
+                  <img src={msg.imageUrl} alt="Chat attachment" className="rounded-lg max-w-full cursor-pointer" onClick={() => window.open(msg.imageUrl, '_blank')} />
+                )}
+
+                {/* Render text only if it exists */}
+                {msg.text && (
+                  <p className={`text-sm ${msg.imageUrl ? 'pt-2 px-2' : ''}`}>{msg.text}</p>
+                )}
+
+                
+                <div className="flex items-center justify-end ...">
+                  <p className="text-xs opacity-75 mt-1 text-right px-2">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                 </p>
+                  {/* {msg.status === 'sending' && <Clock size={12} className="ml-1 animate-spin" />} */}
+                  {msg.status === 'failed' && <AlertCircle size={12} className="ml-1 text-red-500" />}
+              </div>
               </div>
             </div>
           );
@@ -187,22 +243,40 @@ const ChatPage: React.FC = () => {
       </div>
 
       {/* Input */}
-      <form
-        onSubmit={handleSendMessage}
-        className="p-3 border-t flex items-center gap-3 bg-gray-50 dark:bg-neutral-900/50 dark:border-neutral-800 flex-shrink-0"
-      >
-        <Input
-          ref={inputRef}
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          autoComplete="off"
-          className="flex-grow bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700"
-        />
-        <Button type="submit" disabled={!newMessage.trim()} size="icon">
-          <Send className="h-5 w-5 text-white dark:text-green-500 " />
-        </Button>
-      </form>
+      <div className="p-3 border-t bg-gray-50 dark:bg-neutral-900/50 dark:border-neutral-800 flex-shrink-0">
+          {/* --- Image Preview --- */}
+          {imagePreview && (
+              <div className="relative w-24 h-24 mb-2 p-2 bg-gray-200 dark:bg-neutral-800 rounded-lg">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-md" />
+                  <button
+                      onClick={() => { setImageFile(null); setImagePreview(null); }}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-700"
+                      aria-label="Remove image"
+                  >
+                      <X size={14} />
+                  </button>
+              </div>
+          )}
+          <form onSubmit={handleSendMessage} className="flex items-center gap-3">
+              {/* --- Attach Button --- */}
+              <label htmlFor="image-upload" className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer">
+                  <Paperclip className="h-5 w-5 text-green-600 dark:text-neutral-300" />
+              </label>
+              <input id="image-upload" type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
+
+              <Input
+                ref={inputRef}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                autoComplete="off"
+                className="flex-grow bg-white text-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700"
+              />
+              <Button type="submit" disabled={!newMessage.trim() && !imageFile} size="icon">
+                <Send className="h-5 w-5 text-green-600" />
+              </Button>
+          </form>
+        </div>
     </div>
   );
 };

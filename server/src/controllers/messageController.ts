@@ -69,7 +69,8 @@ export const getMyConversations = async (req: Request, res: Response) => {
         path: 'lastMessage',
         populate: {
             path: 'sender',
-            select: 'username'
+            select: 'username text createdAt',
+            
         }// Populate only necessary last message fields
       })
       .sort({ updatedAt: -1 }); // Sort by most recent activity
@@ -100,9 +101,6 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Conversation not found.' });
     }
 
-    // --- CRITICAL FIX: Correctly check if the user is a participant ---
-    // The old way `conversation.participants.includes(req.user._id)` fails because it compares object references.
-    // The correct way is to use .some() and .equals() to compare the ID values.
     const isParticipant = conversation.participants.some(participant => 
         participant.user._id.equals(req.user!._id)
     );
@@ -114,6 +112,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
 
     const messages = await Message.find({ conversation: conversationId })
       .populate('sender', 'username profilePictureUrl')
+      .select('sender text imageUrl createdAt') 
       .sort('createdAt');
 
     // Mark messages as read by the current user

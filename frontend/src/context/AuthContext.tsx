@@ -9,6 +9,7 @@ import { socket as globalSocketInstance } from '../lib/socketService';
 // Define the shape of the user object from the backend
 export interface User {
   _id: string;
+  googleId?: string; 
   email: string;
   username: string;
   role: 'buyer' | 'seller'| 'admin';
@@ -113,7 +114,7 @@ export interface AuthContextType {
   setToken: (newToken: string | null) => void; // Function to update token, e.g., after refresh
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   clearError: () => void;
-  sendSocketMessage: (data: { conversationId: string; text: string; recipientId: string }) => void;
+  sendSocketMessage: (data: { conversationId: string; text: string; recipientId: string; imageBase64?: string; }) => void;
   switchUserRole: (newRole: 'buyer' | 'seller') => Promise<string>;
   saveListing: (listingId: string) => Promise<void>;
   unsaveListing: (listingId: string) => Promise<void>;

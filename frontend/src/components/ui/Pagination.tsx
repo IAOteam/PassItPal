@@ -24,12 +24,16 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
       onPageChange(currentPage + 1);
     }
   };
-  
+
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
     <div className="flex justify-center items-center gap-2 dark:text-white">
-      <Button onClick={handleNext} disabled={currentPage === totalPages}>Previous</Button>
+      {/* Corrected: Previous button goes backward */}
+      <Button onClick={handlePrevious} disabled={currentPage === 1}>
+        Previous
+      </Button>
+
       {pageNumbers.map(number => (
         <Button
           key={number}
@@ -40,7 +44,11 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
           {number}
         </Button>
       ))}
-      <Button onClick={handlePrevious} disabled={currentPage === 1}>Next</Button>
+
+      {/* Corrected: Next button goes forward */}
+      <Button onClick={handleNext} disabled={currentPage === totalPages}>
+        Next
+      </Button>
     </div>
   );
 };

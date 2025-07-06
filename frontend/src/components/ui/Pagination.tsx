@@ -13,7 +13,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
   if (totalPages <= 1) {
     return null;
   }
-  console.log(currentPage)
+  // console.log(currentPage)
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
@@ -31,8 +31,9 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
   return (
     <div className="flex justify-center items-center gap-2 dark:text-white">
       {/*  Previous button goes backward */}
-       <Button onClick={handleNext} disabled={currentPage === totalPages}>
-      <ChevronLeft className="h-4 w-4 mr-2" />
+       
+        <Button onClick={handlePrevious} disabled={currentPage === 1}>
+      <ChevronLeft className="h-4 w-4 mr-2 hover:text-blue-500" />
         Previous
       </Button>
 
@@ -40,7 +41,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
         <Button
           key={number}
           onClick={() => onPageChange(number)}
-          variant={currentPage === number ? 'default' : 'outline'}
+          variant={currentPage === number ?  'outline' : 'default'}
           size="icon"
         >
           {number}
@@ -49,9 +50,9 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
 
       {/*  Next button goes forward */}
      
-      <Button onClick={handlePrevious} disabled={currentPage === 1}>
+      <Button onClick={handleNext} disabled={currentPage === totalPages}>
         Next
-        <ChevronRight className="h-4 w-4 ml-2" />
+        <ChevronRight className="h-4 w-4 ml-2 hover:text-blue-500" />
       </Button>
     </div>
   );

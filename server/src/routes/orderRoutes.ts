@@ -8,7 +8,8 @@ import {
   getMyOrders, //  for buyer to see their orders
   getListingOrders, // for seller to see orders on their listings
   updateOrderStatus, // for seller to accept/reject/complete orders
-  cancelOrder
+  cancelOrder,
+  completeOrder
 } from '../controllers/orderController'; 
 
 const router = Router();
@@ -67,4 +68,13 @@ router.put(
   updateOrderStatus
 );
 router.put('/:orderId/cancel',protect, authorizeRoles('buyer'), cancelOrder);
+
+router.post(
+    '/:orderId/complete',
+    protect,
+    authorizeRoles('buyer'),
+    [ param('orderId').isMongoId().withMessage('Invalid order ID format.') ],
+    validate,
+    completeOrder
+);
 export default router;

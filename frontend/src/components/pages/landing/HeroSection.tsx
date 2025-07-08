@@ -88,19 +88,19 @@ const HeroSection: React.FC = () => {
 
         <form onSubmit={handleSearchSubmit} className="mb-80 w-full max-w-lg relative">
           <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-800 dark:text-gray-200" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-900 dark:text-gray-100" />
               <Input
                   type="text"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   disabled={!ready}
                   placeholder="Enter your location (e.g., Koramangala, Bengaluru)"
-                  className="w-full h-14 pl-12 pr-32 rounded-full bg-neutral-100/40 placeholder:text-gray-800  dark:bg-neutral-800/80  dark:text-white dark:placeholder:text-gray-400 drop-shadow-xl"
+                  className="w-full h-14 pl-12 pr-32 rounded-2xl bg-white text-black placeholder:text-gray-500 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-400"
                   autoComplete="off"
               />
               <Button
                   type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-6 text-gray-800 dark:text-gray-400"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-6 bg-gray-900 text-white tracking-wide font-normal hover:bg-gray-300 dark:bg-gray-700 dark:text-white hover:dark:bg-gray-600"
                   disabled={!value}
               >
                   Search

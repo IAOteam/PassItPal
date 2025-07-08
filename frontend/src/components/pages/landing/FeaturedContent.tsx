@@ -57,7 +57,7 @@ const FeaturedContent: React.FC = () => {
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="h-96 w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                  className="h-96 w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 dark:text-white"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'motion/react';
-import usePlacesAutocomplete from 'use-places-autocomplete';
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
     clearSuggestions,
     init,
   } = usePlacesAutocomplete({
-    initOnMount: false,
+    initOnMount: true,
     debounce: 300,
     // requestOptions: {
     //   componentRestrictions: { country: 'in' }, // Restrict search to India

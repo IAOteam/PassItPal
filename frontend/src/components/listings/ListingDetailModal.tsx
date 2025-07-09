@@ -33,7 +33,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   // ---  Map setup logic  ---
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!
+    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY
   });
 
   const mapContainerStyle = {

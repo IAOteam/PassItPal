@@ -14,6 +14,39 @@ export default {
     extend: {
       // We are using CSS variables for theming from index.css,
       // but you can extend colors, fonts, etc. here if needed.
+      animation: {
+        slideRight : "slideRight 9s infinite",
+        slideLeft: "slideLeft 7s infinite",
+        'slow-spin-fall': 'slowSpinFall 5s infinite',
+        slideLeftSlow : "slideLeftSlow 5s infinite",
+        'slow-bounce': 'bounce 5s infinite',
+
+      },
+      keyframes: {
+        slideLeftSlow: {
+          '0%': { transform: 'translateX(-10px) ' },
+          '50%': { transform: 'translateX(10px) ' },
+          '100%': { transform: 'translateX(-10px)' },
+        },
+        slowSpinFall: {
+          '0%': { transform: 'translateY(10px) rotate(0deg)' },
+          '50%': { transform: 'translateY(-10px) rotate(-15deg) scale(1.1)' },
+          '100%': { transform: 'translateY(10px) rotate(0deg)' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-200px) scale(1)' },
+          '50%': { transform: 'translateX(0px) scale(1.1)' },
+          '100%': { transform: 'translateX(-200px) scale(1)' },
+          
+        },
+        slideLeft: {
+          '0%': { transform: 'translateX(200px) scale(1)' },
+          '50%': { transform: 'translateX(0px) scale(1.1)' },
+          '100%': { transform: 'translateX(200px) scale(1)' },
+          
+        },
+      },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

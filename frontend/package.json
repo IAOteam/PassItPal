@@ -19,6 +19,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@react-google-maps/api": "^2.20.7",
     "@tabler/icons-react": "^3.33.0",
+    "animejs": "^4.0.2",
     "antd": "^5.25.4",
     "axios": "^1.7.2",
     "brace-expansion": "^4.0.1",

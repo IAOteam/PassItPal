@@ -44,11 +44,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ scrollToCategory }) => {
         Find Your Nearest Pass
       </RainbowButton>
 
-
-
-
-
-
     </div>
   );
 };

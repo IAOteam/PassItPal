@@ -1,5 +1,5 @@
-// frontend/src/pages/landing/HomePage.tsx
-import React from 'react';
+// HomePage.tsx
+import React, { useRef } from 'react';
 import HeroSection from '@/components/pages/landing/HeroSection';
 import CategoryTabs from '@/components/pages/landing/CategoryTabs';
 import FeaturedContent from './FeaturedContent';
@@ -9,16 +9,19 @@ import Testimonials from './Testimonials';
 import Achievements from './Achievements';
 
 const HomePage: React.FC = () => {
+  const categoryRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <div>
-      <HeroSection />
-      <CategoryTabs />
+      <HeroSection scrollToCategory={() => categoryRef.current?.scrollIntoView({ behavior: 'smooth' })} />
+      <div ref={categoryRef}>
+        <CategoryTabs />
+      </div>
       <FeaturedContent />
       <TrendingListings />
       <Achievements />
       <HowItWorks />
       <Testimonials />
-      {/* The new "Featured Content" section will go here next */}
     </div>
   );
 };

@@ -96,7 +96,7 @@ export function NavBar() {
 
   return (
     <header className={cn(
-      "fixed top-0 z-50 w-full bg-white/10 dark:bg-black/30 backdrop-blur-lg transition-transform duration-300",
+      "fixed top-0 z-[999] w-full bg-white/10 dark:bg-neutral-700 backdrop-blur-xl transition-transform duration-300 ",
       showNavbar ? "translate-y-0" : "-translate-y-full"
     )}>
       <div className="container mx-auto px-4">
@@ -108,7 +108,7 @@ export function NavBar() {
               <NavLink
                 key={item.name}
                 to={item.href}
-                className={({ isActive }) => cn("text-sm", isActive ? "font-semibold text-black dark:text-white" : "text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white")}
+                className={({ isActive }) => cn("text-md", isActive ? "font-semibold text-black dark:text-white" : "text-neutral-800  hover:translate-y-[2px] dark:text-white/90 hover:text-black dark:hover:text-white transition-all duration-300 ease-in-out")}
               >
                 {item.name}
               </NavLink>

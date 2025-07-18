@@ -1,7 +1,7 @@
 // src/components/listings/ListingCard.tsx
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { type IListing } from '@/types';
+
+
 import { getDistance } from '@/lib/utils';
 
 // UI Components
@@ -12,6 +12,8 @@ import { Avatar } from 'antd';
 // Icons
 import { UserOutlined } from '@ant-design/icons';
 import { Star, Bookmark, CalendarDays, MapPin, NotebookText, MessageCircle } from 'lucide-react';
+import type { IListing } from '@passitpal/types';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface ListingCardProps {
   listing: IListing;
@@ -26,7 +28,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     getOrCreateConversation,
     saveListing,
     unsaveListing,
-  } = useAuth();
+  } = useAuthStore();
 
   const isSaved = user?.savedListings?.includes(listing._id);
   const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(
@@ -129,7 +131,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
           </a>
           <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
             <MapPin className="h-3 w-3" />
-            <p>{listing.city}</p>
+            <p>{listing.displayLocation}</p>
+
             {user?.latitude && user?.longitude && (
               <p className="font-semibold">
                 • {getDistance(user.latitude, user.longitude, listing.latitude, listing.longitude).toFixed(1)} km

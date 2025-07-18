@@ -1,5 +1,7 @@
 // src/lib/api.ts
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import toast from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
 
@@ -85,16 +87,22 @@ api.interceptors.response.use(
         processQueue(refreshError, null); // Reject queued requests
         isRefreshing = false;
         // console.error('Token refresh failed:', refreshError);
+        toast.error('Your session has expired. Please log in again.');
+
         // If refresh fails, clear user data and redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        /*localStorage.removeItem('token');
+        localStorage.removeItem('user');*/
+
         // This is a side-effect, ideally handled by AuthContext listening to an event or a global state change
         // Forcing a reload to login page might be too abrupt, but it ensures re-authentication.
         // A better way is for AuthContext to handle this based on an event or a failed refresh attempt.
-        if (window.location.pathname !== '/login') {
+        /*if (window.location.pathname !== '/login') {
            // alert('Your session has expired. Please log in again.'); // Optional: inform user
            window.location.href = '/'; // Redirect to login
         }
+        return Promise.reject(refreshError);*/
+
+        useAuthStore.getState().logout();
         return Promise.reject(refreshError);
       }
     }

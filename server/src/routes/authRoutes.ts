@@ -5,7 +5,7 @@ import { validate } from '../middleware/validationMiddleware';
 import { 
   registerUser, 
   loginUser, 
-  requestOtp, 
+  requestOtpController, 
   verifyOtpController, 
   resendOtp, 
   // deleteOtp,
@@ -94,7 +94,7 @@ router.post(
     body('type').isIn(['email', 'mobile']).withMessage('OTP type must be "email" or "mobile".'),
   ],
   validate,
-  requestOtp
+  requestOtpController
 );
 
 // Verify OTP

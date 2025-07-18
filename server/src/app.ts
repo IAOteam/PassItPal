@@ -20,7 +20,7 @@ import adRoutes from './routes/adRoutes';
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
 import User , {IUser} from './models/User';
-import { createAndEmitNotification } from './controllers/notificationController';
+
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
@@ -35,6 +35,7 @@ import './config/passport-setup';
 
 // Cloudinary configuration
 import { v2 as cloudinary } from 'cloudinary';
+import { NotificationService } from './services/notification.service';
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
   api_key: process.env.CLOUDINARY_API_KEY!,
@@ -198,7 +199,7 @@ io.on('connection', (socket: Socket) => {
       });
 
       if (recipientId && recipientId !== sender._id.toString()) {
-        await createAndEmitNotification(
+        await NotificationService.createAndEmitNotification(
           recipientId,
           'message',
           `New message from ${user.username || user.email}: ${text.substring(0, 50)}...`,

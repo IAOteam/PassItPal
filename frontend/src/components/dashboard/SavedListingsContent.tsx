@@ -1,14 +1,15 @@
 // frontend/src/components/dashboard/SavedListingsContent.tsx
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+
 import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingCardSkeleton from '@/components/listings/ListingCardSkeleton';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
-import type { IListing } from '@/types';
+import type { IListing } from '@passitpal/types';
+
 
 // The backend must populate the 'savedListings' field for this to work.
 interface PopulatedUser {

@@ -1,24 +1,26 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, MessageSquare, ChevronLeft, Paperclip, X, Clock, AlertCircle } from 'lucide-react';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import type { ChatMessage, Participant } from '@/types';
+
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import type { IChatMessage, IParticipant } from '@passitpal/types';
 // import useMediaQuery from '@/hooks/useMediaQuery';
 
 const ChatPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { user, socket, sendSocketMessage } = useAuth();
+  const { user, socket, sendSocketMessage } = useAuthStore();
   const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [recipient, setRecipient] = useState<Participant | null>(null);
+  const [messages, setMessages] = useState<IChatMessage[]>([]);
+  const [recipient, setRecipient] = useState<IParticipant | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
@@ -50,11 +52,11 @@ const ChatPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.get(`/messages/conversations/${conversationId}/messages?page=${pageNum}`);
-      const newMessages: ChatMessage[] = res.data.messages || [];
+      const newMessages: IChatMessage[] = res.data.messages || [];
 
       if (pageNum === 1) {
         setMessages(newMessages);
-        const otherUser = res.data.conversation?.participants?.find((p: Participant) => p._id !== user._id);
+        const otherUser = res.data.conversation?.participants?.find((p: IParticipant) => p._id !== user._id);
         setRecipient(otherUser || null);
       } else {
         setMessages(prev => [...newMessages, ...prev]);
@@ -86,7 +88,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleReceiveMessage = (message: ChatMessage) => {
+    const handleReceiveMessage = (message: IChatMessage) => {
       if (message.conversation === conversationId) {
         setMessages(prev => [...prev, message]);
       }
@@ -146,7 +148,7 @@ const ChatPage: React.FC = () => {
         imageBase64 = await toBase64(imageFile);
     }
 
-    const optimisticMsg: ChatMessage = {
+    const optimisticMsg: IChatMessage = {
       _id: tempId,
       conversation: conversationId,
       sender: {

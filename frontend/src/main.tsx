@@ -2,13 +2,16 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
-import { AuthProvider } from './context/AuthContext.tsx'; // Import AuthProvider
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import React from 'react';
 
+const queryClient = new QueryClient();
 createRoot(document.getElementById('root')!).render(
     <React.StrictMode> 
-        <AuthProvider> 
+        <QueryClientProvider client={queryClient}>
             <App />
-        </AuthProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
     </React.StrictMode>
 );

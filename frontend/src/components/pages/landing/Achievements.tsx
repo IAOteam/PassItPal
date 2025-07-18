@@ -1,30 +1,30 @@
 import React, { useEffect, useState } from 'react'
 import { Handshake, TrendingUp, Users } from 'lucide-react';
 import api from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 
-
+//  function that fetches your data
+const fetchPublicStats = async () => {
+  const { data } = await api.get('/listings/stats/public');
+  return data;
+};
 const Achievements: React.FC = () => {
-  const [stats, setStats] = useState({
-    activeListings: '2,450+',
-    moneySaved: '₹1.2L+',
-    successfulDeals: '5,600+',
-  });
 
-  useEffect(() => {
-    api.get('/listings/stats/public').then(res => {
-      const { activeListings, moneySaved, successfulDeals } = res.data;
-      setStats({
-        activeListings: activeListings.toLocaleString('en-IN'),
-        moneySaved: `₹${(moneySaved / 1000).toFixed(1)}k+`, // Format as 'k' or 'L' as you prefer
-        successfulDeals: successfulDeals.toLocaleString('en-IN'),
-      });
-    }).catch(console.error);
-  }, []);
+  // the hook to fetch and manage the data
+  const { data: stats, isLoading, isError } = useQuery({
+    queryKey: ['publicStats'], // A unique key for this data
+    queryFn: fetchPublicStats,
+    staleTime: 1000 * 60 * 5, //  Cache data for 5 minutes
+  });
+   //  the returned state to render your UI
+  if (isLoading) return <div>Loading Achievements...</div>; //  loading state
+  if (isError) return null; // Or show an error message
+
 
   const achievementsItems=[
     {
         icon: <Users/>,
-        figure: stats.activeListings,
+        figure: (stats.activeListings || 0).toLocaleString('en-IN'),
         title: "Active Listings"
     },
     {

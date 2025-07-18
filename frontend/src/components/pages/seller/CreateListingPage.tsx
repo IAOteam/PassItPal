@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea'; // For description
 import { useNavigate } from 'react-router-dom'; // To redirect after creation
-import { useAuth } from '@/hooks/useAuth';
+
 import { ImagePlus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface FormErrors {
   cultPassType?: string;
@@ -22,7 +23,7 @@ interface FormErrors {
 }
 
 const CreateListingPage: React.FC = () => {
-  const { user,createListing, loading, error: apiError, clearError } = useAuth();
+  const { user,createListing, loading, error: apiError, clearError } = useAuthStore();
   const navigate = useNavigate();
   const { ready, value: locationValue, suggestions: { status, data }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ initOnMount: false });
   const [coords, setCoords] = useState<{ lat: number, lng: number } | null>(null);

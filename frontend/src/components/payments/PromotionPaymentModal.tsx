@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+
 import api from '@/lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { X, ShieldCheck, Loader2 } from 'lucide-react';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface ListingForPromotion {
   _id: string;
@@ -20,7 +21,7 @@ interface PromotionPaymentModalProps {
 const PROMOTION_PRICE = 99; // Price in INR
 
 const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, onClose, listing, onSuccess }) => {
-  const { user, createPromotionOrder } = useAuth();
+  const { user, createPromotionOrder } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

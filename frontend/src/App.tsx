@@ -2,7 +2,7 @@
 // import { NavBar } from "./components/nav/NavBar";
 import HeroSection from "./components/pages/landing/HeroSection";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Router components
-import { AuthProvider } from "./context/AuthContext"; // 
+import { useJsApiLoader } from '@react-google-maps/api';
 import ListingsPage from './pages/auth/ListingsPage'; 
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import RegisterPage from "./pages/auth/RegisterPage.tsx";
@@ -45,7 +45,22 @@ import BlogPostGymPass from "./pages/blogs/BlogPostGymPass.tsx";
 import BlogPostAiSub from "./pages/blogs/BlogPostAiSub.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
 
+
+const GOOGLE_MAPS_LIBRARIES: ("places")[] = ['places'];
 function App() {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!,
+    libraries: GOOGLE_MAPS_LIBRARIES, 
+  });
+
+  // This will display a message until the Google Maps script is fully loaded and ready.
+  if (loadError) {
+    return <div>Error loading maps. Please check your API key and internet connection.</div>;
+  }
+  if (!isLoaded) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading Application...</div>;
+  }
   return (
     <>
     <Toaster
@@ -59,8 +74,8 @@ function App() {
           duration: 4000,
         }}
       />
+    <Router future={{ v7_startTransition: true }}></Router>
     <Router>
-      <AuthProvider>
         <Routes>
           {/* Routes that use the shared Layout (NavBar, Footer) */}
           <Route path="/" element={<Layout />}>
@@ -75,6 +90,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
+              
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
@@ -128,7 +144,6 @@ function App() {
             </div>
           } />
         </Routes>
-      </AuthProvider>
     </Router>
     </>
   );

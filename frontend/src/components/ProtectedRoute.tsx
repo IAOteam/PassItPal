@@ -1,5 +1,6 @@
 // src/components/ProtectedRoute.tsx
-import { useAuth } from '@/hooks/useAuth';
+
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 import React from 'react';
 import { Navigate,Outlet  } from 'react-router-dom';
 
@@ -11,7 +12,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({  allowedRoles , unauthorizedMessage}) => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthStore();
 
   // If still loading auth state, you might want to show a spinner
   if (loading) {

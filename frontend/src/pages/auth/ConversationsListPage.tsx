@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { cn } from '@/lib/utils';
-import type { User } from '@/context/AuthContext';
-import type { Participant } from '@/types';
+
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import type { IParticipant, IUser } from '@passitpal/types';
 
 interface Conversation {
   _id: string;
-  participants: (User & { _id: string })[];
+  participants: (IUser & { _id: string })[];
   lastMessage?: {
     text: string;
     createdAt: string;
@@ -20,7 +21,7 @@ interface Conversation {
 
 const ConversationsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { conversationId: activeConvId } = useParams<{ conversationId: string }>();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -78,7 +79,7 @@ const ConversationsListPage: React.FC = () => {
             {conversations.length > 0 ? (
               <ul>
                 {conversations.map((convo) => {
-                  const otherParticipant = convo.participants.find(p => p._id !== user?._id) as Participant;
+                  const otherParticipant = convo.participants.find(p => p._id !== user?._id) as IParticipant;
                   if (!otherParticipant) return null;
                   const active = activeConvId === convo._id;
                   return (

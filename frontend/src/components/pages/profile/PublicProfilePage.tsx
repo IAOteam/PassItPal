@@ -4,7 +4,8 @@ import api from '@/lib/api';
 import StarRating from '@/components/ui/StarRating';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { type User } from '@/context/AuthContext';
+import type { IUser } from '@passitpal/types';
+
 
 // Define the structure of a review object
 interface IReview {
@@ -21,7 +22,7 @@ interface IReview {
 
 const PublicProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const [profile, setProfile] = useState<User | null>(null);
+  const [profile, setProfile] = useState<IUser | null>(null);
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

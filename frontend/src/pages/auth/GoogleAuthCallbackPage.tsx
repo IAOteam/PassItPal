@@ -1,13 +1,15 @@
 // frontend/src/pages/auth/GoogleAuthCallbackPage.tsx
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import type { IUser } from '@passitpal/types';
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { type User} from "@/context/AuthContext"
-import { useAuth } from '@/hooks/useAuth';
+
+
 
 const GoogleAuthCallbackPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuth(); // We'll need a way to set the user directly in AuthContext
+  const { setToken, setUser } = useAuthStore(); 
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -16,7 +18,7 @@ const GoogleAuthCallbackPage: React.FC = () => {
 
     if (token && userString) {
       try {
-        const userData: User = JSON.parse(userString);
+        const userData: IUser = JSON.parse(userString);
         
         // console.log('[GoogleCallback] Received token:', token);
         // console.log('[GoogleCallback] Received user data:', userData);

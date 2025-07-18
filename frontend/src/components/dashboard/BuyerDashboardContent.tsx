@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface MyOrder {
   _id: string;
@@ -33,7 +34,7 @@ interface MyOrder {
 
 const BuyerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
-  const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuth();
+  const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuthStore();
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

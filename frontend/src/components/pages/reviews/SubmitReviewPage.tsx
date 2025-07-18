@@ -1,17 +1,18 @@
 // frontend/src/pages/reviews/SubmitReviewPage.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 const SubmitReviewPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { submitReview, loading } = useAuth();
+  const { submitReview, loading } = useAuthStore();
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);

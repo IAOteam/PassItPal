@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import validator from 'validator';
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   googleId?: string; 
@@ -8,6 +9,7 @@ export interface IUser extends Document {
   username: string; // Buyer-specific
   mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
+  authProvider: 'local' | 'google'; // NEW: To track the authentication method
   location: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -77,6 +79,12 @@ const UserSchema: Schema = new Schema({
     enum: ['buyer', 'seller', 'admin'],
     default: 'buyer',
    },
+  authProvider: { // NEW FIELD
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local',
+    required: true,
+  },
   location: {
         city: {
         type: String,

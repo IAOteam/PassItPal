@@ -5,12 +5,13 @@ import {  useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+
 
 const ResetPasswordPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const { resetPassword, loading, error, clearError } = useAuth();
+  const { resetPassword, loading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,12 +44,11 @@ const ResetPasswordPage: React.FC = () => {
     }
 
     try {
-      const message = await resetPassword(email, resetToken, newPassword);
+      const message = await resetPassword( { email, resetToken, newPassword });
       alert(message); // "Password has been reset successfully."
       navigate('/login'); // Redirect to login after successful reset
     } catch (err) {
       console.error("Password reset failed:", err);
-      // Error message is already set by useAuth context
     }
   };
 

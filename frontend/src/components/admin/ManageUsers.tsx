@@ -1,18 +1,20 @@
 // frontend/src/components/admin/ManageUsers.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { User } from '@/context/AuthContext';
+import type { IUser } from '@passitpal/types';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+
 
 
 
 
 const ManageUsers: React.FC = () => {
-  const { user: adminUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const { user: adminUser } = useAuthStore();
+  const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

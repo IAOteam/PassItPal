@@ -2,12 +2,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Edit, Trash2, Megaphone, Plus } from 'lucide-react';
 import PromotionPaymentModal from '../payments/PromotionPaymentModal';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface ReceivedOrder {
   _id: string;
@@ -42,7 +43,7 @@ interface SellerDashboardContentProps {
 const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section }) => {
 
   const navigate = useNavigate();
-  const { acceptOrder, rejectOrder, loading: authLoading } = useAuth();
+  const { acceptOrder, rejectOrder, loading: authLoading } = useAuthStore();
 
   const [orders, setOrders] = useState<ReceivedOrder[]>([]);
   const [listings, setListings] = useState<MyListing[]>([]);

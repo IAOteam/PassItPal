@@ -1,148 +1,70 @@
 import { Request, Response } from 'express';
-import Notification, { INotification } from '../models/Notification';
-import { io } from '../app'; // Correct import for io
+import { NotificationService } from '../services/notification.service';
 
-// Helper function to create and emit a notification (used by other controllers)
-export const createAndEmitNotification = async (
-  recipientId: string,
-  type: INotification['type'],
-  message: string,
-  linkTarget?: { type: 'listing' | 'chat' | 'profile'; id: string }, 
-  senderId?: string
-) => {
-    try {
-    let link: string | undefined;
-    // --- Standardized Link Generation ---
-    if (linkTarget) {
-        switch (linkTarget.type) {
-            case 'listing':
-                // This  matches the modal-opening logic on your listings page
-                link = `/listings?listingId=${linkTarget.id}`;
-                break;
-            case 'chat':
-                link = `/messages/${linkTarget.id}`;
-                break;
-            case 'profile':
-                link = `/profile/${linkTarget.id}`;
-                break;
-        }
-    }
+// --- Helper Functions for Consistent Responses ---
 
-    const newNotification = new Notification({
-      recipient: recipientId,
-      sender: senderId,
-      type,
-      message,
-      link
-    });
-    const notification = await newNotification.save();
-
-    // Emit notification via Socket.IO to the recipient if they are online
-    io.to(recipientId).emit('newNotification', notification);
-    // console.log(`Notification emitted to ${recipientId}: ${message}`);
-    return notification;
-  } catch (error) {
-    console.error('Error creating or emitting notification:', error);
-  }
+const sendSuccess = (res: Response, message: string, data: object = {}, statusCode = 200) => {
+    res.status(statusCode).json({ message, ...data });
 };
 
-// @route   GET /api/notifications/me
-// @desc    Get all notifications for the logged-in user
-// @access  Private
+const sendError = (res: Response, error: any, defaultMessage: string) => {
+    console.error(`Error in NotificationController: ${error.message}`);
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || defaultMessage });
+};
+
+// --- Controller Methods ---
+
 export const getMyNotifications = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized, user not logged in.' });
+    try {
+        const userId = req.user?._id.toString();
+        if (!userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+        const notifications = await NotificationService.getNotificationsForUser(userId);
+        res.status(200).json(notifications);
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not fetch notifications.');
     }
-
-    const notifications = await Notification.find({ recipient: req.user._id })
-      .populate('sender', 'username profilePictureUrl')
-      .sort({ createdAt: -1 });
-
-    res.json(notifications);
-  } catch (error: any) {
-    console.error('Error fetching notifications:', error.message);
-    res.status(500).send('Server error: Could not fetch notifications.');
-  }
 };
 
-// @route   PUT /api/notifications/:id/read
-// @desc    Mark a notification as read
-// @access  Private
 export const markNotificationAsRead = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized, user not logged in.' });
+    try {
+        const userId = req.user?._id.toString();
+        const { id: notificationId } = req.params;
+        if (!userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+        const notification = await NotificationService.markAsRead(notificationId, userId);
+        sendSuccess(res, 'Notification marked as read.', { notification });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not mark notification as read.');
     }
-
-    const notification = await Notification.findById(req.params.id);
-
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found.' });
-    }
-
-    if (notification.recipient.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this notification.' });
-    }
-
-    notification.read = true;
-    await notification.save();
-
-    res.json({ message: 'Notification marked as read.', notification });
-  } catch (error: any) {
-    console.error('Error marking notification as read:', error.message);
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ message: 'Invalid notification ID.' });
-    }
-    res.status(500).send('Server error: Could not mark notification as read.');
-  }
 };
 
-// @route   PUT /api/notifications/mark-all-read
-// @desc    Mark all notifications for the logged-in user as read
-// @access  Private
 export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized, user not logged in.' });
+    try {
+        const userId = req.user?._id.toString();
+        if (!userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+        await NotificationService.markAllAsRead(userId);
+        sendSuccess(res, 'All notifications marked as read.');
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not mark all notifications as read.');
     }
-
-    await Notification.updateMany({ recipient: req.user._id, read: false }, { $set: { read: true } });
-
-    res.json({ message: 'All notifications marked as read.' });
-  } catch (error: any) {
-    console.error('Error marking all notifications as read:', error.message);
-    res.status(500).send('Server error: Could not mark all notifications as read.');
-  }
 };
 
-// @route   DELETE /api/notifications/:id
-// @desc    Delete a specific notification
-// @access  Private
 export const deleteNotification = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized, user not logged in.' });
+    try {
+        const userId = req.user?._id.toString();
+        const { id: notificationId } = req.params;
+        if (!userId) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+        await NotificationService.deleteNotification(notificationId, userId);
+        sendSuccess(res, 'Notification deleted successfully.');
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not delete notification.');
     }
-
-    const notification = await Notification.findById(req.params.id);
-
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found.' });
-    }
-
-    if (notification.recipient.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to delete this notification.' });
-    }
-
-    await Notification.deleteOne({ _id: req.params.id });
-
-    res.json({ message: 'Notification deleted successfully.' });
-  } catch (error: any) {
-    console.error('Error deleting notification:', error.message);
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ message: 'Invalid notification ID.' });
-    }
-    res.status(500).send('Server error: Could not delete notification.');
-  }
 };

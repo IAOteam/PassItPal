@@ -5,11 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
-  const { forgotPasswordRequestOtp, loading, error, clearError } = useAuth();
+  const { forgotPasswordRequestOtp, loading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {

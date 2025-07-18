@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -25,7 +25,7 @@ const timeSince = (date: string) => {
 };
 
 export function NavBar() {
-  const { isAuthenticated, logout, user, notifications, unreadCount, markNotificationsAsRead } = useAuth();
+  const { isAuthenticated, logout, user, notifications, unreadCount, markNotificationsAsRead } = useAuthStore();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useTheme();

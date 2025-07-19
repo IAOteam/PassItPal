@@ -23,24 +23,30 @@ export class ListingService {
      * Creates a new listing.
      */
     public static async createNewListing(listingData: any, seller: IUser): Promise<Partial<IListing>> {
-        if (!listingData.adImageBase64) {
+        const { adImageBase64, locationName, categories, ...restOfListingData } = listingData;
+        if (adImageBase64) {
             throw new HttpError('Listing image is required.', 400);
         }
-
-        const uploadResponse = await cloudinary.uploader.upload(listingData.adImageBase64, {
+        // const categories = listingData.categories.split(',').map((category: string) => category.trim());
+        if (!categories || !Array.isArray(categories) || categories.length === 0) {
+            throw new HttpError('At least one category is required.', 400);
+        }
+        const uploadResponse = await cloudinary.uploader.upload(adImageBase64, {
             upload_preset: 'passitpal_listings', folder: 'listings'
         }).catch(() => { throw new HttpError('Image upload failed.', 500); });
 
-        const geocodeResult = await geocodeAddress(listingData.locationName);
+        const geocodeResult = await geocodeAddress(locationName);
         if (!geocodeResult) {
             throw new HttpError('Could not determine coordinates for the provided location.', 400);
         }
 
         const newListing = new Listing({
-            ...listingData,
+            ...restOfListingData,
+            categories,
             seller: seller._id,
             adImageUrl: uploadResponse.secure_url,
             city: geocodeResult.city,
+            displayLocation: geocodeResult.displayLocation,
             location: { type: 'Point', coordinates: [geocodeResult.longitude, geocodeResult.latitude] }
         });
         await newListing.save();

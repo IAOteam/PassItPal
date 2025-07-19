@@ -1,5 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose'; // Ensure Types is imported
-import { IUser } from './User';
+import mongoose, { Schema, Document, Types } from 'mongoose'; 
 interface IGeoPoint {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
@@ -34,7 +33,7 @@ export interface IListing extends Document {
   isPromoted: boolean; // Added for admin controls
   promotionExpiresAt?: Date;
   views: number;
-  category: string; 
+  categories: Types.ObjectId[];
   description: string; 
   createdAt: Date;
   updatedAt: Date;
@@ -80,7 +79,7 @@ const ListingSchema: Schema = new Schema({
   isPromoted: { type: Boolean, default: false }, // Default to false
   promotionExpiresAt: { type: Date, required: false },
   views: { type: Number, default: 0 },
-  category: { type: String, required: true, index: true }, 
+  categories: [{ type: Schema.Types.ObjectId, ref: 'Category', required: true }],
   description: { type: String, required: true, maxlength: 2000 }, 
   
 },
@@ -100,6 +99,8 @@ ListingSchema.index({ city: 1 });
 
 // Text index to make searching by pass name (cultPassType) much faster
 ListingSchema.index({ cultPassType: 'text' });
+
+ListingSchema.index({ categories: 1 });
 
 const Listing = mongoose.model<IListing>('Listing', ListingSchema);
 export default Listing;

@@ -26,6 +26,7 @@ import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import reportRoutes from './routes/reportRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 import { createEmailWorker, emailQueue } from './config/queue'; 
 import emailProcessor from './workers/emailProcessor';
 import cron from 'node-cron';
@@ -101,7 +102,7 @@ app.use('/api/ads', adRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes); 
 app.use('/api/reports', reportRoutes); 
-
+app.use('/api/categories', categoryRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {

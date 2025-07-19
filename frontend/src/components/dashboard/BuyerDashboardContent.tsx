@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
+import type { IOrder } from '@passitpal/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; 
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,68 +17,71 @@ import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
+import toast from 'react-hot-toast';
 
-interface MyOrder {
-  _id: string;
-  listing: {
-    _id: string;
-    cultPassType: string;
-    adImageUrl?: string;
-  };
-  seller: {
-    _id: string;
-    username?: string;
-  };
-  offerPrice: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
-  createdAt: string;
-}
+// --- API Fetching Functions ---
+const fetchMyOrders = async (): Promise<IOrder[]> => {
+    const response = await api.get('/orders/me');
+    return response.data.orders || [];
+};
 
 const BuyerDashboardContent: React.FC = () => {
   const navigate = useNavigate();
-  const { cancelOrder, loading: authLoading, getOrCreateConversation } = useAuthStore();
-  const [orders, setOrders] = useState<MyOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { getOrCreateConversation } = useAuthStore();
+  const queryClient = useQueryClient(); // Get the query client instance
 
-  const fetchMyOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/orders/me');
-      setOrders(response.data.orders || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch your orders.');
-    } finally {
-      setLoading(false);
+  // --- TanStack Query Hook for fetching data ---
+  const { data: orders, isLoading, isError, error } = useQuery<IOrder[], Error>({
+    queryKey: ['myOrders'], // A unique key for this query
+    queryFn: fetchMyOrders, // The function that fetches the data
+  });
+
+  // --- TanStack Mutation Hook for cancelling an order ---
+  const cancelOrderMutation = useMutation({
+    mutationFn: (orderId: string) => api.put(`/orders/${orderId}/cancel`),
+    onSuccess: () => {
+      toast.success("Order cancelled successfully!");
+      // Invalidate the 'myOrders' query to automatically refetch the data
+      queryClient.invalidateQueries({ queryKey: ['myOrders'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to cancel order.");
     }
-  }, []);
+  });
+  
+  // --- TanStack Mutation Hook for completing an order ---
+  const completeOrderMutation = useMutation({
+    mutationFn: (orderId: string) => api.post(`/orders/${orderId}/complete`),
+    onSuccess: () => {
+        toast.success("Deal completed successfully!");
+        queryClient.invalidateQueries({ queryKey: ['myOrders'] });
+    },
+    onError: (err: any) => {
+        toast.error(err.response?.data?.message || "Failed to complete the deal.");
+    }
+  });
 
-  useEffect(() => {
-    fetchMyOrders();
-  }, [fetchMyOrders]);
 
   const handleContactSeller = async (sellerId: string) => {
     try {
       const conversationId = await getOrCreateConversation(sellerId);
       navigate(`/messages/${conversationId}`);
     } catch (err: any) {
-      alert(err.message || "Could not start chat.");
+      toast.error(err.message || "Could not start chat.");
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
+  const handleCancelOrder = (orderId: string) => {
     if (!window.confirm("Are you sure you want to cancel this order request?")) return;
-    try {
-      const message = await cancelOrder(orderId);
-      alert(message);
-      fetchMyOrders();
-    } catch (err: any) {
-      alert(err.message || "An error occurred while cancelling the order.");
-    }
+    cancelOrderMutation.mutate(orderId);
+  };
+  
+  const handleConfirmReceipt = (orderId: string) => {
+    if (!window.confirm("Please confirm only if you have received and verified the pass/ticket. This action is final and will complete the transaction.")) return;
+    completeOrderMutation.mutate(orderId);
   };
 
-  const getStatusBadgeVariant = (status: MyOrder['status']) => {
+  const getStatusBadgeVariant = (status: IOrder['status']) => {
     switch (status) {
       case 'pending': return 'outline';
       case 'accepted': return 'success';
@@ -86,18 +91,6 @@ const BuyerDashboardContent: React.FC = () => {
       default: return 'secondary';
     }
   };
-  const handleConfirmReceipt = async (orderId: string) => {
-    if (!window.confirm("Please confirm only if you have received and verified the pass/ticket. This action is final and will complete the transaction.")) {
-        return;
-    }
-    try {
-        const response = await api.post(`/orders/${orderId}/complete`);
-        alert(response.data.message);
-        fetchMyOrders(); // Refresh the order list
-    } catch (err: any) {
-        alert(err.response?.data?.message || "Failed to confirm the order.");
-    }
-};
 
   return (
     <TooltipProvider>
@@ -112,16 +105,16 @@ const BuyerDashboardContent: React.FC = () => {
           </Button>
         </div>
 
-        {loading && (
+        {isLoading && (
           <div className="text-center text-sm text-neutral-500 dark:text-neutral-400">Loading your orders...</div>
         )}
 
-        {error && (
-          <div className="text-center text-red-500 font-medium">{error}</div>
+        {isError && (
+          <div className="text-center text-red-500 font-medium">{error.message}</div>
         )}
 
-        {!loading && !error && (
-          orders.length > 0 ? (
+        {!isLoading && !isError && (
+          orders && orders.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm">
               <Table className="min-w-full text-sm">
                 <TableHeader>
@@ -162,7 +155,6 @@ const BuyerDashboardContent: React.FC = () => {
                                 variant="outline"
                                 size="icon"
                                 onClick={() => handleContactSeller(order.seller._id)}
-                                disabled={authLoading}
                                 className="rounded-full"
                               >
                                 <MessageSquare className="h-4 w-4" />
@@ -181,7 +173,7 @@ const BuyerDashboardContent: React.FC = () => {
                                 variant="destructive"
                                 size="icon"
                                 onClick={() => handleCancelOrder(order._id)}
-                                disabled={authLoading}
+                                disabled={cancelOrderMutation.isPending}
                                 className="rounded-full"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -194,7 +186,7 @@ const BuyerDashboardContent: React.FC = () => {
                         )}
 
                         {order.status === 'accepted' && (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmReceipt(order._id)}>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmReceipt(order._id)} disabled={completeOrderMutation.isPending}>
                                 Confirm Receipt & Complete Deal
                             </Button>
                         )}

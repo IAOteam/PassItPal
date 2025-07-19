@@ -4,7 +4,8 @@ import User, { IUser } from '../models/User';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { sendOtp, verifyOtp as verifyOtpUtil } from '../utils/otp';
 import { normalizeIndianMobileNumber } from '../utils/stringUtils';
-
+import { getWelcomeEmailTemplate } from '../utils/emailTemplates';
+import { sendEmail } from '../utils/emailService';
 import { IFrontendUser, UserService } from './user.service';
 
 
@@ -92,6 +93,10 @@ export class AuthService {
     });
 
     await user.save();
+    const { subject, html } = getWelcomeEmailTemplate(user.username);
+    // We send the email but don't wait for it to complete to avoid slowing down the registration process.
+    sendEmail(user.email, subject, '', html).catch(err => console.error("Failed to send welcome email:", err));
+    
     await sendOtp(user.email, user.mobileNumber, 'email', 'verification');
 
     return UserService.createFrontendUserObject(user);

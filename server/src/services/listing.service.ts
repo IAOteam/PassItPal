@@ -1,6 +1,6 @@
 import Listing, { IListing } from '../models/Listing';
 import Order from '../models/Order';
-import { IUser } from '../models/User';
+import User, { IUser } from '../models/User';
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from 'mongoose';
 import IORedis from 'ioredis';
@@ -10,6 +10,7 @@ import { toPlainObject } from '@/utils/mongooseUtils';
 
 const redis = new IORedis(process.env.REDIS_URL!);
 
+const FREE_LISTING_LIMIT = 3;
 class HttpError extends Error {
     statusCode: number;
     constructor(message: string, statusCode: number) {
@@ -24,6 +25,11 @@ export class ListingService {
      */
     public static async createNewListing(listingData: any, seller: IUser): Promise<Partial<IListing>> {
         const { adImageBase64, locationName, categories, ...restOfListingData } = listingData;
+        
+        if (seller.role !== 'admin' && seller.monthlyListingCount >= FREE_LISTING_LIMIT) {
+            throw new HttpError(`You have reached your free monthly limit of ${FREE_LISTING_LIMIT} listings. Please upgrade to post more.`, 403); // 403 Forbidden
+        }
+        
         if (adImageBase64) {
             throw new HttpError('Listing image is required.', 400);
         }
@@ -50,6 +56,7 @@ export class ListingService {
             location: { type: 'Point', coordinates: [geocodeResult.longitude, geocodeResult.latitude] }
         });
         await newListing.save();
+        await User.findByIdAndUpdate(seller._id, { $inc: { monthlyListingCount: 1 } });
         return toPlainObject<IListing>(newListing);
     }
 

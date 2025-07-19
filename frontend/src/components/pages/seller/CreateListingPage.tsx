@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -9,16 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImagePlus, X, Loader2 } from 'lucide-react';
-import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
-import useAuthStore from '@/hooks/zustand/useAuthStore';
+import usePlacesAutocomplete from 'use-places-autocomplete';
 
-// Define the shape of a Category object, which we'll fetch from the API
+import ListingLimitModal from '@/components/shared/ListingLimitModal'; 
+
 interface Category {
   _id: string;
   name: string;
 }
 
-// --- API Fetching Functions for TanStack Query ---
 const fetchCategories = async (): Promise<Category[]> => {
   const { data } = await api.get('/categories');
   return data;
@@ -30,7 +29,6 @@ const createNewCategory = async (name: string): Promise<Category> => {
 };
 
 const CreateListingPage: React.FC = () => {
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -43,37 +41,37 @@ const CreateListingPage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [adImageBase64, setAdImageBase64] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // --- Location State ---
   const { ready, value: locationValue, suggestions: { status, data: locationData }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
 
-  // --- NEW: Category State ---
+  // --- Category State ---
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
+  
+  // --- NEW: Modal State ---
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [limitModalMessage, setLimitModalMessage] = useState('');
 
-  // --- TanStack Query for fetching existing categories ---
+
   const { data: allCategories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
 
-  // --- TanStack Mutation for creating a new category ---
   const createCategoryMutation = useMutation({
     mutationFn: createNewCategory,
     onSuccess: (newCategory) => {
       toast.success(`Category "${newCategory.name}" created!`);
-      // Add the new category to our selected list and invalidate the query to refetch
       setSelectedCategories(prev => [...prev, newCategory]);
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      setCategorySearch(''); // Clear the search input
+      setCategorySearch('');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create category.");
     }
   });
   
-  // --- TanStack Mutation for creating the listing ---
   const createListingMutation = useMutation({
       mutationFn: (listingData: any) => api.post('/listings', listingData),
       onSuccess: () => {
@@ -81,13 +79,16 @@ const CreateListingPage: React.FC = () => {
           navigate('/dashboard');
       },
       onError: (error: any) => {
-          setErrors({ form: error.response?.data?.message || 'An unexpected error occurred.' });
-          toast.error(error.response?.data?.message || 'An unexpected error occurred.');
+          // 2. CATCH the specific 403 error for listing limits
+          if (error.response?.status === 403) {
+              setLimitModalMessage(error.response.data.message);
+              setIsLimitModalOpen(true);
+          } else {
+              toast.error(error.response?.data?.message || 'An unexpected error occurred.');
+          }
       }
   });
 
-
-  // --- Event Handlers ---
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,7 +106,6 @@ const CreateListingPage: React.FC = () => {
     clearSuggestions();
   };
 
-  // --- NEW: Category Handlers ---
   const handleCategorySelect = (category: Category) => {
     if (!selectedCategories.some(c => c._id === category._id)) {
       setSelectedCategories([...selectedCategories, category]);
@@ -123,10 +123,8 @@ const CreateListingPage: React.FC = () => {
       }
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation...
     if (selectedCategories.length === 0) {
         toast.error("Please select at least one category.");
         return;
@@ -138,14 +136,13 @@ const CreateListingPage: React.FC = () => {
       askingPrice: parseFloat(askingPrice),
       expiryDate,
       locationName: locationValue,
-      categories: selectedCategories.map(c => c._id), // Send array of IDs
+      categories: selectedCategories.map(c => c._id),
       description,
       availableCredits: availableCredits ? parseInt(availableCredits, 10) : undefined,
       adImageBase64: adImageBase64 || undefined,
     });
   };
 
-  // Filter categories based on search input, excluding already selected ones
   const filteredCategories = allCategories.filter(
     (cat) =>
       cat.name.toLowerCase().includes(categorySearch.toLowerCase()) &&
@@ -153,12 +150,18 @@ const CreateListingPage: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto max-w-2xl py-24 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Create a New Listing</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
-        
-        {/* Image Upload */}
-        <div>
+    <> 
+      {/* 3. RENDER the modal */}
+      <ListingLimitModal 
+        isOpen={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        message={limitModalMessage}
+      />
+      <div className="container mx-auto max-w-2xl py-24 px-4">
+        <h1 className="text-3xl font-bold mb-6 text-center">Create a New Listing</h1>
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
+          {/* ... rest of your form JSX remains the same ... */}
+           <div>
           <Label>Listing Image</Label>
           <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
             {imagePreview ? (
@@ -178,14 +181,12 @@ const CreateListingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="md:col-span-2">
             <Label htmlFor="cultPassType">Pass / Ticket Name</Label>
             <Input id="cultPassType" value={cultPassType} onChange={(e) => setCultPassType(e.target.value)} placeholder="e.g., CultPass ELITE - 6 Months" required />
           </div>
 
-          {/* --- NEW CATEGORY INPUT --- */}
           <div className="md:col-span-2 relative">
             <Label htmlFor="category">Categories</Label>
             <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-white dark:bg-neutral-800">
@@ -263,8 +264,9 @@ const CreateListingPage: React.FC = () => {
         <Button type="submit" className="w-full" disabled={createListingMutation.isPending}>
           {createListingMutation.isPending ? 'Submitting...' : 'Create Listing'}
         </Button>
-      </form>
-    </div>
+        </form>
+      </div>
+    </>
   );
 };
 

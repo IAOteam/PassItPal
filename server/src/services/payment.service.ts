@@ -30,12 +30,9 @@ const razorpay = new Razorpay({
 
 export class PaymentService {
     /**
-     * Creates a Razorpay order to promote a listing.
-     * @param amount The amount for the order.
-     * @param listingId The ID of the listing to be promoted.
-     * @param userId The ID of the user promoting the listing.
+     * Creates a Razorpay order to promote a listing for a specific duration.
      */
-    public static async createListingPromotionOrder(amount: number, listingId: string, userId: string) {
+    public static async createListingPromotionOrder(amount: number, listingId: string, userId: string, durationDays: number) { 
         const listing = await Listing.findById(listingId);
         if (!listing) {
             throw new HttpError('Listing not found.', 404);
@@ -47,10 +44,11 @@ export class PaymentService {
         const options = {
             amount: amount * 100, // Amount in paise
             currency: 'INR',
-            receipt: `receipt_listing_${listingId}`,
+            receipt: `receipt_listing_${listingId}_${durationDays}days`,
             notes: {
                 listingId: listingId.toString(),
                 userId: userId.toString(),
+                durationDays: durationDays, // ADDED: Pass duration in notes
                 paymentType: 'listing_promotion'
             }
         };
@@ -58,11 +56,10 @@ export class PaymentService {
     }
 
     /**
-     * Verifies a payment for a listing promotion, updates the listing, and sends notifications.
-     * @param verificationData The payment verification data from Razorpay.
+     * Verifies a payment for a listing promotion and applies the correct duration.
      */
-    public static async verifyListingPromotionPayment(verificationData: { razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, listingId: string, userId: string }) {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, listingId, userId } = verificationData;
+    public static async verifyListingPromotionPayment(verificationData: { razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, listingId: string, userId: string, durationDays: number }) { // ADDED durationDays
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, listingId, userId, durationDays } = verificationData;
 
         const body = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSignature = crypto
@@ -82,18 +79,19 @@ export class PaymentService {
         if (isAuthentic) {
             listing.isPromoted = true;
             const now = new Date();
-            listing.promotionExpiresAt = new Date(now.setDate(now.getDate() + 7)); // Promote for 7 days
+            // MODIFIED: Use the dynamic duration instead of hardcoded 7 days
+            listing.promotionExpiresAt = new Date(now.setDate(now.getDate() + durationDays)); 
             await listing.save();
 
             await NotificationService.createAndEmitNotification(
                 listing.seller.toString(),
                 'promoted_listing',
-                `Your listing "${listing.cultPassType}" has been successfully promoted!`,
+                `Your listing "${listing.cultPassType}" has been successfully promoted for ${durationDays} days!`,
                 { type: 'listing', id: listing._id.toString() }
             );
             
             const subject = `✅ Payment Successful: Your listing is now promoted!`;
-            const html = `<p>Hi ${user.username},</p><p>Your payment for promoting the listing "<strong>${listing.cultPassType}</strong>" was successful. It is now promoted for 7 days.</p><p>Thank you for using Passitpal!</p>`;
+            const html = `<p>Hi ${user.username},</p><p>Your payment for promoting the listing "<strong>${listing.cultPassType}</strong>" was successful. It is now promoted for ${durationDays} days.</p><p>Thank you for using Passitpal!</p>`;
             await sendEmail(user.email, subject, '', html).catch(e => console.error("Failed to send payment success email:", e));
 
             return { success: true };
@@ -109,7 +107,6 @@ export class PaymentService {
 
     /**
      * Creates a Razorpay order for an approved ad.
-     * @param adId The ID of the ad to create a payment order for.
      */
     public static async createAdPaymentOrder(adId: string) {
         const ad = await Ad.findById(adId);
@@ -117,7 +114,7 @@ export class PaymentService {
             throw new HttpError('Approved ad not found or it is already active.', 404);
         }
 
-        const amount = ad.price; // Assuming price is stored on the ad model
+        const amount = ad.price;
         const options = {
             amount: amount * 100,
             currency: 'INR',
@@ -129,7 +126,6 @@ export class PaymentService {
 
     /**
      * Verifies a payment for an ad and activates it.
-     * @param verificationData The payment verification data from Razorpay.
      */
     public static async verifyAdPayment(verificationData: { razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, adId: string }) {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, adId } = verificationData;

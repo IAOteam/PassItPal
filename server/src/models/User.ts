@@ -25,6 +25,7 @@ export interface IUser extends Document {
   profilePictureUrl?: string;
   averageRating: number;
   reviewCount: number;
+  monthlyListingCount: number;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
@@ -124,6 +125,10 @@ const UserSchema: Schema = new Schema({
     max: [5, 'Rating must be at most 5'],
   },
   reviewCount: {
+    type: Number,
+    default: 0,
+  },
+  monthlyListingCount: { 
     type: Number,
     default: 0,
   },

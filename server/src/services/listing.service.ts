@@ -250,9 +250,6 @@ export class ListingService {
         return { activeListings, successfulDeals, moneySaved };
     }
 
-    /**
-     * Gets a city name from coordinates.
-     */
     public static async getCityFromCoords(latitude: number, longitude: number): Promise<string> {
         const cityName = await reverseGeocode(latitude, longitude);
         if (!cityName) {

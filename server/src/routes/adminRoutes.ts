@@ -10,6 +10,7 @@ import {
   getReports,
   updateReport,
   getAllAds,
+  getAdById,
   createAd,
   updateAd,
   deleteAd,
@@ -43,6 +44,7 @@ router.put('/listings/:id/toggle-promote', [param('id').isMongoId()], validate, 
 
 // --- Ad Management Routes ---
 router.get('/ads', getAllAds);
+router.get('/ads/:id', [param('id').isMongoId()], validate, getAdById);
 router.post('/ads', createAd);
 router.put('/ads/:id', [param('id').isMongoId()], validate, updateAd);
 router.delete('/ads/:id', [param('id').isMongoId()], validate, deleteAd);

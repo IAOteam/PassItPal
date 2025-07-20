@@ -1,4 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose'; 
+import { IUser } from './User';
+import { ICategory } from './Category'; 
 interface IGeoPoint {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
@@ -15,7 +17,7 @@ interface IAddress {
 }
 export interface IListing extends Document {
   _id: Types.ObjectId; // Explicitly type _id as Mongoose ObjectId
-  seller: Types.ObjectId ;
+  seller: Types.ObjectId | IUser;
   cultPassType: string;
   
   expiryDate: Date;
@@ -35,6 +37,7 @@ export interface IListing extends Document {
   views: number;
   categories: Types.ObjectId[];
   description: string; 
+  searchIndex: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,9 +84,20 @@ const ListingSchema: Schema = new Schema({
   views: { type: Number, default: 0 },
   categories: [{ type: Schema.Types.ObjectId, ref: 'Category', required: true }],
   description: { type: String, required: true, maxlength: 2000 }, 
+  searchIndex: { type: String, select: false },
   
 },
  { timestamps: true });
+
+ // Pre-save hook to automatically populate the searchIndex field
+ListingSchema.pre('save', async function(next) {
+    if (this.isModified('cultPassType') || this.isModified('description') || this.isModified('categories')) {
+        await this.populate('categories');
+        const categoryNames = (this.categories as ICategory[]).map(c => c.name).join(' ');
+        this.searchIndex = `${this.cultPassType} ${this.description} ${categoryNames}`;
+    }
+    next();
+});
  
 // Geospatial index for location-based queries (already existed, which is good)
 ListingSchema.index({ location: '2dsphere' });

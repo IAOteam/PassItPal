@@ -48,6 +48,15 @@ export class AdService {
         return toPlainObject<IAd>(newAd);
     }
     // --- Admin-facing Ad Management ---
+
+    public static async getAdById(adId: string): Promise<Partial<IAd>> {
+        const ad = await Ad.findById(adId);
+        if (!ad) {
+            throw new HttpError('Ad not found.', 404);
+        }
+        return toPlainObject<IAd>(ad);
+    }
+    
     /**
      * Fetches all ads and returns them as plain objects.
      */

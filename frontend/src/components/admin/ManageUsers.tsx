@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import type { IUser } from '@passitpal/types';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
+import toast from 'react-hot-toast';
 
 
 
@@ -41,9 +42,9 @@ const ManageUsers: React.FC = () => {
       return;
     }
     try {
-      // This endpoint is ready in our adminController
-      await api.put(`/admin/users/${userId}/block`, { isBlocked: !isCurrentlyBlocked });
-      alert(`User successfully ${action}ed.`);
+      
+      await api.put(`/admin/users/${userId}/toggle-block`);
+      toast.success(`User successfully ${action}ed.`);
       fetchUsers(); // Refresh the user list
     } catch (err: any) {
       alert(err.response?.data?.message || `Failed to ${action} user.`);

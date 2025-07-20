@@ -22,8 +22,8 @@ const AdPaymentPage: React.FC = () => {
     useEffect(() => {
         if (!adId) return;
 
-        // Fetch ad details to show what's being paid for
-        api.get(`/admin/ads/${adId}`) // Assuming an admin route to get ad details by ID
+        // Fetch ad details to show what's being paid for, Calling the new /api/admin/ads/:id route
+        api.get(`/admin/ads/${adId}`) 
             .then(res => {
                 setAd(res.data);
                 setStatus('ready');

@@ -11,6 +11,7 @@ import { toPlainObject } from '@/utils/mongooseUtils';
 const redis = new IORedis(process.env.REDIS_URL!);
 
 const FREE_LISTING_LIMIT = 3;
+
 class HttpError extends Error {
     statusCode: number;
     constructor(message: string, statusCode: number) {
@@ -20,23 +21,20 @@ class HttpError extends Error {
 }
 
 export class ListingService {
-    /**
-     * Creates a new listing.
-     */
     public static async createNewListing(listingData: any, seller: IUser): Promise<Partial<IListing>> {
         const { adImageBase64, locationName, categories, ...restOfListingData } = listingData;
-        
+
         if (seller.role !== 'admin' && seller.monthlyListingCount >= FREE_LISTING_LIMIT) {
-            throw new HttpError(`You have reached your free monthly limit of ${FREE_LISTING_LIMIT} listings. Please upgrade to post more.`, 403); // 403 Forbidden
+            throw new HttpError(`You have reached your free monthly limit of ${FREE_LISTING_LIMIT} listings. Please upgrade to post more.`, 403);
         }
-        
-        if (adImageBase64) {
+
+        if (!adImageBase64) {
             throw new HttpError('Listing image is required.', 400);
         }
-        // const categories = listingData.categories.split(',').map((category: string) => category.trim());
         if (!categories || !Array.isArray(categories) || categories.length === 0) {
             throw new HttpError('At least one category is required.', 400);
         }
+
         const uploadResponse = await cloudinary.uploader.upload(adImageBase64, {
             upload_preset: 'passitpal_listings', folder: 'listings'
         }).catch(() => { throw new HttpError('Image upload failed.', 500); });
@@ -53,77 +51,112 @@ export class ListingService {
             adImageUrl: uploadResponse.secure_url,
             city: geocodeResult.city,
             displayLocation: geocodeResult.displayLocation,
+            address: geocodeResult.address,
             location: { type: 'Point', coordinates: [geocodeResult.longitude, geocodeResult.latitude] }
         });
+        
         await newListing.save();
         await User.findByIdAndUpdate(seller._id, { $inc: { monthlyListingCount: 1 } });
+
         return toPlainObject<IListing>(newListing);
     }
 
     /**
-     * Fetches listings with advanced filtering, sorting, and pagination.
+     * Fetches listings using a powerful aggregation pipeline with Atlas Search.
      */
     public static async getListings(queryParams: any) {
-        const { locationName, cultPassType, minPrice, maxPrice, page = '1', limit = '12', sortBy = 'createdAt_desc' } = queryParams;
+        const { searchTerm, locationName, minPrice, maxPrice, page = '1', limit = '12', sortBy = 'relevance' } = queryParams;
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
         const skip = (pageNum - 1) * limitNum;
 
+        // Promoted listings are fetched separately as they always appear first.
         const promotedListingDocs = await Listing.find({ isPromoted: true, isAvailable: true })
             .populate('seller', 'username profilePictureUrl')
             .limit(4);
-        
-        // Transform promoted listings to plain objects
         const promotedListings = promotedListingDocs.map(listing => toPlainObject<IListing>(listing));
 
+        // --- Start of the Aggregation Pipeline ---
         const pipeline: mongoose.PipelineStage[] = [];
+
+        // 1. ATLAS SEARCH STAGE (This is the core of the new search logic)
+        if (searchTerm) {
+            pipeline.push({
+                $search: {
+                    index: 'default', // The name of the index you created in Atlas
+                    compound: {
+                        should: [
+                            {
+                                autocomplete: {
+                                    query: searchTerm,
+                                    path: 'searchIndex',
+                                    tokenOrder: 'any',
+                                    fuzzy: { maxEdits: 1, prefixLength: 2 }
+                                }
+                            },
+                            {
+                                text: {
+                                    query: searchTerm,
+                                    path: 'searchIndex',
+                                    score: { boost: { value: 3 } } // Boost exact matches
+                                }
+                            }
+                        ]
+                    }
+                }
+            });
+        }
+        
+        // 2. GEOSPATIAL STAGE (for location-based filtering)
         if (locationName) {
             const geocodeResult = await geocodeAddress(locationName);
             if (geocodeResult) {
                 pipeline.push({
                     $geoNear: {
                         near: { type: 'Point', coordinates: [geocodeResult.longitude, geocodeResult.latitude] },
-                        distanceField: 'distance', maxDistance: 50 * 1000, spherical: true,
+                        distanceField: 'distance',
+                        maxDistance: 50 * 1000, // 50km radius
+                        spherical: true,
                     },
                 });
             }
         }
 
+        // 3. MATCH STAGE (for all other filters)
         const matchStage: any = { isAvailable: true, isPromoted: false };
-        if (cultPassType) {
-            matchStage.$or = [
-                { cultPassType: { $regex: cultPassType, $options: 'i' } },
-                { description: { $regex: cultPassType, $options: 'i' } }
-            ];
-        }
         if (minPrice || maxPrice) {
             matchStage.askingPrice = {};
             if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice);
             if (maxPrice) matchStage.askingPrice.$lte = parseFloat(maxPrice);
         }
         pipeline.push({ $match: matchStage });
-
+        
+        // 4. SORTING STAGE
         const sortStage: any = {};
-        if (sortBy === 'distance' && locationName) sortStage.distance = 1;
-        else if (sortBy === 'price_asc') sortStage.askingPrice = 1;
+        if (sortBy === 'price_asc') sortStage.askingPrice = 1;
         else if (sortBy === 'price_desc') sortStage.askingPrice = -1;
-        else sortStage.createdAt = -1;
+        else if (sortBy === 'createdAt_desc') sortStage.createdAt = -1;
+        // If a search term was used, Atlas Search automatically adds a 'score' field for relevance.
+        // We default to sorting by this score if no other sort is specified.
+        else if (searchTerm) sortStage.score = { $meta: "searchScore" };
+        else sortStage.createdAt = -1; // Fallback for no search term and no specific sort
         pipeline.push({ $sort: sortStage });
 
+        // 5. FACET STAGE (for pagination and getting total count efficiently)
         pipeline.push({
             $facet: {
                 listings: [
-                    { $skip: skip }, { $limit: limitNum },
+                    { $skip: skip },
+                    { $limit: limitNum },
                     { $lookup: { from: 'users', localField: 'seller', foreignField: '_id', as: 'seller' } },
                     { $unwind: '$seller' },
-                    { $project: { 'seller.password': 0, 'seller.email': 0, 'seller.refreshToken': 0 } }
+                    { $project: { 'seller.password': 0, 'seller.email': 0, 'seller.refreshToken': 0, 'searchIndex': 0 } }
                 ],
                 totalCount: [{ $count: 'count' }]
             }
         });
 
         const results = await Listing.aggregate(pipeline);
-        // Aggregation results are already plain objects, so no transformation needed here.
         const regularListings = results[0].listings;
         const totalCount = results[0].totalCount[0]?.count || 0;
 
@@ -132,13 +165,10 @@ export class ListingService {
             regularListings,
             totalPages: Math.ceil(totalCount / limitNum),
             currentPage: pageNum,
-            totalCount: totalCount + promotedListings.length
         };
     }
 
-    /**
-     * Fetches a single listing by its ID, using a cache.
-     */
+    // ... The rest of the service file (getListingById, updateListing, etc.) remains unchanged ...
     public static async getListingById(listingId: string): Promise<Partial<IListing>> {
         const cacheKey = `listing:${listingId}`;
         const cachedListing = await redis.get(cacheKey);
@@ -162,17 +192,11 @@ export class ListingService {
         return plainListing;
     }
 
-    /**
-     * Fetches all listings for a specific seller.
-     */
     public static async getMyListings(sellerId: string): Promise<Partial<IListing>[]> {
         const listings = await Listing.find({ seller: sellerId }).sort({ createdAt: -1 });
         return listings.map(listing => toPlainObject<IListing>(listing));
     }
 
-    /**
-     * Updates a listing.
-     */
     public static async updateListing(listingId: string, updateData: any, user: IUser): Promise<Partial<IListing>> {
         const listing = await Listing.findById(listingId);
         if (!listing) { throw new HttpError('Listing not found.', 404); }
@@ -187,9 +211,6 @@ export class ListingService {
         return toPlainObject<IListing>(updatedListingDoc);
     }
 
-    /**
-     * Deletes a listing after checking for active orders.
-     */
     public static async deleteListing(listingId: string, user: IUser): Promise<void> {
         const listing = await Listing.findById(listingId);
         if (!listing) {
@@ -205,9 +226,6 @@ export class ListingService {
         redis.del(`listing:${listingId}`);
     }
     
-    /**
-     * Promotes a listing, simulating a successful payment.
-     */
     public static async promoteListing(listingId: string, userId: string): Promise<Partial<IListing>> {
         const listing = await Listing.findById(listingId);
         if (!listing) { throw new HttpError('Listing not found.', 404); }
@@ -231,9 +249,6 @@ export class ListingService {
         return toPlainObject<IListing>(listing);
     }
 
-    /**
-     * Gets public-facing platform statistics.
-     */
     public static async getPublicStats() {
         const activeListings = await Listing.countDocuments({ isAvailable: true });
         const successfulDeals = await Order.countDocuments({ status: 'completed' });

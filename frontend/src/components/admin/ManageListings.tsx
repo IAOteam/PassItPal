@@ -6,8 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Link } from 'react-router-dom';
 import type { IListing } from '@passitpal/types';
-
-
+import toast from 'react-hot-toast';
 
 
 const ManageListings: React.FC = () => {
@@ -34,8 +33,8 @@ const ManageListings: React.FC = () => {
   const handleTogglePromote = async (listingId: string) => {
     if (!window.confirm('Are you sure you want to toggle the promotion status for this listing?')) return;
     try {
-      await api.put(`/admin/listings/${listingId}/promote`);
-      alert('Listing promotion status updated.');
+       await api.put(`/admin/listings/${listingId}/toggle-promote`);
+      toast.success('Listing promotion status updated.');
       fetchListings(); // Refresh the list
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update promotion status.');
@@ -46,7 +45,7 @@ const ManageListings: React.FC = () => {
     if (!window.confirm('Are you sure you want to permanently delete this listing? This action cannot be undone.')) return;
     try {
       await api.delete(`/admin/listings/${listingId}`);
-      alert('Listing deleted successfully by admin.');
+      toast.success('Listing deleted successfully by admin.');
       fetchListings(); // Refresh the list
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to delete listing.');

@@ -7,6 +7,7 @@ import { Toaster } from 'react-hot-toast';
 
 import ListingCard from '@/components/listings/ListingCard';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
+import FilterSidebar from '@/components/listings/FilterSidebar'; 
 import AdCard from '@/components/listings/AdCard';
 import ListingCardSkeleton from '@/components/listings/ListingCardSkeleton';
 import { DualRangeSlider } from '@/components/ui/slider';
@@ -69,7 +70,7 @@ const ListingsPage: React.FC = () => {
         clearSuggestions();
     };
 
-    // FIX #4: This is the fully-typed and corrected useQuery hook.
+    //  This is the fully-typed and corrected useQuery hook.
     const { data, isLoading, isError, error } = useQuery<ListingsResponse, Error, ListingsResponse, ListingsQueryKey>({
         queryKey: ['listings', { 
             locationName: searchParams.get('locationName'),
@@ -80,7 +81,7 @@ const ListingsPage: React.FC = () => {
             page: searchParams.get('page') || '1'
         }],
         queryFn: fetchListings,
-        placeholderData: keepPreviousData, // FIX #5: Correct property name for keeping data during loads.
+        placeholderData: keepPreviousData, // Correct property name for keeping data during loads.
     });
 
     // Filter handlers now simply update the URL. useQuery does the rest.
@@ -117,7 +118,7 @@ const ListingsPage: React.FC = () => {
     const displayItems = useMemo<DisplayItem[]>(() => {
         const items: DisplayItem[] = [];
         let adIdx = 0;
-        // FIX #6: The "spread" errors are gone because TypeScript now knows `regularListings` is an array of IListing objects.
+        // The "spread" errors are gone because TypeScript now knows `regularListings` is an array of IListing objects.
         regularListings.forEach((listing, idx) => {
             items.push({ ...listing, type: 'listing' });
             if ((idx + 1) % 5 === 0 && adIdx < ads.length) {

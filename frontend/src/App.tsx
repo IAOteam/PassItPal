@@ -1,6 +1,4 @@
 
-// import { NavBar } from "./components/nav/NavBar";
-import HeroSection from "./components/pages/landing/HeroSection";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Router components
 import { useJsApiLoader } from '@react-google-maps/api';
 import ListingsPage from './pages/auth/ListingsPage'; 
@@ -23,7 +21,6 @@ import SubmitReviewPage from "./components/pages/reviews/SubmitReviewPage.tsx";
 import MessagingLayout from "./components/pages/messaging/MessagingLayout.tsx";
 import AdminLayout from './components/admin/layout/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
-// import ManageRoleRequests from './components/admin/ManageRoleRequests';
 import ManageReports from './components/admin/ManageReports';
 import ManageUsers from './components/admin/ManageUsers';
 import ManageListings from './components/admin/ManageListings';
@@ -44,15 +41,33 @@ import BlogPostSafetyTips from "./pages/blogs/BlogPostSafetyTips.tsx";
 import BlogPostGymPass from "./pages/blogs/BlogPostGymPass.tsx";
 import BlogPostAiSub from "./pages/blogs/BlogPostAiSub.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
-
+import ReactGA from "react-ga4";
+import CookieConsent from './components/shared/CookieConsent';
+import { useEffect } from "react";
 
 const GOOGLE_MAPS_LIBRARIES: ("places")[] = ['places'];
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 function App() {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!,
     libraries: GOOGLE_MAPS_LIBRARIES, 
   });
+
+  const initializeAnalytics = () => {
+    if (GA_MEASUREMENT_ID) {
+      ReactGA.initialize(GA_MEASUREMENT_ID);
+      console.log("Google Analytics initialized.");
+    }
+  };
+
+  useEffect(() => {
+    // Check for consent on initial app load
+    const consent = localStorage.getItem('cookie_consent');
+    if (consent === 'true') {
+      initializeAnalytics();
+    }
+  }, []);
 
   // This will display a message until the Google Maps script is fully loaded and ready.
   if (loadError) {
@@ -74,6 +89,7 @@ function App() {
           duration: 4000,
         }}
       />
+    <CookieConsent onAccept={initializeAnalytics} />
     <Router future={{ v7_startTransition: true }}></Router>
     <Router>
         <Routes>

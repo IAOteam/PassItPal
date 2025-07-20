@@ -12,7 +12,7 @@ const sendError = (res: Response, error: any, defaultMessage: string) => {
     res.status(statusCode).json({ message: error.message || defaultMessage });
 };
 
-// --- User Management Methods (from original userController) ---
+// --- User Management Methods  ---
 
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
@@ -119,6 +119,15 @@ export const getAllAds = async (req: Request, res: Response) => {
         res.status(200).json(ads);
     } catch (error: any) {
         sendError(res, error, 'Server error: Could not fetch ads.');
+    }
+};
+
+export const getAdById = async (req: Request, res: Response) => {
+    try {
+        const ad = await AdService.getAdById(req.params.id);
+        res.status(200).json(ad);
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not fetch ad.');
     }
 };
 

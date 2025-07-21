@@ -20,6 +20,9 @@ export default {
         'slow-spin-fall': 'slowSpinFall 5s infinite',
         slideLeftSlow : "slideLeftSlow 5s infinite",
         'slow-bounce': 'bounce 5s infinite',
+        marquee: "marquee var(--duration) linear infinite",
+        "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
+        "slow-spin" : "spin 5s linear infinite",
 
       },
       keyframes: {
@@ -44,6 +47,14 @@ export default {
           '50%': { transform: 'translateX(0px) scale(1.1)' },
           '100%': { transform: 'translateX(200px) scale(1)' },
           
+        },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(calc(-100% - var(--gap)))" },
+        },
+        "marquee-vertical": {
+          from: { transform: "translateY(0)" },
+          to: { transform: "translateY(calc(-100% - var(--gap)))" },
         },
       },
 

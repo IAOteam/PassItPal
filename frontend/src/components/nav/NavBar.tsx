@@ -96,7 +96,7 @@ export function NavBar() {
 
   return (
     <header className={cn(
-      "fixed top-0 z-[999] w-full bg-white/10 dark:bg-neutral-700 backdrop-blur-xl transition-transform duration-300 ",
+      "fixed top-0 z-[999] w-full  backdrop-blur-[100px] bg-white/90 dark:bg-black/90  transition-transform duration-300 ",
       showNavbar ? "translate-y-0" : "-translate-y-full"
     )}>
       <div className="container mx-auto px-4">

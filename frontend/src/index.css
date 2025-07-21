@@ -158,6 +158,16 @@
     @apply mt-1 w-full px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:ring-primary focus:outline-none transition;
   }
 
+  .bento-grid{
+    @apply hover:shadow-[4.0px_8.0px_8.0px_rgba(0,0,0,0.38)] transition-all duration-300 ease-in-out p-4 rounded-lg relative px-6 border border-violet-100 dark:border-neutral-700;
+  }
+  .bento-grid-text{
+    @apply group-hover:translate-x-3  group-hover:scale-105  transition-all duration-300 ease-in-out w-[90%] text-gray-600 dark:text-white/70;
+  }
+  .bento-grid-heading{
+    @apply text-xl md:text-2xl lg:text-3xl group-hover:translate-x-3  group-hover:scale-105  transition-all duration-300 ease-in-out font-bold mb-2;
+  }
+
 }
 
 :root {

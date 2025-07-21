@@ -6,7 +6,7 @@ type Theme = 'light' | 'dark';
 // This is the custom hook that will manage our theme logic
 export const useTheme = (): [Theme, (theme: Theme) => void] => {
   // Initialize state. We default to 'dark' and let useEffect correct it on mount.
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
 
   // This function will be returned to allow components to change the theme
   const setTheme = (newTheme: Theme) => {

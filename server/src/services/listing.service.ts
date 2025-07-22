@@ -22,7 +22,7 @@ class HttpError extends Error {
 
 export class ListingService {
     public static async createNewListing(listingData: any, seller: IUser): Promise<Partial<IListing>> {
-        const { adImageBase64, locationName, categories, ...restOfListingData } = listingData;
+        const { adImageBase64, locationName, categories,latitude, longitude, ...restOfListingData } = listingData;
 
         if (seller.role !== 'admin' && seller.monthlyListingCount >= FREE_LISTING_LIMIT) {
             throw new HttpError(`You have reached your free monthly limit of ${FREE_LISTING_LIMIT} listings. Please upgrade to post more.`, 403);
@@ -34,12 +34,24 @@ export class ListingService {
         if (!categories || !Array.isArray(categories) || categories.length === 0) {
             throw new HttpError('At least one category is required.', 400);
         }
+        if (!locationName) throw new HttpError('Location name is required.', 400);
 
         const uploadResponse = await cloudinary.uploader.upload(adImageBase64, {
             upload_preset: 'passitpal_listings', folder: 'listings'
         }).catch(() => { throw new HttpError('Image upload failed.', 500); });
 
-        const geocodeResult = await geocodeAddress(locationName);
+        // const geocodeResult = await geocodeAddress(locationName);
+        let geocodeResult;
+        if (latitude && longitude) {
+            geocodeResult = await geocodeAddress(locationName); // Still geocode to get city/address components
+            if (geocodeResult) {
+                geocodeResult.latitude = parseFloat(latitude);
+                geocodeResult.longitude = parseFloat(longitude);
+            }
+        } else {
+            geocodeResult = await geocodeAddress(locationName);
+        }
+
         if (!geocodeResult) {
             throw new HttpError('Could not determine coordinates for the provided location.', 400);
         }
@@ -79,7 +91,7 @@ export class ListingService {
         // --- Start of the Aggregation Pipeline ---
         const pipeline: mongoose.PipelineStage[] = [];
 
-        // 1. ATLAS SEARCH STAGE (This is the core of the new search logic)
+        // ATLAS SEARCH STAGE (search logic)
         if (searchTerm) {
             pipeline.push({
                 $search: {
@@ -107,7 +119,7 @@ export class ListingService {
             });
         }
         
-        // 2. GEOSPATIAL STAGE (for location-based filtering)
+        //GEOSPATIAL STAGE (for location-based filtering)
         if (locationName) {
             const geocodeResult = await geocodeAddress(locationName);
             if (geocodeResult) {
@@ -122,7 +134,7 @@ export class ListingService {
             }
         }
 
-        // 3. MATCH STAGE (for all other filters)
+        // MATCH STAGE (for all other filters)
         const matchStage: any = { isAvailable: true, isPromoted: false };
         if (minPrice || maxPrice) {
             matchStage.askingPrice = {};
@@ -131,7 +143,7 @@ export class ListingService {
         }
         pipeline.push({ $match: matchStage });
         
-        // 4. SORTING STAGE
+        // SORTING STAGE
         const sortStage: any = {};
         if (sortBy === 'price_asc') sortStage.askingPrice = 1;
         else if (sortBy === 'price_desc') sortStage.askingPrice = -1;
@@ -142,7 +154,7 @@ export class ListingService {
         else sortStage.createdAt = -1; // Fallback for no search term and no specific sort
         pipeline.push({ $sort: sortStage });
 
-        // 5. FACET STAGE (for pagination and getting total count efficiently)
+        // FACET STAGE (for pagination and getting total count efficiently)
         pipeline.push({
             $facet: {
                 listings: [
@@ -168,7 +180,6 @@ export class ListingService {
         };
     }
 
-    // ... The rest of the service file (getListingById, updateListing, etc.) remains unchanged ...
     public static async getListingById(listingId: string): Promise<Partial<IListing>> {
         const cacheKey = `listing:${listingId}`;
         const cachedListing = await redis.get(cacheKey);
@@ -265,11 +276,11 @@ export class ListingService {
         return { activeListings, successfulDeals, moneySaved };
     }
 
-    public static async getCityFromCoords(latitude: number, longitude: number): Promise<string> {
-        const cityName = await reverseGeocode(latitude, longitude);
-        if (!cityName) {
+     public static async getAddressFromCoords(latitude: number, longitude: number): Promise<{ address: string | null }> {
+        const address = await reverseGeocode(latitude, longitude);
+        if (!address) {
             throw new HttpError('Could not determine location from coordinates.', 404);
         }
-        return cityName;
+        return { address };
     }
 }

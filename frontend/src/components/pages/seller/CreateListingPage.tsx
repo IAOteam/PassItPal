@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ImagePlus, X, Loader2 } from 'lucide-react';
-import usePlacesAutocomplete from 'use-places-autocomplete';
+import { ImagePlus, X, Loader2, MapPin } from 'lucide-react';
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
 import ListingLimitModal from '@/components/shared/ListingLimitModal'; 
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
 interface Category {
   _id: string;
@@ -26,6 +27,18 @@ const fetchCategories = async (): Promise<Category[]> => {
 const createNewCategory = async (name: string): Promise<Category> => {
     const { data } = await api.post('/categories', { name });
     return data;
+};
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '300px',
+  borderRadius: '0.5rem',
+};
+
+// Default center (Bengaluru)
+const defaultCenter = {
+  lat: 12.9716,
+  lng: 77.5946,
 };
 
 const CreateListingPage: React.FC = () => {
@@ -44,12 +57,17 @@ const CreateListingPage: React.FC = () => {
   
   // --- Location State ---
   const { ready, value: locationValue, suggestions: { status, data: locationData }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
+  const [markerPosition, setMarkerPosition] = useState(defaultCenter);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  // const [mapZoom, setMapZoom] = useState(15);
+  const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
+  const [isMapInteractive, setIsMapInteractive] = useState(false);
 
   // --- Category State ---
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   
-  // --- NEW: Modal State ---
+  // --- Modal State ---
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [limitModalMessage, setLimitModalMessage] = useState('');
 
@@ -79,7 +97,7 @@ const CreateListingPage: React.FC = () => {
           navigate('/dashboard');
       },
       onError: (error: any) => {
-          // 2. CATCH the specific 403 error for listing limits
+          // CATCH the specific 403 error for listing limits
           if (error.response?.status === 403) {
               setLimitModalMessage(error.response.data.message);
               setIsLimitModalOpen(true);
@@ -89,6 +107,7 @@ const CreateListingPage: React.FC = () => {
       }
   });
 
+   // --- Handlers ---
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,7 +123,60 @@ const CreateListingPage: React.FC = () => {
   const handleLocationSelect = async (address: string) => {
     setLocationValue(address, false);
     clearSuggestions();
+    setIsMapInteractive(false);
+    try {
+        const results = await getGeocode({ address });
+        const { lat, lng } = await getLatLng(results[0]);
+        setMapCenter({ lat, lng });
+        setMarkerPosition({ lat, lng });
+    } catch (error) {
+        console.error("Error geocoding address: ", error);
+        toast.error("Could not find that location on the map.");
+    }
   };
+
+  const handleMarkerDragEnd = useCallback(async (e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        setMarkerPosition({ lat, lng });
+        try {
+            // Call our new backend endpoint to get the address for these coordinates
+            const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
+            if (data.address) {
+                setLocationValue(data.address, false); // Update the text input
+            }
+        } catch (error) {
+            console.error("Reverse geocoding failed:", error);
+            toast.error("Could not get address for this location.");
+        }
+    }
+  }, [setLocationValue]);
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    setMapRef(map);
+  }, []);
+
+  const handleMapIdle = useCallback(async () => {
+    if (mapRef) {
+        const newCenter = mapRef.getCenter();
+        if (newCenter) {
+            const lat = newCenter.lat();
+            const lng = newCenter.lng();
+            setMarkerPosition({ lat, lng });
+            try {
+                // Call our new backend endpoint to get the address for these coordinates
+                const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
+                if (data.address) {
+                    setLocationValue(data.address, false); // Update the text input
+                }
+            } catch (error) {
+                console.error("Reverse geocoding failed:", error);
+                toast.error("Could not get address for this location.");
+            }
+        }
+    }
+  }, [mapRef, setLocationValue]);
 
   const handleCategorySelect = (category: Category) => {
     if (!selectedCategories.some(c => c._id === category._id)) {
@@ -136,6 +208,8 @@ const CreateListingPage: React.FC = () => {
       askingPrice: parseFloat(askingPrice),
       expiryDate,
       locationName: locationValue,
+      latitude: markerPosition.lat,
+      longitude: markerPosition.lng,
       categories: selectedCategories.map(c => c._id),
       description,
       availableCredits: availableCredits ? parseInt(availableCredits, 10) : undefined,
@@ -151,7 +225,7 @@ const CreateListingPage: React.FC = () => {
 
   return (
     <> 
-      {/* 3. RENDER the modal */}
+      {/* RENDER the modal */}
       <ListingLimitModal 
         isOpen={isLimitModalOpen}
         onClose={() => setIsLimitModalOpen(false)}
@@ -160,7 +234,7 @@ const CreateListingPage: React.FC = () => {
       <div className="container mx-auto max-w-2xl py-24 px-4">
         <h1 className="text-3xl font-bold mb-6 text-center">Create a New Listing</h1>
         <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
-          {/* ... rest of your form JSX remains the same ... */}
+          
            <div>
           <Label>Listing Image</Label>
           <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
@@ -248,8 +322,13 @@ const CreateListingPage: React.FC = () => {
           </div>
           <div className="md:col-span-2 relative">
               <Label htmlFor="locationName">Location / City</Label>
-              <Input id="locationName" value={locationValue} onChange={(e) => setLocationValue(e.target.value)} disabled={!ready} placeholder="Start typing your address..." required />
+              <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  
+              <Input id="locationName" value={locationValue} onChange={(e) => setLocationValue(e.target.value)} disabled={!ready} placeholder="Start typing your address..." required className="pl-9"/>
+              </div>
               {status === 'OK' && (
+                <div className="relative">
                   <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg">
                       {locationData.map(suggestion => (
                           <li key={suggestion.place_id} onClick={() => handleLocationSelect(suggestion.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer">
@@ -257,7 +336,20 @@ const CreateListingPage: React.FC = () => {
                           </li>
                       ))}
                   </ul>
+                  </div>
               )}
+              <div className="mt-2">
+                <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={isMapInteractive ? undefined : mapCenter} // Stop re-centering when user pans/zooms
+                    zoom={14}
+                    onLoad={onMapLoad}
+                    onIdle={handleMapIdle}
+                    onCenterChanged={() => setIsMapInteractive(true)} // User is interacting
+                >
+                    <MarkerF position={markerPosition} draggable={true} onDragEnd={handleMarkerDragEnd} />
+                </GoogleMap>
+              </div>
           </div>
         </div>
        

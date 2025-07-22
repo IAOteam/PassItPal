@@ -104,11 +104,11 @@ export const getPublicStats = async (req: Request, res: Response) => {
     }
 };
 
-export const getCityFromCoords = async (req: Request, res: Response) => {
+export const getAddressFromCoords = async (req: Request, res: Response) => {
     try {
         const { latitude, longitude } = req.body;
-        const cityName = await ListingService.getCityFromCoords(latitude, longitude);
-        res.status(200).json({ locationName: cityName });
+        const data = await ListingService.getAddressFromCoords(latitude, longitude);
+        res.status(200).json(data);
     } catch (error: any) {
         sendError(res, error, 'Server error: Could not determine location.');
     }

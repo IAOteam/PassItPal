@@ -87,7 +87,7 @@ router.put(
     body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
     body('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Optional location name
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.'),
-    body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean.') // Allow seller to update availability
+    body('status').optional().isIn(['available', 'sold', 'expired', 'deactivated', 'pending']).withMessage('Invalid status provided.') // Allow seller to update availability
   ],
   validate,
   updateListing

@@ -25,7 +25,7 @@ export class OrderService {
             await session.withTransaction(async () => {
                 const listing = await Listing.findById(listingId).session(session);
                 if (!listing) { throw new HttpError('Listing not found.', 404); }
-                if (!listing.isAvailable) { throw new HttpError('This listing is no longer available.', 400); }
+                if (listing.status !== 'available') { throw new HttpError('This listing is no longer available.', 400); }
                 if (listing.seller.toString() === buyerId) { throw new HttpError('You cannot make an offer on your own listing.', 400); }
                 if (await Order.findOne({ buyer: buyerId, listing: listingId, status: 'pending' }).session(session)) {
                     throw new HttpError('You already have a pending offer for this listing.', 409);
@@ -76,7 +76,7 @@ export class OrderService {
     public static async getMyOrders(buyerId: string): Promise<Partial<IOrder>[]> {
         const orders = await Order.find({ buyer: buyerId })
             .populate('seller', 'username email profilePictureUrl')
-            .populate('listing', 'cultPassType askingPrice adImageUrl isAvailable')
+            .populate('listing', 'cultPassType askingPrice adImageUrl status')
             .sort({ createdAt: -1 });
         return orders.map(order => toPlainObject<IOrder>(order));
     }
@@ -99,8 +99,8 @@ export class OrderService {
                 let notificationMessage = '';
 
                 if (newStatus === 'accepted') {
-                    if (!order.listing.isAvailable) { throw new HttpError('This listing has already been sold.', 409); }
-                    await Listing.findByIdAndUpdate(order.listing._id, { isAvailable: false }, { session });
+                    if (order.listing.status !== 'available') { throw new HttpError('This listing has already been sold.', 409); }
+                    await Listing.findByIdAndUpdate(order.listing._id, { status: 'sold' }, { session });
                     notificationMessage = `Your offer for "${order.listing.cultPassType}" was accepted!`;
                 } else {
                     notificationMessage = `Your offer for "${order.listing.cultPassType}" was rejected.`;
@@ -167,7 +167,7 @@ export class OrderService {
                 order.paymentStatus = 'paid';
                 completedOrder = await order.save({ session });
 
-                await Listing.findByIdAndUpdate(order.listing, { isAvailable: false }, { session });
+                await Listing.findByIdAndUpdate(order.listing, { status: 'sold' }, { session });
 
                 await NotificationService.createAndEmitNotification(
                     order.seller.toString(), 'transaction', `The buyer has confirmed the deal for order #${order._id?.toString().slice(-6)} is complete!`, { type: 'profile', id: order.seller.toString() }

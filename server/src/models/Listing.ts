@@ -5,6 +5,7 @@ interface IGeoPoint {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
 }
+export type ListingStatus = 'available' | 'sold' | 'expired' | 'deactivated' | 'pending';
 
 interface IAddress {
   street?: string;      // e.g., "123 Main St"
@@ -31,7 +32,8 @@ export interface IListing extends Document {
   latitude: number;
   longitude: number;
   adImageUrl?: string;
-  isAvailable: boolean ;
+  // isAvailable: boolean ;
+  status: ListingStatus;
   isPromoted: boolean; // Added for admin controls
   promotionExpiresAt?: Date;
   views: number;
@@ -78,7 +80,13 @@ const ListingSchema: Schema = new Schema({
     }
   },
   adImageUrl: { type: String },
-  isAvailable: { type: Boolean, default: true },
+  // isAvailable: { type: Boolean, default: true },
+  status: {
+    type: String,
+    enum: ['available', 'sold', 'expired', 'deactivated', 'pending'],
+    default: 'available',
+    index: true, // Add an index for faster queries on status
+  },
   isPromoted: { type: Boolean, default: false }, // Default to false
   promotionExpiresAt: { type: Date, required: false },
   views: { type: Number, default: 0 },
@@ -103,10 +111,13 @@ ListingSchema.pre('save', async function(next) {
 ListingSchema.index({ location: '2dsphere' });
 
 // Compound index for the most common query: finding available, non-promoted listings sorted by date.
-ListingSchema.index({ isAvailable: 1, isPromoted: 1, createdAt: -1 });
+// ListingSchema.index({ isAvailable: 1, isPromoted: 1, createdAt: -1 });
 
 // Compound index to help with price sorting
-ListingSchema.index({ isAvailable: 1, askingPrice: 1 });
+// ListingSchema.index({ isAvailable: 1, askingPrice: 1 });
+
+ListingSchema.index({ status: 1, isPromoted: 1, createdAt: -1 });
+ListingSchema.index({ status: 1, askingPrice: 1 });
 
 // Index for city, which is often used as a filter
 ListingSchema.index({ city: 1 });

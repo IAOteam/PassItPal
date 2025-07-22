@@ -83,7 +83,7 @@ export class ListingService {
         const skip = (pageNum - 1) * limitNum;
 
         // Promoted listings are fetched separately as they always appear first.
-        const promotedListingDocs = await Listing.find({ isPromoted: true, isAvailable: true })
+        const promotedListingDocs = await Listing.find({ isPromoted: true, status: true })
             .populate('seller', 'username profilePictureUrl')
             .limit(4);
         const promotedListings = promotedListingDocs.map(listing => toPlainObject<IListing>(listing));
@@ -135,7 +135,7 @@ export class ListingService {
         }
 
         // MATCH STAGE (for all other filters)
-        const matchStage: any = { isAvailable: true, isPromoted: false };
+        const matchStage: any = { status: true, isPromoted: false };
         if (minPrice || maxPrice) {
             matchStage.askingPrice = {};
             if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice);
@@ -261,7 +261,7 @@ export class ListingService {
     }
 
     public static async getPublicStats() {
-        const activeListings = await Listing.countDocuments({ isAvailable: true });
+        const activeListings = await Listing.countDocuments({ status: true });
         const successfulDeals = await Order.countDocuments({ status: 'completed' });
         const moneySavedAggregate = await Order.aggregate([
             { $match: { status: 'completed' } },

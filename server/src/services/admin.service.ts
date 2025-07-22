@@ -110,7 +110,7 @@ export class AdminService {
             User.countDocuments({ role: 'buyer' }),
             User.countDocuments({ role: 'seller' }),
             Listing.countDocuments(),
-            Listing.countDocuments({ isAvailable: true }),
+            Listing.countDocuments({ status: 'available' }),
             Conversation.countDocuments(),
             Message.countDocuments()
         ]);

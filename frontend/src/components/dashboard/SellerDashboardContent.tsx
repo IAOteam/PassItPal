@@ -198,11 +198,12 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                       <TableCell className="font-medium">{listing.cultPassType}</TableCell>
                       <TableCell>₹{listing.askingPrice.toLocaleString('en-IN')}</TableCell>
                       <TableCell>
-                        {listing.isAvailable ? (
-                          <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Available</Badge>
-                        ) : (
-                          <Badge variant="secondary">Unavailable</Badge>
-                        )}
+                        <Badge 
+                            variant={listing.status === 'available' ? 'success' : 'secondary'} 
+                            className="capitalize"
+                          >
+                            {listing.status}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {listing.isPromoted ? (

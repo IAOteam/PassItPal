@@ -63,7 +63,8 @@ export type IListing = {
   latitude: number;
   longitude: number;
   isPromoted: boolean;
-  isAvailable: boolean;
+  status: 'available' | 'sold' | 'expired' | 'deactivated' | 'pending';
+  images?: string[];
   adImageUrl?: string;
   expiryDate: string;
   availableCredits?: number;

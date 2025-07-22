@@ -81,11 +81,12 @@ const ManageListings: React.FC = () => {
                   <TableCell>{listing.seller?.username || 'N/A'}</TableCell>
                   <TableCell>₹{listing.askingPrice.toLocaleString('en-IN')}</TableCell>
                   <TableCell>
-                    {listing.isAvailable ? (
-                      <Badge variant="success" className="bg-green-500 text-white">Available</Badge>
-                    ) : (
-                      <Badge variant="secondary">Sold</Badge>
-                    )}
+                    <Badge 
+                      variant={listing.status === 'available' ? 'success' : 'secondary'} 
+                      className="capitalize"
+                    >
+                      {listing.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={listing.isPromoted ? 'default' : 'outline'}>

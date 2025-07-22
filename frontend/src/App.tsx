@@ -70,12 +70,12 @@ function App() {
   }, []);
 
   // This will display a message until the Google Maps script is fully loaded and ready.
-  if (loadError) {
+  /*if (loadError) {
     return <div>Error loading maps. Please check your API key and internet connection.</div>;
   }
   if (!isLoaded) {
     return <div className="flex h-screen w-full items-center justify-center">Loading Application...</div>;
-  }
+  }*/
   return (
     <>
     <Toaster
@@ -89,9 +89,12 @@ function App() {
           duration: 4000,
         }}
       />
-    <CookieConsent onAccept={initializeAnalytics} />
-    <Router future={{ v7_startTransition: true }}></Router>
+    
+      
+    
+    {/* <Router future={{ v7_startTransition: true }}></Router> */}
     <Router>
+        <CookieConsent onAccept={initializeAnalytics} />
         <Routes>
           {/* Routes that use the shared Layout (NavBar, Footer) */}
           <Route path="/" element={<Layout />}>
@@ -161,6 +164,7 @@ function App() {
           } />
         </Routes>
     </Router>
+    
     </>
   );
 }

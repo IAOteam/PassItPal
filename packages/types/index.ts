@@ -17,9 +17,36 @@ export type IUser = {
   profilePictureUrl?: string;
   averageRating?: number;
   reviewCount?: number;
-  savedListings?: string[];
+  savedListings?: (string | Partial<IListing>)[];
+  requestedRole?: 'buyer' | 'seller';
+  roleRequestStatus?: 'pending' | 'approved' | 'rejected';
+  roleReviewNotes?: string;
+  monthlyListingCount?: number;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  refreshToken?: string;
+  otp?: string;
+  otpExpiry?: Date;
+  otpPurpose?: 'verification' | 'password_reset';
+  otpVerifiedAt?: Date;
   latitude?: number;
   longitude?: number;
+};
+
+export type IAddress = {
+  street?: string;
+  suburb?: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode?: string;
+  fullAddress: string;
+};
+
+export type IGeoPoint = {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+  
 };
 
 // Represents a listing, populated with seller info
@@ -28,7 +55,7 @@ export type IListing = {
   seller: IUser;
   cultPassType: string;
   description: string;
-  category: string;
+  categories: string[]; 
   askingPrice: number;
   originalPrice: number;
   displayLocation: string;

@@ -1,3 +1,4 @@
+import { IListing } from '@passitpal/types';
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import validator from 'validator';
 
@@ -29,7 +30,7 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
-  savedListings: Types.ObjectId[];
+  savedListings?: string[]| Partial<IListing>[];
   requestedRole?: 'buyer' | 'seller';                     
   roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
   roleRequestTimestamp?: Date;                             

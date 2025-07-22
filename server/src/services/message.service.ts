@@ -1,7 +1,7 @@
 import Conversation, { IConversation } from '../models/Conversation';
 import Message, { IMessage } from '../models/Message';
 import User from '../models/User';
-import { io } from '../app'; // Assuming io is exported from your main app file
+import { io } from '../app'; 
 import { toPlainObject } from '@/utils/mongooseUtils';
 
 class HttpError extends Error {
@@ -70,7 +70,7 @@ export class MessageService {
 
         const messages = await Message.find({ conversation: conversationId })
             .populate('sender', 'username profilePictureUrl')
-            .select('sender text imageUrl createdAt')
+            .select('sender text imageUrl createdAt readBy')
             .sort({ createdAt: 'asc' });
 
         await Message.updateMany(

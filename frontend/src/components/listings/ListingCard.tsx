@@ -97,7 +97,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
-              {listing.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
+              {listing.categories[0]?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
             </Badge>
             <h3 className="truncate text-xl font-bold dark:text-white mt-1" title={listing.cultPassType}>
               {listing.cultPassType}

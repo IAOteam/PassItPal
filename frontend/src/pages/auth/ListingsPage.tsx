@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData, type QueryFunctionContext } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pagination } from '@/components/ui/Pagination';
 import usePlacesAutocomplete from 'use-places-autocomplete';
 import type { IListing, IAd } from '@passitpal/types';
+import { MapPin, Search } from 'lucide-react';
 
 interface ListingsResponse {
   promotedListings: IListing[];
@@ -49,6 +50,20 @@ const fetchListings = async ({ queryKey }: QueryFunctionContext<ListingsQueryKey
 
 type DisplayItem = (IListing & { type: 'listing' }) | (IAd & { type: 'ad' });
 
+const NoLocalListings: React.FC<{ location: string; onClear: () => void }> = ({ location, onClear }) => (
+    <div className="text-center py-16 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
+        <MapPin className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+        <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">
+            No listings found in "{location}" yet.
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Be the first to list an item in your area or browse all available passes.
+        </p>
+        <Button onClick={onClear} className="mt-6">
+            <Search className="mr-2 h-4 w-4" /> Show All Listings
+        </Button>
+    </div>
+);
 const ListingsPage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     
@@ -63,6 +78,13 @@ const ListingsPage: React.FC = () => {
     ]);
     
     const { ready, value, suggestions, setValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
+
+    useEffect(() => {
+        const locationParam = searchParams.get('locationName');
+        if (locationParam) {
+            setValue(locationParam, false);
+        }
+    }, []);
 
     const handleLocationSelect = (desc: string) => {
         setValue(desc, false);
@@ -99,7 +121,7 @@ const ListingsPage: React.FC = () => {
     const handleClear = () => {
         setSearchTerm('');
         setLocationTerm('');
-        setValue('');
+        setValue('', false);
         setPriceRange([0, 50000]);
         setSortBy('createdAt_desc');
         setSearchParams({});
@@ -128,6 +150,10 @@ const ListingsPage: React.FC = () => {
         });
         return items;
     }, [regularListings, ads]);
+
+    const locationFilter = searchParams.get('locationName');
+    const hasOtherFilters = searchParams.get('cultPassType') || searchParams.get('sortBy') !== 'createdAt_desc';
+    const isInitialLocationSearchEmpty = !!locationFilter && !hasOtherFilters && !isLoading && regularListings.length === 0 && promotedListings.length === 0;
 
     return (
         <div className="min-h-screen bg-neutral-200 dark:bg-neutral-800 py-8 px-4 md:px-8 lg:px-16 mt-10">
@@ -193,46 +219,52 @@ const ListingsPage: React.FC = () => {
                     {Array(8).fill(0).map((_, i) => <ListingCardSkeleton key={i} />)}
                 </div>
             ) : isError ? (
-                // FIX #7: Render the error.message property, which is a ReactNode.
+                //  Render the error.message property, which is a ReactNode.
                 <div className="text-center text-red-600 py-10">{error.message}</div>
             ) : (
-                <>
-                    {promotedListings.length > 0 && (
-                        <section className="mb-8">
-                            <h2 className="text-2xl font-semibold mb-4 dark:text-white">Featured Passes</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {promotedListings.map((l) => (
-                                    <ListingCard key={l._id} listing={l} onClick={() => setSelectedListing(l)} />
-                                ))}
-                            </div>
-                        </section>
+                 <>
+                    {/* Conditional rendering for the new "no local listings" message */}
+                    {isInitialLocationSearchEmpty ? (
+                        <NoLocalListings location={locationFilter} onClear={handleClear} />
+                    ) : (
+                        <>
+                            {promotedListings.length > 0 && (
+                                <section className="mb-8">
+                                    <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Featured Passes</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {promotedListings.map((l) => (
+                                            <ListingCard key={l._id} listing={l} onClick={() => setSelectedListing(l)} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                            <section>
+                                {(displayItems.length > 0 || promotedListings.length > 0) && <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">All Passes</h2>}
+                                {displayItems.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {displayItems.map((item) =>
+                                            item.type === 'listing' ? (
+                                                <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />
+                                            ) : (
+                                                <AdCard key={item._id} ad={item} />
+                                            )
+                                        )}
+                                    </div>
+                                ) : !isInitialLocationSearchEmpty && (
+                                    <p className="text-center py-10 text-gray-500 dark:text-gray-400">No listings found matching your criteria.</p>
+                                )}
+                            </section>
+                        </>
                     )}
-                    <section>
-                        {displayItems.length > 0 && (
-                            <>
-                                {promotedListings.length > 0 && <h2 className="text-2xl font-semibold mb-4 dark:text-white">All Passes</h2>}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                    {displayItems.map((item) =>
-                                        item.type === 'listing' ? (
-                                            <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />
-                                        ) : (
-                                            <AdCard key={item._id} ad={item} />
-                                        )
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        {displayItems.length === 0 && promotedListings.length === 0 && (
-                            <p className="text-center py-10 text-gray-500 dark:text-gray-300">No listings found matching your criteria.</p>
-                        )}
-                    </section>
-                    <div className="pt-6">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-                    </div>
+                    {totalPages > 1 && (
+                      <div className="pt-8">
+                          <Pagination
+                              currentPage={currentPage}
+                              totalPages={totalPages}
+                              onPageChange={handlePageChange}
+                          />
+                      </div>
+                    )}
                 </>
             )}
             <ListingDetailModal

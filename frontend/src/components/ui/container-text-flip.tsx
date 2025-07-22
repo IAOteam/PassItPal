@@ -28,43 +28,36 @@ export function ContainerTextFlip({
   const id = useId();
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [width, setWidth] = useState(100);
-  const textRef = React.useRef(null);
+  const textRef = React.useRef<HTMLDivElement>(null);
 
   const updateWidthForWord = () => {
     if (textRef.current) {
-      // Add some padding to the text width (30px on each side)
-      // @ts-ignore
       const textWidth = textRef.current.scrollWidth + 30;
       setWidth(textWidth);
     }
   };
 
   useEffect(() => {
-    // Update width whenever the word changes
     updateWidthForWord();
   }, [currentWordIndex]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCurrentWordIndex((prevIndex) => (prevIndex + 1) % words.length);
-      // Width will be updated in the effect that depends on currentWordIndex
     }, interval);
 
     return () => clearInterval(intervalId);
   }, [words, interval]);
 
   return (
-    <motion.p
+    // CHANGED: motion.p is now motion.span
+    <motion.span
       layout
       layoutId={`words-here-${id}`}
       animate={{ width }}
       transition={{ duration: animationDuration / 2000 }}
       className={cn(
         "relative inline-block rounded-lg pt-2 px-3 text-start text-2xl font-bold text-black dark:text-white min-w-52 ",
-        
-        
-        
-        
         className,
       )}
       key={words[currentWordIndex]}
@@ -99,6 +92,6 @@ export function ContainerTextFlip({
           ))}
         </motion.div>
       </motion.div>
-    </motion.p>
+    </motion.span>
   );
 }

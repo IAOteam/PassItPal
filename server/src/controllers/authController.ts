@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { IUser } from '../models/User';
+import { IUser as IMongooseUser }  from '../models/User';
 
 
 /**
@@ -176,7 +176,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const googleOAuthCallbackController = async (req: Request, res: Response) => {
     try {
-        const { accessToken, refreshToken, user } = await AuthService.handleGoogleAuth(req.user as IUser);
+        const { accessToken, refreshToken, user } = await AuthService.handleGoogleAuth(req.user as IMongooseUser);
 
         res.cookie('refreshToken', refreshToken, { 
             httpOnly: true, 

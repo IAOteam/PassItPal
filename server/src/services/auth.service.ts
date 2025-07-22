@@ -1,17 +1,18 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import User, { IUser } from '../models/User';
+import User , { IUser as IMongooseUser } from '../models/User';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { sendOtp, verifyOtp as verifyOtpUtil } from '../utils/otp';
 import { normalizeIndianMobileNumber } from '../utils/stringUtils';
 import { getWelcomeEmailTemplate } from '../utils/emailTemplates';
 import { sendEmail } from '../utils/emailService';
-import { IFrontendUser, UserService } from './user.service';
+import { UserService } from './user.service';
+import { IUser as ISharedUser } from '@passitpal/types';
 
 
 // --- Type Definitions for Clarity ---
 
-type RegisterUserData = Pick<IUser, 'email' | 'password' | 'username' | 'role' | 'mobileNumber'> & {
+type RegisterUserData = Pick<IMongooseUser, 'email' | 'password' | 'username' | 'role' | 'mobileNumber'> & {
     city?: string;
     latitude?: number;
     longitude?: number;
@@ -20,7 +21,7 @@ type RegisterUserData = Pick<IUser, 'email' | 'password' | 'username' | 'role' |
 type LoginReturnType = {
     accessToken: string;
     refreshToken: string;
-    user: IFrontendUser;
+    user: ISharedUser;
 };
 
 type GoogleAuthReturnType = LoginReturnType;
@@ -46,7 +47,7 @@ export class AuthService {
    * @param userData - The data for the new user.
    * @returns A promise that resolves to a frontend-safe user object.
    */
-  static async register(userData: RegisterUserData): Promise<IFrontendUser> {
+  static async register(userData: RegisterUserData): Promise<ISharedUser> {
     const { email, password, username, mobileNumber, role, city, latitude, longitude } = userData;
 
     if (!email || !password || !username || !role) {
@@ -183,7 +184,7 @@ export class AuthService {
    * Handles the callback from Google OAuth, generating tokens for the user.
    * @returns A promise that resolves to an object containing tokens and user data.
    */
-  static async handleGoogleAuth(passportUser: IUser): Promise<GoogleAuthReturnType> {
+  static async handleGoogleAuth(passportUser: IMongooseUser): Promise<GoogleAuthReturnType> {
       if (!passportUser) {
           throw new HttpError('Google authentication failed.', 401);
       }

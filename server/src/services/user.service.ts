@@ -1,10 +1,11 @@
 import User, { IUser as IMongooseUser } from '../models/User';
 import Order from '../models/Order';
+import Listing from '../models/Listing';
 import { v2 as cloudinary } from 'cloudinary';
 import { normalizeIndianMobileNumber } from '../utils/stringUtils';
 import { toPlainObject } from '../utils/mongooseUtils';
 import { NotificationService } from './notification.service';
-import { IListing } from '@passitpal/types';
+import { IUser, IListing } from '@passitpal/types';
 
 // --- Type Definitions ---
 export interface IFrontendUser {
@@ -43,46 +44,54 @@ export class UserService {
     /**
      * Creates a clean, frontend-safe user object from a Mongoose document.
      */
-    public static createFrontendUserObject(user: IMongooseUser): IFrontendUser {
+    public static createFrontendUserObject(user: IMongooseUser): IUser {
         const plainUser = toPlainObject<IMongooseUser>(user);
+        const savedListings = plainUser.savedListings?.map(item => {
+            // Mongoose's toObject converts populated docs to objects and ObjectIds to strings.
+            return typeof item === 'object' ? item as IListing : item.toString();
+        }) || []
+        
         return {
             _id: plainUser._id.toString(),
             googleId: plainUser.googleId,
             email: plainUser.email,
             username: plainUser.username,
             role: plainUser.role,
+            authProvider: plainUser.authProvider,
             isEmailVerified: plainUser.isEmailVerified,
             isMobileVerified: plainUser.isMobileVerified,
+            isBlocked: plainUser.isBlocked,
             city: plainUser.location?.city,
             mobileNumber: plainUser.mobileNumber,
             profilePictureUrl: plainUser.profilePictureUrl,
-            requestedRole: plainUser.requestedRole,
-            roleRequestStatus: plainUser.roleRequestStatus,
-            savedListings: plainUser.savedListings?.map(id => id.toString()),
+            averageRating: plainUser.averageRating,
+            reviewCount: plainUser.reviewCount,
+            savedListings: savedListings,
         };
     }
 
-    public static async getProfileById(userId: string): Promise<IFrontendUser> {
+    public static async getProfileById(userId: string): Promise<IUser> {
         const user = await User.findById(userId);
         if (!user) { throw new HttpError('User not found.', 404); }
         return this.createFrontendUserObject(user);
     }
 
-   public static async getMyPopulatedProfile(userId: string): Promise<Partial<IFrontendUser>> {
+   public static async getMyPopulatedProfile(userId: string): Promise<Partial<IUser>> {
         const user = await User.findById(userId)
             .select('-password -otp -refreshToken')
-            .populate({
+            .populate<{ savedListings: IListing[] }>({
                 path: 'savedListings',
-                model: 'Listing',
+                model: Listing,
                 populate: { path: 'seller', select: 'username profilePictureUrl' }
             });
         if (!user) { throw new HttpError('User not found.', 404); }
         
+        
         // Transform the entire populated document into a plain object before returning.
-        return toPlainObject<IFrontendUser>(user);
+        return toPlainObject<IUser>(user);
     }
 
-    public static async updateMyProfile(userId: string, updateData: IProfileUpdateData): Promise<IFrontendUser> {
+    public static async updateMyProfile(userId: string, updateData: IProfileUpdateData): Promise<IUser> {
         const user = await User.findById(userId);
         if (!user) { throw new HttpError('User not found.', 404); }
 
@@ -127,7 +136,7 @@ export class UserService {
         return this.createFrontendUserObject(user);
     }
 
-    public static async switchUserRole(userId: string, newRole: 'buyer' | 'seller'): Promise<IFrontendUser> {
+    public static async switchUserRole(userId: string, newRole: 'buyer' | 'seller'): Promise<IUser> {
         const user = await User.findById(userId);
         if (!user) { throw new HttpError('User not found.', 404); }
         if (user.role === newRole) { throw new HttpError(`You are already a ${newRole}.`, 400); }

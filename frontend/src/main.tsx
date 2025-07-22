@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')!).render(
     <React.StrictMode> 
         <QueryClientProvider client={queryClient}>
             <App />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>
     </React.StrictMode>
 );

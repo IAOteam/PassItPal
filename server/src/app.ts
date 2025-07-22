@@ -32,6 +32,7 @@ import emailProcessor from './workers/emailProcessor';
 import cron from 'node-cron';
 import adExpiryProcessor from './workers/adExpiryProcessor';
 import listingExpiryProcessor from './workers/listingExpiryProcessor';
+import listingPromotionExpiryProcessor from './workers/listingPromotionExpiryProcessor';
 import monthlyResetProcessor from './workers/monthlyResetProcessor';
 import './config/passport-setup'; 
 
@@ -66,7 +67,8 @@ cron.schedule('5 0 * * *', listingExpiryProcessor, { // Runs at 12:05 AM daily
   //scheduled: true,
   timezone: "Asia/Kolkata"
 });
-
+cron.schedule('10 0 * * *', listingPromotionExpiryProcessor, { timezone: "Asia/Kolkata" });
+// console.log("Scheduled listing promotion expiry job to run daily at 12:10 AM.");
 cron.schedule('0 0 1 * *', monthlyResetProcessor, { timezone: "Asia/Kolkata" });
 // console.log("Scheduled listing expiry job to run daily.");
 

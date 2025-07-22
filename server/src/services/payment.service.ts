@@ -48,7 +48,7 @@ export class PaymentService {
             notes: {
                 listingId: listingId.toString(),
                 userId: userId.toString(),
-                durationDays: durationDays, // ADDED: Pass duration in notes
+                durationDays: durationDays, //  Pass duration in notes
                 paymentType: 'listing_promotion'
             }
         };
@@ -58,7 +58,7 @@ export class PaymentService {
     /**
      * Verifies a payment for a listing promotion and applies the correct duration.
      */
-    public static async verifyListingPromotionPayment(verificationData: { razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, listingId: string, userId: string, durationDays: number }) { // ADDED durationDays
+    public static async verifyListingPromotionPayment(verificationData: { razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, listingId: string, userId: string, durationDays: number }) { //  durationDays
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, listingId, userId, durationDays } = verificationData;
 
         const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -79,7 +79,7 @@ export class PaymentService {
         if (isAuthentic) {
             listing.isPromoted = true;
             const now = new Date();
-            // MODIFIED: Use the dynamic duration instead of hardcoded 7 days
+            //  Use the dynamic duration instead of hardcoded 7 days
             listing.promotionExpiresAt = new Date(now.setDate(now.getDate() + durationDays)); 
             await listing.save();
 

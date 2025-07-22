@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
-import { X, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, ShieldCheck, Loader2, Zap } from 'lucide-react';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
+import toast from 'react-hot-toast';
+import { cn } from '@/lib/utils';
 
 interface ListingForPromotion {
   _id: string;
@@ -18,19 +20,22 @@ interface PromotionPaymentModalProps {
   onSuccess: () => void; // To refresh the dashboard list
 }
 
-const PROMOTION_PRICE = 99; // Price in INR
-
+const promotionTiers = [
+  { durationDays: 7, price: 39, name: 'Standard', description: 'Feature your listing for a week.' },
+  { durationDays: 30, price: 99, name: 'Premium', description: 'Get a full month of visibility.', popular: true },
+];
 const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, onClose, listing, onSuccess }) => {
   const { user, createPromotionOrder } = useAuthStore();
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<'selecting' | 'processing' | 'error'>('selecting');
   const [error, setError] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState(promotionTiers[0]);
 
   // This effect triggers the payment process when the modal opens
-  useEffect(() => {
-    if (isOpen && listing) {
-      initiatePayment();
-    }
-  }, [isOpen, listing]);
+  // useEffect(() => {
+  //   if (isOpen && listing) {
+  //     initiatePayment();
+  //   }
+  // }, [isOpen, listing]);
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -44,45 +49,48 @@ const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, o
 
   const initiatePayment = async () => {
     if (!listing) return;
-    setLoading(true);
+    setStatus('processing');
     setError(null);
 
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded) {
       setError('Could not load payment script. Please check your internet connection.');
-      setLoading(false);
+      setStatus('error');
       return;
     }
 
     try {
-      // 1. Create an order on our backend
-      const order = await createPromotionOrder(listing._id, PROMOTION_PRICE);
-
-      // 2. Configure Razorpay options
+      //  Create an order on our backend
+      const order = await api.post('/payments/create-order', {
+        listingId: listing._id,
+        amount: selectedTier.price,
+        durationDays: selectedTier.durationDays,
+      });
+      //  Configure Razorpay options
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
+        amount: order.data.amount,
+        currency: order.data.currency,
         name: 'Passitpal Listing Promotion',
-        description: `Promoting: ${listing.cultPassType}`,
-        order_id: order.id,
+        description: `Promoting: ${listing.cultPassType} for ${selectedTier.durationDays} days`,
+        
+        order_id: order.data.id,
         handler: async function (response: any) {
-          // 3. Verify the payment on our backend
-          setLoading(true);
+          // Verify the payment on our backend
+          setStatus('processing');
           try {
             await api.post('/payments/verify', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
+              ...response,
               listingId: listing._id,
+              durationDays: selectedTier.durationDays,
             });
-            alert('Payment successful! Your listing has been promoted.');
+            toast.success('Payment successful! Your listing has been promoted.');
             onSuccess(); // Refresh the dashboard
             onClose(); // Close the modal
           } catch (verificationError: any) {
             setError(verificationError.response?.data?.message || 'Payment verification failed. Please contact support.');
           } finally {
-            setLoading(false);
+            setStatus('error');
           }
         },
         prefill: {
@@ -93,25 +101,35 @@ const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, o
         theme: {
           color: '#2563EB',
         },
+        modal: {
+            ondismiss: () => {
+                setStatus('selecting'); // Reset status if user closes the Razorpay modal
+            }
+        }
       };
 
-      // 4. Open the Razorpay checkout modal
+      // Open the Razorpay checkout modal
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
-      setLoading(false);
 
     } catch (err: any) {
       setError(err.message || 'Failed to initiate payment.');
-      setLoading(false);
+      setStatus('error');
     }
   };
+
+  const handleClose = () => {
+    setStatus('selecting');
+    setError(null);
+    onClose();
+  }
 
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        onClick={onClose}
+        onClick={handleClose}
         className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
       >
         <motion.div
@@ -123,23 +141,41 @@ const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, o
         >
           <div className="flex items-center justify-between p-4 border-b border-neutral-800">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="text-primary" /> Promote Your Listing
+              <Zap className="text-yellow-400" /> Promote Your Listing
             </h2>
-            <Button variant="ghost" size="icon" className="rounded-full text-neutral-400" onClick={onClose}><X /></Button>
+            <Button variant="ghost" size="icon" className="rounded-full text-neutral-400" onClick={handleClose}><X /></Button>
           </div>
-          <div className="p-8 text-center text-white">
-            {loading && (
-              <div className="flex flex-col items-center gap-4">
+          <div className="p-6 text-white">
+            {status === 'selecting' && (
+              <div className="space-y-4">
+                <p className="text-sm text-center text-neutral-400">Choose a promotion tier to boost your listing's visibility.</p>
+                {promotionTiers.map(tier => (
+                  <div key={tier.name} onClick={() => setSelectedTier(tier)} className={cn(
+                      "p-4 border rounded-lg cursor-pointer transition-all relative",
+                      selectedTier.name === tier.name ? "border-primary ring-2 ring-primary" : "border-neutral-700 hover:border-neutral-500"
+                  )}>
+                    {tier.popular && <div className="absolute -top-2.5 right-2 text-xs bg-yellow-400 text-black font-bold px-2 py-0.5 rounded-full">POPULAR</div>}
+                    <h3 className="font-semibold">{tier.name} - ₹{tier.price}</h3>
+                    <p className="text-sm text-neutral-400">{tier.description}</p>
+                  </div>
+                ))}
+                <Button className="w-full mt-4" onClick={initiatePayment}>
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Pay ₹{selectedTier.price} and Promote
+                </Button>
+              </div>
+            )}
+            {status === 'processing' && (
+              <div className="flex flex-col items-center gap-4 text-center h-40 justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-neutral-300">Initializing secure payment...</p>
+                <p className="text-neutral-300">Processing secure payment...</p>
                 <p className="text-xs text-neutral-500">Please do not close this window.</p>
               </div>
             )}
-            {error && (
-              <div className="text-red-400">
+            {status === 'error' && (
+              <div className="text-red-400 text-center h-40 flex flex-col justify-center">
                 <p className="font-semibold">Payment Error</p>
                 <p className="text-sm mt-2">{error}</p>
-                <Button variant="secondary" className="mt-4" onClick={onClose}>Close</Button>
+                <Button variant="secondary" className="mt-4" onClick={() => setStatus('selecting')}>Try Again</Button>
               </div>
             )}
           </div>
@@ -150,4 +186,3 @@ const PromotionPaymentModal: React.FC<PromotionPaymentModalProps> = ({ isOpen, o
 };
 
 export default PromotionPaymentModal;
-

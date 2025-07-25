@@ -63,8 +63,8 @@ const ListingSchema: Schema = new Schema({
   originalPrice: { type: Number, required: true },
   availableCredits: { type: Number }, // e.g., "5 sessions", "unlimited"
   city: { type: String, required: true },
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
+  latitude: { type: Number },
+  longitude: { type: Number },
   displayLocation: { type: String, required: true },
   address: { type: AddressSchema, required: true },
   location: { // GeoJSON Point for geospatial queries

@@ -8,31 +8,31 @@ const featuredItems = [
   {
     title: 'How Passitpal Works',
     description: 'Understand our simple and secure process in three easy steps.',
-    imageUrl: 'https://images.unsplash.com/photo-1581093450021-916382494869?q=80&w=2670&auto=format&fit=crop',
+    imageUrl: 'https://placehold.co/400x600/a3e635/172754?text=How+It+Works',
     link: '/how-it-works',
   },
   {
     title: 'Your Safety, Our Priority',
     description: 'Learn how to transact securely with our comprehensive safety guide.',
-    imageUrl: 'https://images.unsplash.com/photo-1580894908361-967195033215?q=80&w=2670&auto=format&fit=crop',
+    imageUrl: 'https://placehold.co/400x600/67e8f9/172754?text=Safety+Guide',
     link: '/safety-guide',
   },
   {
     title: 'Explore Top Categories',
     description: 'From gym passes to concert tickets, find exactly what you need.',
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2720&auto=format&fit=crop',
+    imageUrl: 'https://placehold.co/400x600/f9a8d4/172754?text=Top+Categories',
     link: '/listings',
   },
   {
     title: 'Become a Seller Today',
     description: 'Have an unused pass? List it in minutes and earn cash securely.',
-    imageUrl: 'https://images.unsplash.com/photo-1517130038641-a774d04afb3c?q=80&w=2670&auto=format&fit=crop',
+    imageUrl: 'https://placehold.co/400x600/fde047/172754?text=Become+a+Seller',
     link: '/seller/create-listing', // This will redirect to login if not authenticated
   },
   {
     title: 'From the Blog',
     description: 'Get tips, news, and updates from the Passitpal team.',
-    imageUrl: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2670&auto=format&fit=crop',
+    imageUrl: 'https://placehold.co/400x600/fdba74/172754?text=Our+Blog',
     link: '/blog',
   },
 ];

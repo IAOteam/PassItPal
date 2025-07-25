@@ -8,10 +8,16 @@ import { cn } from '@/lib/utils';
 
 import useAuthStore from '@/hooks/zustand/useAuthStore';
 import type { IParticipant, IUser } from '@passitpal/types';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 
+
+interface PopulatedParticipant {
+  user: IParticipant;
+}
 interface Conversation {
   _id: string;
-  participants: (IUser & { _id: string })[];
+  participants: PopulatedParticipant[];
   lastMessage?: {
     text: string;
     createdAt: string;
@@ -19,31 +25,21 @@ interface Conversation {
   updatedAt: string;
 }
 
+const fetchConversations = async (): Promise<Conversation[]> => {
+  const { data } = await api.get('/messages/conversations/me');
+  return data || [];
+}
+
 const ConversationsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { conversationId: activeConvId } = useParams<{ conversationId: string }>();
+  
 
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchConversations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get('/messages/conversations/me');
-      setConversations(res.data || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch conversations.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
+  const { data: conversations, isLoading, isError, error } = useQuery<Conversation[], Error>({
+    queryKey: ['conversations'],
+    queryFn: fetchConversations,
+  });
 
   const timeSince = (date: string) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -68,18 +64,22 @@ const ConversationsListPage: React.FC = () => {
         Chats
       </h2>
       <div className="flex-grow overflow-y-auto">
-        {loading && (
-          <p className="p-4 text-center text-sm text-neutral-500">Loading...</p>
+        {isLoading && (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="animate-spin text-gray-400" />
+          </div>
         )}
-        {error && (
-          <p className="p-4 text-center text-sm text-red-500">{error}</p>
+        {isError && (
+          <p className="p-4 text-center text-sm text-red-500">{error.message}</p>
         )}
-        {!loading && !error && (
+        {!isLoading && !isError && (
           <>
-            {conversations.length > 0 ? (
+            {conversations && conversations.length > 0 ? (
               <ul>
                 {conversations.map((convo) => {
-                  const otherParticipant = convo.participants.find(p => p._id !== user?._id) as IParticipant;
+                  // Correctly find the other participant by accessing the nested `user` property.
+                  const otherParticipant = convo.participants.find(p => p.user._id !== user?._id)?.user;
+                  
                   if (!otherParticipant) return null;
                   const active = activeConvId === convo._id;
                   return (
@@ -94,14 +94,15 @@ const ConversationsListPage: React.FC = () => {
                       )}
                     >
                       <Avatar
-                        src={otherParticipant?.profilePictureUrl}
+                        // FIX: Access profilePictureUrl and username from the nested user object.
+                        src={otherParticipant.profilePictureUrl}
                         icon={<UserOutlined />}
                         size={48}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center">
                           <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 truncate">
-                            {otherParticipant?.username || 'User'}
+                            {otherParticipant.username || 'User'}
                           </p>
                           <span className="text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0 ml-2">
                             {timeSince(convo.updatedAt)}

@@ -6,13 +6,17 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY frontend/package*.json ./
+COPY ../packages/types/package.json ../packages/types/
 
 # Install dependencies
 RUN npm install
 
 # Copy the rest of the frontend source code
-COPY . .
+COPY frontend/ ./
+
+# Copy the shared types too
+COPY ../packages/types ../packages/types
 
 # Build the production-ready static files
 RUN npm run build
@@ -26,7 +30,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy the custom Nginx configuration
 # This ensures that all routes are directed to index.html for our Single-Page App
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80 for the Nginx server
 EXPOSE 80

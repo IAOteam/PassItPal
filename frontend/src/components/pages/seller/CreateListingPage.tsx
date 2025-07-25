@@ -120,20 +120,24 @@ const CreateListingPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
   
-  const handleLocationSelect = async (address: string) => {
+  const handleLocationSelect = useCallback(async (address: string) => {
     setLocationValue(address, false);
     clearSuggestions();
-    setIsMapInteractive(false);
     try {
         const results = await getGeocode({ address });
         const { lat, lng } = await getLatLng(results[0]);
-        setMapCenter({ lat, lng });
-        setMarkerPosition({ lat, lng });
+        const newPosition = { lat, lng };
+        setMapCenter(newPosition);
+        setMarkerPosition(newPosition); // Directly set the marker position
+        // Pan the map to the new location
+        if (mapRef) {
+          mapRef.panTo(newPosition);
+        }
     } catch (error) {
         console.error("Error geocoding address: ", error);
         toast.error("Could not find that location on the map.");
     }
-  };
+  }, [setLocationValue, clearSuggestions, mapRef]); 
 
   const handleMarkerDragEnd = useCallback(async (e: google.maps.MapMouseEvent) => {
     if (e.latLng) {

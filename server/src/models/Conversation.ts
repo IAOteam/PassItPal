@@ -7,7 +7,7 @@ export interface IConversation extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-interface IParticipant {
+export interface IParticipant {
   user: Types.ObjectId;
   lastNotificationSentAt?: Date; // Tracks when the last "you have unread messages" email was sent
 }

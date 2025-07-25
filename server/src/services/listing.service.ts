@@ -83,7 +83,7 @@ export class ListingService {
         const skip = (pageNum - 1) * limitNum;
 
         // Promoted listings are fetched separately as they always appear first.
-        const promotedListingDocs = await Listing.find({ isPromoted: true, status: true })
+        const promotedListingDocs = await Listing.find({ isPromoted: true, status: 'available' })
             .populate('seller', 'username profilePictureUrl')
             .limit(4);
         const promotedListings = promotedListingDocs.map(listing => toPlainObject<IListing>(listing));
@@ -135,7 +135,7 @@ export class ListingService {
         }
 
         // MATCH STAGE (for all other filters)
-        const matchStage: any = { status: true, isPromoted: false };
+        const matchStage: any = { status: 'available', isPromoted: false };
         if (minPrice || maxPrice) {
             matchStage.askingPrice = {};
             if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice);
@@ -158,17 +158,54 @@ export class ListingService {
         pipeline.push({
             $facet: {
                 listings: [
-                    { $skip: skip },
-                    { $limit: limitNum },
-                    { $lookup: { from: 'users', localField: 'seller', foreignField: '_id', as: 'seller' } },
-                    { $unwind: '$seller' },
-                    { $project: { 'seller.password': 0, 'seller.email': 0, 'seller.refreshToken': 0, 'searchIndex': 0 } }
+                { $skip: skip },
+                { $limit: limitNum },
+                {
+                    $lookup: {
+                    from: 'users',
+                    localField: 'seller',
+                    foreignField: '_id',
+                    as: 'seller'
+                    }
+                },
+                { $unwind: '$seller' },
+                {
+                    $lookup: {
+                    from: 'categories',
+                    localField: 'categories',
+                    foreignField: '_id',
+                    as: 'categoryObjects'
+                    }
+                },
+                {
+                    $addFields: {
+                    categoryName: { $arrayElemAt: ['$categoryObjects.name', 0] }
+                    }
+                },
+
+                {
+                    $project: {
+                    'seller.password': 0,
+                    'seller.email': 0,
+                    'seller.refreshToken': 0,
+                    'searchIndex': 0,
+                    'categoryObjects': 0 // optional
+                    }
+                }
                 ],
+
                 totalCount: [{ $count: 'count' }]
             }
         });
+        // console.log({ queryParams, matchStage, pipeline });
+        // console.log('💡 Incoming Query Params:', queryParams);
+        // console.log('💡 Match Stage:', matchStage);
+        // console.log('💡 Aggregation Pipeline:', JSON.stringify(pipeline, null, 2));
+
 
         const results = await Listing.aggregate(pipeline);
+        console.log("🔍 Aggregation Results Sample:", JSON.stringify(results[0].listings[0], null, 2));
+
         const regularListings = results[0].listings;
         const totalCount = results[0].totalCount[0]?.count || 0;
 
@@ -261,7 +298,7 @@ export class ListingService {
     }
 
     public static async getPublicStats() {
-        const activeListings = await Listing.countDocuments({ status: true });
+        const activeListings = await Listing.countDocuments({ status: 'available' });
         const successfulDeals = await Order.countDocuments({ status: 'completed' });
         const moneySavedAggregate = await Order.aggregate([
             { $match: { status: 'completed' } },

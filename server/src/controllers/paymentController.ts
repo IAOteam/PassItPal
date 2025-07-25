@@ -13,12 +13,12 @@ const sendError = (res: Response, error: any, defaultMessage: string) => {
 
 export const createRazorpayOrder = async (req: Request, res: Response) => {
     try {
-        const { amount, listingId } = req.body;
+        const { amount, listingId, durationDays } = req.body;
         const userId = req.user?._id.toString();
         if (!userId) {
             return res.status(401).json({ message: 'Not authorized' });
         }
-        const order = await PaymentService.createListingPromotionOrder(amount, listingId, userId);
+        const order = await PaymentService.createListingPromotionOrder(amount, listingId, userId, durationDays);
         res.status(200).json(order);
     } catch (error: any) {
         sendError(res, error, 'Server error while creating payment order.');

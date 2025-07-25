@@ -30,7 +30,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     unsaveListing,
   } = useAuthStore();
 
-  const isSaved = user?.savedListings?.includes(listing._id);
+  const isSaved = user?.savedListings?.some(item => (typeof item === 'string' ? item : item._id) === listing._id);
   const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(
     listing.cultPassType
   )}`;
@@ -62,6 +62,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
       console.error("Save error:", err.message);
     }
   };
+
+  const displayCategory = listing.categories || 'General';
 
   return (
     <div
@@ -97,7 +99,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
-              {listing.categories[0]?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
+              {displayCategory}
             </Badge>
             <h3 className="truncate text-xl font-bold dark:text-white mt-1" title={listing.cultPassType}>
               {listing.cultPassType}

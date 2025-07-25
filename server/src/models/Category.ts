@@ -27,7 +27,7 @@ const CategorySchema: Schema = new Schema({
 });
 
 // Index to quickly find categories by name
-CategorySchema.index({ name: 1 });
+// CategorySchema.index({ name: 1 });
 
 const Category = mongoose.model<ICategory>('Category', CategorySchema);
 

@@ -93,10 +93,15 @@ export class AuthService {
       authProvider: 'local',
     });
 
-    await user.save();
+    /*await user.save();
     const { subject, html } = getWelcomeEmailTemplate(user.username);
     // We send the email but don't wait for it to complete to avoid slowing down the registration process.
     sendEmail(user.email, subject, '', html).catch(err => console.error("Failed to send welcome email:", err));
+    
+    await sendOtp(user.email, user.mobileNumber, 'email', 'verification');*/
+
+    await user.save();
+    // Welcome email is no longer sent here. It will be sent after OTP verification.
     
     await sendOtp(user.email, user.mobileNumber, 'email', 'verification');
 

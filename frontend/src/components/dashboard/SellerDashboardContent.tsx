@@ -51,7 +51,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
   const listings = data?.listings ?? [];
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string, status: 'accepted' | 'rejected' }) => 
+    mutationFn: ({ orderId,  }: { orderId: string, status: 'accepted' | 'rejected' }) => 
       api.put(`/orders/${orderId}/status`, { status }),
     onSuccess: (_, variables) => {
       toast.success(`Order ${variables.status} successfully.`);

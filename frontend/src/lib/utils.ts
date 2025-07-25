@@ -20,8 +20,8 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
 }
 
 export const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result as string);
+  reader.onerror = error => reject(error);
 });

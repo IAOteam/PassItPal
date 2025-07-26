@@ -5,28 +5,31 @@ FROM node:22-alpine AS builder
 # Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY frontend/package*.json ./
-COPY ../packages/types/package.json ../packages/types/
+# Copy all package.json and lock files to leverage Docker layer caching
+# This ensures npm can resolve the "workspace:*" protocol
+COPY package*.json ./
+COPY server/package.json ./server/
+COPY frontend/package.json ./frontend/
+COPY packages/types/package.json ./packages/types/
 
 # Install dependencies
+# Running from the root installs dependencies for all workspaces
 RUN npm install
 
-# Copy the rest of the frontend source code
-COPY frontend/ ./
-
-# Copy the shared types too
-COPY ../packages/types ../packages/types
+# Copy the rest of the source code
+COPY . .
 
 # Build the production-ready static files
-RUN npm run build
+# The --workspace flag tells npm to run the build script for the 'frontend' package
+RUN npm run build --workspace=frontend
 
 # --- Stage 2: Production Stage ---
 # Use a lightweight Nginx image to serve the static files
 FROM nginx:1.27-alpine
 
 # Copy the built static files from the 'builder' stage to the Nginx public directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# The build output is now located in the frontend/dist directory
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
 # Copy the custom Nginx configuration
 # This ensures that all routes are directed to index.html for our Single-Page App

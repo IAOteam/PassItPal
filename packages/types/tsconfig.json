@@ -6,7 +6,11 @@
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    "moduleResolution": "node",
+    "composite": true
   },
   "include": ["index.ts"],
   "exclude": ["node_modules", "dist"]

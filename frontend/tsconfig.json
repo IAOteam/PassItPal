@@ -2,14 +2,15 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.node.json" },
+    { "path": "../packages/types" }
   ],
   "compilerOptions": {
     
     "baseUrl": "./", 
     "paths": {
       "@/*": ["./src/*"], // This maps any import starting with '@/'' to './src/'
-      "@passitpal/types": ["../packages/types"]
+      "@passitpal/types": ["../packages/types/index.ts"]
     },
   }
 }

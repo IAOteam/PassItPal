@@ -9,7 +9,9 @@ const connectDB = async () => {
     if (!mongoURI) {
       throw new Error('MongoDB URI not found in environment variables.');
     }
-    await mongoose.connect(mongoURI);
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 5000 // 5 seconds timeout
+    });
     // console.log('MongoDB Connected...');
   } catch (err: any) {
     console.error(err.message);

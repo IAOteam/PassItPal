@@ -44,7 +44,8 @@ interface AuthState {
   markNotificationsAsRead: () => Promise<void>;
   connectSocket: () => void;
   disconnectSocket: () => void;
-  sendSocketMessage: (payload: object) => void;
+  // FIX: Use a specific type for the payload to match the implementation.
+  sendSocketMessage: (payload: { conversationId: string; text: string; recipientId: string; imageBase64?: string; }) => void;
 }
 
 const useAuthStore = create<AuthState>()(
@@ -308,7 +309,9 @@ const useAuthStore = create<AuthState>()(
         get().socket?.disconnect();
         set({ socket: null });
       },
-      sendSocketMessage: (payload) => get().socket?.emit('sendMessage', payload),
+      sendSocketMessage: (payload: { conversationId: string, text: string, recipientId: string, imageBase64?: string }) => {
+        get().socket?.emit('sendMessage', payload);
+      },
     }),
     {
       name: 'passitpal-auth-storage',

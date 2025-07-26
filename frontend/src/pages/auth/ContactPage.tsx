@@ -1,9 +1,11 @@
+import { BackButton } from '@/components/shared/BackButton'
 import React from 'react'
 
 export default function ContactPage() {
   return (
     <>
     <div className="container mx-auto py-16 px-4 max-w-2xl">
+        <BackButton />
     <h1 className="text-4xl font-bold mb-4 text-center">Get In Touch</h1>
         <p className="text-lg text-muted-foreground mb-12 text-center">
             We're here to help! Whether you have a question, a suggestion, or a business inquiry, please don't hesitate to reach out.

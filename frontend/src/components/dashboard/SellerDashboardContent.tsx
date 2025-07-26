@@ -92,7 +92,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
   };
 
   const handleEditListing = (listingId: string) => {
-    alert(`Edit functionality for listing ${listingId} coming soon!`);
+    navigate(`/seller/edit-listing/${listingId}`);
   };
 
   const handlePromoteClick = (listing: IListing) => {
@@ -188,6 +188,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                     <TableHead>Pass Type</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Views</TableHead>
                     <TableHead>Promoted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -205,6 +206,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                             {listing.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{listing.views}</TableCell>
                       <TableCell>
                         {listing.isPromoted ? (
                           <Badge variant="outline" className="border-yellow-500 text-yellow-600">Yes</Badge>

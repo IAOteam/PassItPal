@@ -1,10 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData, type QueryFunctionContext } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Toaster } from 'react-hot-toast';
-
-
+import toast, { Toaster } from 'react-hot-toast';
 import ListingCard from '@/components/listings/ListingCard';
 import ListingDetailModal from '@/components/listings/ListingDetailModal';
 import FilterSidebar from '@/components/listings/FilterSidebar'; 
@@ -65,6 +63,7 @@ const NoLocalListings: React.FC<{ location: string; onClear: () => void }> = ({ 
     </div>
 );
 const ListingsPage: React.FC = () => {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     
     // State is only for filter inputs, not for the data itself.
@@ -76,6 +75,10 @@ const ListingsPage: React.FC = () => {
         Number(searchParams.get('minPrice')) || 0,
         Number(searchParams.get('maxPrice')) || 50000
     ]);
+    const [directLinkListing, setDirectLinkListing] = useState<IListing | null>(null);
+    const [category, setCategory] = useState(searchParams.get('category') || '');
+    const [city, setCity] = useState(searchParams.get('city') || '');
+
     
     const { ready, value, suggestions, setValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
 
@@ -92,6 +95,21 @@ const ListingsPage: React.FC = () => {
         clearSuggestions();
     };
 
+    useEffect(() => {
+    const listingIdFromUrl = searchParams.get('listingId');
+    if (listingIdFromUrl) {
+      // Fetch this specific listing's data to show in the modal
+      api.get(`/listings/${listingIdFromUrl}`)
+        .then(response => {
+          setDirectLinkListing(response.data);
+        })
+        .catch(error => {
+          console.error("Failed to fetch direct link listing:", error);
+          toast.error("Could not load the requested listing.");
+        });
+    }
+  }, [searchParams]);
+
     //  This is the fully-typed and corrected useQuery hook.
     const { data, isLoading, isError, error } = useQuery<ListingsResponse, Error, ListingsResponse, ListingsQueryKey>({
         queryKey: ['listings', { 
@@ -100,7 +118,9 @@ const ListingsPage: React.FC = () => {
             sortBy: searchParams.get('sortBy'),
             minPrice: searchParams.get('minPrice'),
             maxPrice: searchParams.get('maxPrice'),
-            page: searchParams.get('page') || '1'
+            page: searchParams.get('page') || '1',
+            city: searchParams.get('city'),
+            category: searchParams.get('category'),
         }],
         queryFn: fetchListings,
         placeholderData: keepPreviousData, // Correct property name for keeping data during loads.
@@ -111,6 +131,8 @@ const ListingsPage: React.FC = () => {
         const newParams = new URLSearchParams();
         if (searchTerm) newParams.set('cultPassType', searchTerm);
         if (locationTerm) newParams.set('locationName', locationTerm);
+        if (city) newParams.set('city', city);
+        if (category) newParams.set('category', category);
         if (sortBy) newParams.set('sortBy', sortBy);
         if (priceRange[0] > 0) newParams.set('minPrice', priceRange[0].toString());
         if (priceRange[1] < 50000) newParams.set('maxPrice', priceRange[1].toString());
@@ -124,6 +146,8 @@ const ListingsPage: React.FC = () => {
         setValue('', false);
         setPriceRange([0, 50000]);
         setSortBy('createdAt_desc');
+        setCity('');
+        setCategory('');
         setSearchParams({});
     };
 
@@ -192,6 +216,30 @@ const ListingsPage: React.FC = () => {
                         </ul>
                     )}
                 </div>
+                <Select value={city} onValueChange={setCity}>
+                <SelectTrigger className="rounded-full dark:text-white">
+                    <SelectValue placeholder="City…" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
+                    <SelectItem value="Bangalore">Bangalore</SelectItem>
+                    <SelectItem value="Mumbai">Mumbai</SelectItem>
+                    <SelectItem value="Delhi">Delhi</SelectItem>
+                    {/* Add your cities here */}
+                </SelectContent>
+                </Select>
+
+                <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="rounded-full dark:text-white">
+                    <SelectValue placeholder="Category…" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
+                    <SelectItem value="Gym">Gym</SelectItem>
+                    <SelectItem value="Swimming">Swimming</SelectItem>
+                    <SelectItem value="Yoga">Yoga</SelectItem>
+                    {/* Add your categories here */}
+                </SelectContent>
+                </Select>
+
                 <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="rounded-full dark:text-white">
                         <SelectValue placeholder="Sort by…" />
@@ -267,10 +315,15 @@ const ListingsPage: React.FC = () => {
                     )}
                 </>
             )}
-            <ListingDetailModal
-                listing={selectedListing}
-                onClose={() => setSelectedListing(null)}
-            />
+            <ListingDetailModal 
+          listing={selectedListing || directLinkListing} 
+          onClose={() => {
+            setSelectedListing(null);
+            setDirectLinkListing(null);
+            // Optional: remove the query param from URL without reloading
+            navigate('/listings', { replace: true });
+          }} 
+        />
         </div>
     );
 };

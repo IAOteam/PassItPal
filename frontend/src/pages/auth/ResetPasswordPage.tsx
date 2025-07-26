@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
+import { BackButton } from '@/components/shared/BackButton';
 
 
 const ResetPasswordPage: React.FC = () => {
@@ -59,6 +60,7 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+       <BackButton />
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-neutral-900">
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Reset Password</h2>
         <form onSubmit={handleSubmit} className="space-y-4">

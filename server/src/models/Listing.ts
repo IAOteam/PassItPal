@@ -37,7 +37,8 @@ export interface IListing extends Document {
   isPromoted: boolean; // Added for admin controls
   promotionExpiresAt?: Date;
   views: number;
-  categories: Types.ObjectId[];
+  // Allow categories to be an array of ObjectIds (unpopulated) or ICategory objects (populated).
+  categories: (Types.ObjectId | ICategory)[];
   description: string; 
   searchIndex: string;
   createdAt: Date;

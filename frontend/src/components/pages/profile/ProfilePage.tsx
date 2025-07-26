@@ -111,7 +111,7 @@ const ProfilePage: React.FC = () => {
     // clearError();
     setProfileUpdateLoading(true);
 
-    const profileData: { username?: string; mobileNumber?: string; city?: string; } = {};
+    const profileData: { username?: string; mobileNumber?: string; city?: string; profilePictureBase64?: string; } = {};
 
     let profilePictureBase64: string | undefined;
     if (newProfilePic) {
@@ -147,7 +147,7 @@ const ProfilePage: React.FC = () => {
       setIsError(true);
       // Error is already set by useAuth hook if handleApiError is used correctly
     } finally {
-      setProfileUpdateLoading(false); // CRITICAL: Reset local loading state
+      setProfileUpdateLoading(false); // Reset local loading state
     }
   };
 

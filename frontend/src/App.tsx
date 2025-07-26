@@ -44,6 +44,7 @@ import NotFoundPage from "./pages/NotFoundPage.tsx";
 import ReactGA from "react-ga4";
 import CookieConsent from './components/shared/CookieConsent';
 import { useEffect } from "react";
+import EditListingPage from "./components/pages/seller/EditListingPage.tsx";
 
 const GOOGLE_MAPS_LIBRARIES: ("places")[] = ['places'];
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -92,8 +93,7 @@ function App() {
     
       
     
-    {/* <Router future={{ v7_startTransition: true }}></Router> */}
-    <Router>
+    <Router future={{ v7_startTransition: true }}>
         <CookieConsent onAccept={initializeAnalytics} />
         <Routes>
           {/* Routes that use the shared Layout (NavBar, Footer) */}
@@ -133,6 +133,7 @@ function App() {
             {/* Seller-only protected route */}
             <Route element={<ProtectedRoute allowedRoles={['seller']} unauthorizedMessage="Only sellers can create listings." />}>
               <Route path="/seller/create-listing" element={<CreateListingPage />} />
+              <Route path="/seller/edit-listing/:listingId" element={<EditListingPage />}/>
             </Route>
             <Route path="/advertise" element={<AdvertisePage />} />
           </Route>

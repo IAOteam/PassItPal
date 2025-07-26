@@ -1,6 +1,9 @@
+import { BackButton } from "@/components/shared/BackButton";
+
 // frontend/src/pages/AboutPage.tsx
 const AboutPage = () => (
   <div className="container mx-auto py-16 px-4 max-w-4xl">
+        <BackButton />
   <h1 className="text-4xl font-bold mb-4 text-center">Value Should Never Be Wasted.</h1>
   <p className="text-lg text-muted-foreground mb-12 text-center">
     Our mission is to create India's most trusted and secure community marketplace where unused opportunities find new life.

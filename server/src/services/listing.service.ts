@@ -85,6 +85,8 @@ export class ListingService {
         // Promoted listings are fetched separately as they always appear first.
         const promotedListingDocs = await Listing.find({ isPromoted: true, status: 'available' })
             .populate('seller', 'username profilePictureUrl')
+            .populate('categories', 'name')
+            .sort({ promotionExpiresAt: -1 })
             .limit(4);
         const promotedListings = promotedListingDocs.map(listing => toPlainObject<IListing>(listing));
 
@@ -95,22 +97,30 @@ export class ListingService {
         if (searchTerm) {
             pipeline.push({
                 $search: {
-                    index: 'default', // The name of the index you created in Atlas
+                    index: 'listings_search', // The name of the index you created in Atlas
                     compound: {
                         should: [
                             {
                                 autocomplete: {
-                                    query: searchTerm,
-                                    path: 'searchIndex',
-                                    tokenOrder: 'any',
-                                    fuzzy: { maxEdits: 1, prefixLength: 2 }
-                                }
+                            query: searchTerm,
+                            path: 'cultPassType',
+                            tokenOrder: 'any',
+                            fuzzy: {
+                                maxEdits: 1,
+                                prefixLength: 2,
+                                maxExpansions: 50
+                            }
+                            }
                             },
                             {
                                 text: {
                                     query: searchTerm,
-                                    path: 'searchIndex',
-                                    score: { boost: { value: 3 } } // Boost exact matches
+                                    path: ['description', 'displayLocation', 'categories', 'city'],
+                                    fuzzy: {
+                                        maxEdits: 1,
+                                        prefixLength: 1
+                                    },
+                                    score: { boost: { value: 3 } }
                                 }
                             }
                         ]
@@ -141,6 +151,15 @@ export class ListingService {
             if (minPrice) matchStage.askingPrice.$gte = parseFloat(minPrice);
             if (maxPrice) matchStage.askingPrice.$lte = parseFloat(maxPrice);
         }
+        const filterMatch: any = {};
+            if (queryParams.city) {
+                filterMatch.city = queryParams.city;
+            }
+            if (queryParams.category) {
+                filterMatch.categories = queryParams.category;
+            }
+            Object.assign(matchStage, filterMatch);
+
         pipeline.push({ $match: matchStage });
         
         // SORTING STAGE
@@ -177,11 +196,11 @@ export class ListingService {
                     as: 'categoryObjects'
                     }
                 },
-                {
-                    $addFields: {
-                    categoryName: { $arrayElemAt: ['$categoryObjects.name', 0] }
-                    }
-                },
+                // {
+                //     $addFields: {
+                //     categoryName: { $arrayElemAt: ['$categoryObjects.name', 0] }
+                //     }
+                // },
 
                 {
                     $project: {
@@ -189,7 +208,7 @@ export class ListingService {
                     'seller.email': 0,
                     'seller.refreshToken': 0,
                     'searchIndex': 0,
-                    'categoryObjects': 0 // optional
+                    // 'categoryObjects': 0 // optional
                     }
                 }
                 ],

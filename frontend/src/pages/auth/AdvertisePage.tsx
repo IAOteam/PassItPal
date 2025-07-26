@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import api from '@/lib/api';
+import { BackButton } from '@/components/shared/BackButton';
 
 const AdvertisePage: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -41,7 +42,8 @@ const AdvertisePage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto max-w-2xl py-12">
+        <div className="container mt-11 mx-auto max-w-2xl py-12">
+        <BackButton />
             <h1 className="text-4xl font-bold mb-4 text-center">Advertise With Us</h1>
             <p className="text-center text-muted-foreground mb-8">Reach a targeted audience of active buyers. Submit your ad for review.</p>
             <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-lg shadow-md">

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
 import { AlertTriangle } from 'lucide-react';
+import { BackButton } from '@/components/shared/BackButton';
 
 const ChangePasswordPage: React.FC = () => {
     const { user, changePassword, loading } = useAuthStore();
@@ -54,6 +55,8 @@ const ChangePasswordPage: React.FC = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-neutral-900">
+            <div className="container mx-auto py-12 px-4 max-w-3xl">
+        <BackButton />
             <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Change Your Password</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -91,8 +94,15 @@ const ChangePasswordPage: React.FC = () => {
                     <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Updating...' : 'Update Password'}
                     </Button>
+                    <div className="text-center text-sm">
+                        <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+                            Forgot current password?
+                        </Link>
+                    </div>
                 </form>
             </div>
+            </div>
+            
         </div>
     );
 };

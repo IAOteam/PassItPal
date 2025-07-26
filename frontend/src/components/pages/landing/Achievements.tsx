@@ -18,8 +18,10 @@ const Achievements: React.FC = () => {
   });
    //  the returned state to render your UI
   if (isLoading) return <div>Loading Achievements...</div>; //  loading state
-  if (isError) return null; // Or show an error message
-
+  if (isError || !stats) {
+    // You can return a placeholder, an error message, or nothing
+    return <div className="text-center py-4">Could not load achievements.</div>;
+  }
 
   const achievementsItems=[
     {

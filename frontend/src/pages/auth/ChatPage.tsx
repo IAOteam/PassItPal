@@ -89,7 +89,7 @@ const ChatPage: React.FC = () => {
     // --- Effect to listen for incoming socket messages & read receipts ---
     useEffect(() => {
         if (socket) {
-            const handleReceiveMessage = (incomingMessage: IChatMessage) => {
+            /*const handleReceiveMessage = (incomingMessage: IChatMessage) => {
                 if (incomingMessage.conversation === conversationId) {
                     queryClient.setQueryData(['conversation', conversationId], (oldData: any) => {
                         if (!oldData) return oldData;
@@ -100,6 +100,15 @@ const ChatPage: React.FC = () => {
                         return { ...oldData, pages: newPages };
                     });
                     // Mark as read immediately if chat is open
+                    socket.emit('markAsRead', { conversationId });
+                }
+            };*/
+            
+            const handleReceiveMessage = (incomingMessage: IChatMessage) => {
+                if (incomingMessage.conversation === conversationId) {
+                    // Invalidate the query. This is simpler and more robust.
+                    // It tells TanStack Query to refetch the messages, ensuring order and consistency.
+                    queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
                     socket.emit('markAsRead', { conversationId });
                 }
             };

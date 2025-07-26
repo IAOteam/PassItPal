@@ -1,5 +1,6 @@
 // frontend/src/pages/BlogPage.tsx
 
+import { BackButton } from '@/components/shared/BackButton';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -29,6 +30,7 @@ const BlogPage: React.FC = () => {
   return (
     <div className="bg-gray-50 dark:bg-neutral-950 py-16">
       <div className="container mx-auto px-4 max-w-5xl">
+        <BackButton />
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold dark:text-white">From the Passitpal Blog</h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-3">Tips, updates, and stories from our community.</p>

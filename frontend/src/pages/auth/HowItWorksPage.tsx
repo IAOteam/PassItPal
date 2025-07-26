@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Search, ShieldCheck, PartyPopper, MessageSquare, Banknote } from 'lucide-react';
+import { BackButton } from '@/components/shared/BackButton';
 
 const steps = [
   {
@@ -35,6 +36,7 @@ const HowItWorksPage: React.FC = () => {
   return (
     <div className="bg-white dark:bg-black py-16 md:py-24">
       <div className="container mx-auto px-4 max-w-4xl">
+        <BackButton />
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold dark:text-white">Simple, Safe, and Secure</h1>
           <p className="text-neutral-700 dark:text-neutral-300 mt-4 md:text-lg">

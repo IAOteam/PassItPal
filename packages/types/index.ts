@@ -49,13 +49,24 @@ export type IGeoPoint = {
   
 };
 
+// Define the shape of a Category object for the frontend.
+export type ICategory = {
+  _id: string;
+  name: string;
+  createdBy: string; // To track who created custom categories
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 // Represents a listing, populated with seller info
 export type IListing = {
   _id: string ;
   seller: IUser;
   cultPassType: string;
   description: string;
-  categories: string[]; 
+  // Update categories to reflect that it can be an array of unpopulated IDs (strings)
+  // or an array of populated ICategory objects. This resolves the 'never' type error.
+  categories: (string | ICategory)[]; 
   askingPrice: number;
   originalPrice: number;
   displayLocation: string;

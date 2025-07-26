@@ -14,6 +14,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@passitpal/types": path.resolve(__dirname, "../packages/types/index.ts"),
+      // "@passitpal/utils": path.resolve(__dirname, "../packages/utils/index.ts"),
+      // "@passitpal/hooks": path.resolve(__dirname, "../packages/hooks/index.ts"),
+      // "@passitpal/components": path.resolve(__dirname, "../packages/components/index.ts"),
+      // "@passitpal/config": path.resolve(__dirname, "../packages/config/index.ts"),
+      // "@passitpal/constants": path.resolve(__dirname, "../packages/constants/index.ts"),
+      // "@passitpal/services": path.resolve(__dirname, "../packages/services/index.ts"),
+      // "@passitpal/styles": path.resolve(__dirname, "../packages/styles/index.ts"),
     },
   },
 })

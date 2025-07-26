@@ -27,7 +27,6 @@
       "@/*": [
         "./src/*"
       ],
-      "@passitpal/types": ["../packages/types"]
     }
   },
   "include": ["src"]

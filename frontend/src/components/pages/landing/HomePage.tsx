@@ -5,6 +5,7 @@ import CategoryTabs from '@/components/pages/landing/CategoryTabs';
 import FeaturedContent from './FeaturedContent';
 import TrendingListings from '@/components/listings/TrendingListings';
 import HowItWorks from './HowItWorks';
+import { Helmet } from 'react-helmet-async';
 import Testimonials from './Testimonials';
 import Achievements from './Achievements';
 
@@ -13,6 +14,10 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
+      <Helmet>
+        <title>Passitpal | Buy & Sell Unused Passes and Subscriptions</title>
+        <meta name="description" content="Discover amazing deals on gym passes, event tickets, and digital subscriptions near you. Securely sell your unused passes on India's trusted marketplace." />
+      </Helmet>
       <HeroSection scrollToCategory={() => categoryRef.current?.scrollIntoView({ behavior: 'smooth' })} />
       <div ref={categoryRef}>
         <CategoryTabs />

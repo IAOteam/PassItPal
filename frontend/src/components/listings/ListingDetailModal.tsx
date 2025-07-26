@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
+import { Helmet } from 'react-helmet-async';
 
 
 // UI & Map Components
@@ -90,6 +90,10 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
 
   return (
     <>
+      <Helmet>
+        <title>{`${listing.cultPassType} in ${listing.city}`} | Passitpal</title>
+        <meta name="description" content={`Find a great deal on ${listing.cultPassType} for just ₹${listing.askingPrice}. Originally priced at ₹${listing.originalPrice}. Buy or sell securely on Passitpal.`} />
+      </Helmet>
       <AnimatePresence>
         <motion.div 
           key="modal-backdrop" 

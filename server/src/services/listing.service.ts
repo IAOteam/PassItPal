@@ -223,7 +223,7 @@ export class ListingService {
 
 
         const results = await Listing.aggregate(pipeline);
-        console.log("🔍 Aggregation Results Sample:", JSON.stringify(results[0].listings[0], null, 2));
+        // console.log("🔍 Aggregation Results Sample:", JSON.stringify(results[0].listings[0], null, 2));
 
         const regularListings = results[0].listings;
         const totalCount = results[0].totalCount[0]?.count || 0;

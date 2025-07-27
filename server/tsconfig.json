@@ -12,12 +12,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@passitpal/types": ["../packages/types"]
+      "@passitpal/types": ["../packages/types/index.ts"],
+      "@passitpal/types/*": ["../packages/types/*"]
     },
   },
   "include": [
     "src/**/*",
-    "../packages/types/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./server/Dockerfile
+      dockerfile: server/Dockerfile.backend
     container_name: passitpal-backend-container
     ports:
       - "5001:5001"
@@ -48,7 +48,7 @@ services:
   # Frontend Service Configuration
   frontend:
     build:
-      context: .                 
+      context: .                
       dockerfile: frontend/Dockerfile
     container_name: passitpal-frontend-container
     ports:

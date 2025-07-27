@@ -8,9 +8,10 @@
     "packages/types"
   ],
   "scripts": {
-    "build": "npm run build -w @passitpal/types && npm run build -w frontend"
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm test --workspaces --if-present"
   },
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^5.4.5"
   }
 }

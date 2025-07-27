@@ -2,16 +2,30 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "declaration": true,
+    "lib": ["ES2020"],
     "outDir": "./dist",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    
     "moduleResolution": "node",
-    "composite": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@passitpal/types": ["../packages/types/index.ts"], 
+      "@passitpal/types/*": ["../packages/types/*"]      
+    }
   },
-  "include": ["index.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "index.ts" 
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -109,7 +109,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
             animate={{ y: 0, opacity: 1 }} 
             exit={{ y: 50, opacity: 0 }} 
             transition={{ type: 'spring', stiffness: 300, damping: 25 }} 
-            onClick={(e) => e.stopPropagation()} 
+            onClick={(e: React.MouseEvent) => e.stopPropagation()} 
             className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
           >
             <div className="relative">

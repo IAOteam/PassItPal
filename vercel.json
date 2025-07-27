@@ -5,16 +5,29 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist" 
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
     {
-      "handle": "filesystem"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
-      "src": "/.*",
+      "src": "/(.*).svg",
+      "dest": "/$1.svg"
+    },
+    {
+      "src": "/(.*).png",
+      "dest": "/$1.png"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/robots.txt"
+    },
+    {
+      "src": "/(.*)",
       "dest": "/index.html"
     }
   ],

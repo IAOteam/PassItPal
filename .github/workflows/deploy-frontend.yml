@@ -9,20 +9,22 @@ on:
     # Only run if there are changes in the 'frontend/' directory
     paths:
       - 'frontend/**'
+      - 'packages/types/**'
       - '.github/workflows/deploy-frontend.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'frontend/**'
+      - 'packages/types/**'
       - '.github/workflows/deploy-frontend.yml'
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     name: Build, Test, and Deploy Frontend
 
-    defaults:
-      run:
-        working-directory: ./frontend
+    # defaults:
+    #   run:
+    #     working-directory: ./
 
     steps:
       - name: Checkout repository
@@ -33,12 +35,33 @@ jobs:
         with:
           node-version: '18' # Use the same Node version as your Dockerfile
 
+      # - name: Install and Build Shared Types
+      #   run: |
+      #     cd ../packages/types
+      #     npm install
+      #     npm run build
+
+      #   # cd ../../frontend
+      #   # npm install
+      
+      # - name: Install & Build Frontend
+      #   run: |
+      #     cd ../../frontend
+      #     npm install
+      #     npm run build
+
       - name: Install Dependencies
-        run: npm install
+        run: npm install # Single install at the root
+
+      - name: Build All Workspaces
+        run: npm run build --workspaces # Build types and frontend
+
+      - name: Run Frontend Tests
+        run: npm test --workspace=frontend
 
       #  Run the tests. If this step fails, the workflow stops.
-      - name: Run Tests
-        run: npm test
+      # - name: Run Tests
+      #   run: npm test
 
       # This action builds and deploys your app to Vercel.
       # It automatically uses the Vercel CLI to handle everything.
@@ -54,5 +77,5 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           # Specifies the directory of our frontend code
-          # working-directory: ./frontend
+          working-directory: ./frontend
 

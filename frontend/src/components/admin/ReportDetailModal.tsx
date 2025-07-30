@@ -60,7 +60,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({ isOpen, onClose, 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
           className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl w-full max-w-2xl"
         >
           <div className="flex items-center justify-between p-4 border-b border-neutral-800">

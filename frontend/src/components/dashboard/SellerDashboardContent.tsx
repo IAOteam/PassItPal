@@ -2,38 +2,27 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import toast from 'react-hot-toast';
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Edit, Trash2, Megaphone, Plus } from 'lucide-react';
 import PromotionPaymentModal from '../payments/PromotionPaymentModal';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import type { IListing, IOrder } from '@passitpal/types';
 
-interface ReceivedOrder {
-  _id: string;
-  listing: {
-    _id: string;
-    cultPassType: string;
-    views: number;
+
+const fetchSellerDashboardData = async (): Promise<{ orders: IOrder[], listings: IListing[] }> => {
+  const [ordersResponse, listingsResponse] = await Promise.all([
+    api.get('/orders/seller'),
+    api.get('/listings/my-listings')
+  ]);
+  return {
+    orders: ordersResponse.data.orders || [],
+    listings: listingsResponse.data || [],
   };
-  buyer: {
-    _id: string;
-    username?: string;
-  };
-  offerPrice: number;
-
-  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
-  createdAt: string;
-}
-
-interface MyListing {
-  _id: string;
-  cultPassType: string;
-  askingPrice: number;
-  isAvailable: boolean;
-  isPromoted: boolean;
-  createdAt: string;
-}
+};
 
 interface SellerDashboardContentProps {
   section: 'orders' | 'listings';
@@ -42,71 +31,71 @@ interface SellerDashboardContentProps {
 const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section }) => {
 
   const navigate = useNavigate();
-  const { acceptOrder, rejectOrder, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const { acceptOrder, rejectOrder, loading: authLoading } = useAuthStore();
 
-  const [orders, setOrders] = useState<ReceivedOrder[]>([]);
-  const [listings, setListings] = useState<MyListing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [orders, setOrders] = useState<IOrder[]>([]);
+  // const [listings, setListings] = useState<IListing[]>([]);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [listingToPromote, setListingToPromote] = useState<MyListing | null>(null);
+  const [listingToPromote, setListingToPromote] = useState<IListing | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [ordersResponse, listingsResponse] = await Promise.all([
-        api.get('/orders/seller'),
-        api.get('/listings/my-listings')
-      ]);
-      setOrders(ordersResponse.data.orders || []);
-      setListings(listingsResponse.data || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch dashboard data.');
-    } finally {
-      setLoading(false);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['sellerDashboardData'],
+    queryFn: fetchSellerDashboardData,
+  });
+
+  const orders = data?.orders ?? [];
+  const listings = data?.listings ?? [];
+
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: ({ orderId,  }: { orderId: string, status: 'accepted' | 'rejected' }) => 
+      api.put(`/orders/${orderId}/status`, { status }),
+    onSuccess: (_, variables) => {
+      toast.success(`Order ${variables.status} successfully.`);
+      queryClient.invalidateQueries({ queryKey: ['sellerDashboardData'] });
+    },
+    onError: (err: any, variables) => {
+      toast.error(err.response?.data?.message || `Failed to ${variables.status} order.`);
     }
-  }, []);
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const deleteListingMutation = useMutation({
+    mutationFn: (listingId: string) => api.delete(`/listings/${listingId}`),
+    onSuccess: () => {
+      toast.success("Listing deleted successfully.");
+      queryClient.invalidateQueries({ queryKey: ['sellerDashboardData'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to delete listing.');
+    }
+  });
 
-  const handleUpdateOrderStatus = async (orderId: string, action: 'accept' | 'reject') => {
-    const confirmationText = action === 'accept'
+  const handleUpdateOrderStatus = async (orderId: string, action: 'accepted' | 'rejected') => {
+    const confirmationText = action === 'accepted'
       ? "Are you sure you want to accept this order? This will make the listing unavailable."
       : "Are you sure you want to reject this order?";
 
     if (!window.confirm(confirmationText)) return;
-
-    try {
-      const message = action === 'accept' ? await acceptOrder(orderId) : await rejectOrder(orderId);
-      alert(message);
-      fetchData(); // Refresh all data on the dashboard
-    } catch (err: any) {
-      alert(err.message || `Failed to ${action} order.`);
-    }
+    updateOrderStatusMutation.mutate({ orderId, status: action });
   };
+
 
   const handleDeleteListing = async (listingId: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this listing? This action cannot be undone.")) {
       return;
     }
-    try {
-      await api.delete(`/listings/${listingId}`);
-      alert('Listing deleted successfully.');
-      fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete listing.');
-    }
+    deleteListingMutation.mutate(listingId);
+    
   };
 
   const handleEditListing = (listingId: string) => {
-    alert(`Edit functionality for listing ${listingId} coming soon!`);
+    navigate(`/seller/edit-listing/${listingId}`);
   };
 
-  const handlePromoteClick = (listing: MyListing) => {
+  const handlePromoteClick = (listing: IListing) => {
     setListingToPromote(listing);
     setIsPaymentModalOpen(true);
   };
@@ -116,7 +105,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
   //   alert(`Promotion feature for listing ${listingId} coming soon!`);
   // }
 
-  const getStatusBadgeVariant = (status: ReceivedOrder['status']) => {
+  const getStatusBadgeVariant = (status: IOrder['status']) => {
     switch (status) {
       case 'pending': return 'outline';
       case 'accepted': return 'success';
@@ -133,9 +122,9 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
       {section === 'orders' && (
         <div className='w-full h-full my-10 overflow-y-auto'>
           <h3 className="text-xl font-semibold dark:text-white mb-4">Incoming Orders</h3>
-          {loading && <p className="text-center text-gray-500">Loading orders...</p>}
-          {error && <p className="text-center text-red-500">{error}</p>}
-          {!loading && !error && orders.length > 0 ? (
+          {isLoading && <p className="text-center text-gray-500">Loading orders...</p>}
+          {error && <p className="text-center text-red-500">{error.message}</p>}
+          {!isLoading && !error && orders.length > 0 ? (
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>
@@ -154,17 +143,17 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                       <TableCell className="font-medium">{order.listing.cultPassType}</TableCell>
                       <TableCell>{order.buyer.username || 'N/A'}</TableCell>
                       <TableCell>₹{order.offerPrice.toLocaleString('en-IN')}</TableCell>
-                      <TableCell>{order.listing.views}</TableCell>
+                      <TableCell>{(order.listing as any ).views}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">{order.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         {order.status === 'pending' && (
                           <>
-                            <Button variant="outline" size="sm" onClick={() => handleUpdateOrderStatus(order._id, 'accept')} disabled={authLoading}>
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateOrderStatus(order._id, 'accepted')} disabled={updateOrderStatusMutation.isPending}>
                               <Check className="h-4 w-4 mr-1" /> Accept
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleUpdateOrderStatus(order._id, 'reject')} disabled={authLoading}>
+                            <Button variant="destructive" size="sm" onClick={() => handleUpdateOrderStatus(order._id, 'rejected')} disabled={updateOrderStatusMutation.isPending}>
                               <X className="h-4 w-4 mr-1" /> Reject
                             </Button>
                           </>
@@ -175,7 +164,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                 </TableBody>
               </Table>
             </div>
-          ) : !loading && <p className="py-12 text-neutral-700 dark:text-neutral-300 text-center">You have no incoming orders.</p>}
+          ) : !isLoading && <p className="py-12 text-neutral-700 dark:text-neutral-300 text-center">You have no incoming orders.</p>}
         </div>
       )}
 
@@ -189,9 +178,9 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
               <Plus />Create New Listing
             </Button>
           </div>
-          {loading && <p className="text-center text-gray-500">Loading listings...</p>}
-          {error && <p className="text-center text-red-500">{error}</p>}
-          {!loading && !error && listings.length > 0 ? (
+          {isLoading && <p className="text-center text-gray-500">Loading listings...</p>}
+          {error && <p className="text-center text-red-500">{error.message}</p>}
+          {!isLoading && !error && listings.length > 0 ? (
             <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -199,6 +188,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                     <TableHead>Pass Type</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Views</TableHead>
                     <TableHead>Promoted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -209,12 +199,14 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                       <TableCell className="font-medium">{listing.cultPassType}</TableCell>
                       <TableCell>₹{listing.askingPrice.toLocaleString('en-IN')}</TableCell>
                       <TableCell>
-                        {listing.isAvailable ? (
-                          <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Available</Badge>
-                        ) : (
-                          <Badge variant="secondary">Sold/Unavailable</Badge>
-                        )}
+                        <Badge 
+                            variant={listing.status === 'available' ? 'success' : 'secondary'} 
+                            className="capitalize"
+                          >
+                            {listing.status}
+                        </Badge>
                       </TableCell>
+                      <TableCell>{listing.views}</TableCell>
                       <TableCell>
                         {listing.isPromoted ? (
                           <Badge variant="outline" className="border-yellow-500 text-yellow-600">Yes</Badge>
@@ -231,7 +223,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                         <Button variant="ghost" size="icon" onClick={() => handleEditListing(listing._id)} title="Edit Listing">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => handleDeleteListing(listing._id)} title="Delete Listing">
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => handleDeleteListing(listing._id)} title="Delete Listing" disabled={deleteListingMutation.isPending}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -240,7 +232,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
                 </TableBody>
               </Table>
             </div>
-          ) : !loading && <p className="text-center py-12 text-neutral-700 dark:text-neutral-300">You have no listings.</p>}
+          ) : !isLoading && <p className="text-center py-12 text-neutral-700 dark:text-neutral-300">You have no listings.</p>}
         </div>
       )}
 
@@ -249,7 +241,7 @@ const SellerDashboardContent: React.FC<SellerDashboardContentProps> = ({ section
         onClose={() => setIsPaymentModalOpen(false)}
         listing={listingToPromote}
         onSuccess={() => {
-          fetchData(); // Refresh the dashboard data on successful payment
+          queryClient.invalidateQueries({ queryKey: ['sellerDashboardData'] });
         }}
       />
     </>

@@ -9,21 +9,23 @@ on:
     # Only run if there are changes in the 'server/' directory
     paths:
       - 'server/**'
+      - 'packages/types/**'
       - '.github/workflows/deploy-backend.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
+      - 'server/**'
+      - 'packages/types/**'
+      - '.github/workflows/deploy-backend.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Build, Test, and Deploy Backend
 
     # Define the working directory for all steps in this job
-    defaults:
-      run:
-        working-directory: ./server
+    # defaults:
+    #   run:
+    #     working-directory: ./
 
     steps:
       - name: Checkout repository
@@ -35,12 +37,33 @@ jobs:
         with:
           node-version: '18' # Use the same Node version as your Dockerfile
 
+      # - name: Install and Build Shared Types
+      #   run: |
+      #     cd ../packages/types
+      #     npm install
+      #     npm run build
+      #   # cd ../../server
+      #   # npm install
+      
+      # - name: Install & Build Backend
+      #   run: |
+      #     cd ../../server
+      #     npm install
+      #     npm run build
+
       - name: Install Dependencies
-        run: npm install
+        run: npm install # Single install at the root
+
+      - name: Build All Workspaces
+        run: npm run build --workspaces # Build types and server
+
+      - name: Run Backend Tests
+        run: npm test --workspace=server
 
       #  Run the tests. If this step fails, the workflow stops.
-      - name: Run Tests
-        run: npm test
+      # - name: Run Tests
+      #   run:  npm test
+
       - name: Trigger Render Deploy Hook
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         # This step sends a request to the Render Deploy Hook URL.

@@ -1,9 +1,11 @@
+import { BackButton } from '@/components/shared/BackButton'
 import React from 'react'
 
 export default function HelpPage() {
   return (
     <>
       <div className="container mx-auto py-16 px-4 max-w-4xl">
+        <BackButton />
     <h1 className="text-4xl font-bold mb-12 text-center">Help Center & Safety Guide</h1>
 
     {/* Safety Guide Section */}

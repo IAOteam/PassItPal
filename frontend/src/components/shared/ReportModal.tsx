@@ -1,11 +1,12 @@
 // frontend/src/components/shared/ReportModal.tsx
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, ShieldAlert } from 'lucide-react';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ const reportReasons = [
 ];
 
 const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, contentId, contentType, contentTitle }) => {
-  const { submitReport, loading } = useAuth();
+  const { submitReport, loading } = useAuthStore();
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +79,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, contentId, c
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
           className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl w-full max-w-lg"
         >
           <div className="flex items-center justify-between p-4 border-b border-neutral-800">

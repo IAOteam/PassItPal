@@ -1,9 +1,11 @@
-import mongoose, { Schema, Document, Types } from 'mongoose'; // Ensure Types is imported
+import mongoose, { Schema, Document, Types } from 'mongoose'; 
 import { IUser } from './User';
+import { ICategory } from './Category'; 
 interface IGeoPoint {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
 }
+export type ListingStatus = 'available' | 'sold' | 'expired' | 'deactivated' | 'pending';
 
 interface IAddress {
   street?: string;      // e.g., "123 Main St"
@@ -16,7 +18,7 @@ interface IAddress {
 }
 export interface IListing extends Document {
   _id: Types.ObjectId; // Explicitly type _id as Mongoose ObjectId
-  seller: Types.ObjectId ;
+  seller: Types.ObjectId | IUser;
   cultPassType: string;
   
   expiryDate: Date;
@@ -30,12 +32,15 @@ export interface IListing extends Document {
   latitude: number;
   longitude: number;
   adImageUrl?: string;
-  isAvailable: boolean ;
+  // isAvailable: boolean ;
+  status: ListingStatus;
   isPromoted: boolean; // Added for admin controls
   promotionExpiresAt?: Date;
   views: number;
-  category: string; 
+  // Allow categories to be an array of ObjectIds (unpopulated) or ICategory objects (populated).
+  categories: (Types.ObjectId | ICategory)[];
   description: string; 
+  searchIndex: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,8 +64,8 @@ const ListingSchema: Schema = new Schema({
   originalPrice: { type: Number, required: true },
   availableCredits: { type: Number }, // e.g., "5 sessions", "unlimited"
   city: { type: String, required: true },
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
+  latitude: { type: Number },
+  longitude: { type: Number },
   displayLocation: { type: String, required: true },
   address: { type: AddressSchema, required: true },
   location: { // GeoJSON Point for geospatial queries
@@ -76,30 +81,52 @@ const ListingSchema: Schema = new Schema({
     }
   },
   adImageUrl: { type: String },
-  isAvailable: { type: Boolean, default: true },
+  // isAvailable: { type: Boolean, default: true },
+  status: {
+    type: String,
+    enum: ['available', 'sold', 'expired', 'deactivated', 'pending'],
+    default: 'available',
+    index: true, // Add an index for faster queries on status
+  },
   isPromoted: { type: Boolean, default: false }, // Default to false
   promotionExpiresAt: { type: Date, required: false },
   views: { type: Number, default: 0 },
-  category: { type: String, required: true, index: true }, 
+  categories: [{ type: Schema.Types.ObjectId, ref: 'Category', required: true }],
   description: { type: String, required: true, maxlength: 2000 }, 
+  searchIndex: { type: String, select: false },
   
 },
  { timestamps: true });
+
+ // Pre-save hook to automatically populate the searchIndex field
+ListingSchema.pre('save', async function(next) {
+    if (this.isModified('cultPassType') || this.isModified('description') || this.isModified('categories')) {
+        await this.populate('categories');
+        const categoryNames = (this.categories as ICategory[]).map(c => c.name).join(' ');
+        this.searchIndex = `${this.cultPassType} ${this.description} ${categoryNames}`;
+    }
+    next();
+});
  
 // Geospatial index for location-based queries (already existed, which is good)
 ListingSchema.index({ location: '2dsphere' });
 
 // Compound index for the most common query: finding available, non-promoted listings sorted by date.
-ListingSchema.index({ isAvailable: 1, isPromoted: 1, createdAt: -1 });
+// ListingSchema.index({ isAvailable: 1, isPromoted: 1, createdAt: -1 });
 
 // Compound index to help with price sorting
-ListingSchema.index({ isAvailable: 1, askingPrice: 1 });
+// ListingSchema.index({ isAvailable: 1, askingPrice: 1 });
+
+ListingSchema.index({ status: 1, isPromoted: 1, createdAt: -1 });
+ListingSchema.index({ status: 1, askingPrice: 1 });
 
 // Index for city, which is often used as a filter
 ListingSchema.index({ city: 1 });
 
 // Text index to make searching by pass name (cultPassType) much faster
 ListingSchema.index({ cultPassType: 'text' });
+
+ListingSchema.index({ categories: 1 });
 
 const Listing = mongoose.model<IListing>('Listing', ListingSchema);
 export default Listing;

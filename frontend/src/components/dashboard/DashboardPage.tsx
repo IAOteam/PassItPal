@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+
 import { useNavigate } from 'react-router-dom';
 import BuyerDashboardContent from '@/components/dashboard/BuyerDashboardContent';
 import SellerDashboardContent from '@/components/dashboard/SellerDashboardContent';
@@ -8,9 +8,10 @@ import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Button } from '@/components/ui/button';
 import { Settings, LogOut, Plus, ChevronRight, Menu, X } from 'lucide-react';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 const DashboardPage: React.FC = () => {
-    const { user, loading, logout } = useAuth();
+    const { user, loading, logout } = useAuthStore();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'orders' | 'listings' | 'saved'>('orders');
     const [menuOpen, setMenuOpen] = useState(false);

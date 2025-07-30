@@ -1,6 +1,6 @@
 // frontend/src/pages/profile/ProfilePage.tsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import StarRating from '@/components/ui/StarRating'; //Our star component
 import { Avatar } from 'antd'; // For reviewer avatars
 import { UserOutlined } from '@ant-design/icons';
 import { Mail, Phone, MapPin, Edit3, Save, X, Shield, Settings, ChevronRight, XCircle, CheckCircle2 } from 'lucide-react';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 
 interface IReview {
@@ -28,7 +29,7 @@ interface IReview {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, clearError, switchUserRole: switchUserRoleInContext, requestOtp /*setUser : setUserInContext*/ } = useAuth();
+  const { user, loading: authLoadingGlobal, updateProfile, error: authErrorFromContext, switchUserRole: switchUserRoleInContext, requestOtp /*setUser : setUserInContext*/ } = useAuthStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState('');
@@ -71,9 +72,9 @@ const ProfilePage: React.FC = () => {
       // Clear previous action messages when user data changes (e.g., after successful update from context)
       setMessage(null);
       setIsError(false);
-      clearError();
+      // clearError();
     }
-  }, [user, clearError]);
+  }, [user]);
 
   // Effect to display errors coming from AuthContext (e.g., from a failed API call in AuthContext)
   useEffect(() => {
@@ -95,7 +96,7 @@ const ProfilePage: React.FC = () => {
     setIsEditing(!isEditing);
     setMessage(null); // Clear messages when toggling edit mode
     setIsError(false);
-    clearError(); // Clear global auth error
+    // clearError(); // Clear global auth error
   };
 
   const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,10 +107,11 @@ const ProfilePage: React.FC = () => {
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null); setIsError(false); clearError();
+    setMessage(null); setIsError(false); 
+    // clearError();
     setProfileUpdateLoading(true);
 
-    const profileData: { username?: string; mobileNumber?: string; city?: string; } = {};
+    const profileData: { username?: string; mobileNumber?: string; city?: string; profilePictureBase64?: string; } = {};
 
     let profilePictureBase64: string | undefined;
     if (newProfilePic) {
@@ -145,12 +147,13 @@ const ProfilePage: React.FC = () => {
       setIsError(true);
       // Error is already set by useAuth hook if handleApiError is used correctly
     } finally {
-      setProfileUpdateLoading(false); // CRITICAL: Reset local loading state
+      setProfileUpdateLoading(false); // Reset local loading state
     }
   };
 
   const handleSwitchRole = async (newRole: 'buyer' | 'seller') => {
-    setMessage(null); setIsError(false); clearError();
+    setMessage(null); setIsError(false); 
+    // clearError();
     setRoleChangeLoading(true);
 
     if (newRole === 'seller') {
@@ -183,7 +186,8 @@ const ProfilePage: React.FC = () => {
       setIsError(true);
       return;
     }
-    setMessage(null); setIsError(false); clearError();
+    setMessage(null); setIsError(false); 
+    // clearError();
     setOtpRequestLoading(true);
     try {
       const message = await requestOtp(user.email, 'mobile'); // Call the context function with type 'mobile'

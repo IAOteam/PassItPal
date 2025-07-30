@@ -10,7 +10,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input'; 
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+
 
 const OTP_LENGTH = 6;
 
@@ -24,7 +25,7 @@ const OTPVerificationPage: React.FC = () => {
     error,
     clearError,
     isAuthenticated,
-  } = useAuth();
+  } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -120,7 +121,7 @@ const OTPVerificationPage: React.FC = () => {
     }
 
     try {
-      const result = await verifyOtp(email, finalOtp, type);
+      const result = await verifyOtp(email, finalOtp, type , purpose);
       if (result === null) {
         alert('Unexpected OTP verification result.');
         return;

@@ -1,385 +1,103 @@
-
 import { Request, Response } from 'express';
-import Listing, { IListing } from '../models/Listing';
+import { OrderService } from '../services/order.service';
 
-import User from '../models/User';
-import { createAndEmitNotification } from './notificationController';
-import { Types } from 'mongoose';
-import Order, { IOrder } from "../models/Order";
-import { sendEmail } from '../utils/emailService';
+const sendSuccess = (res: Response, message: string, data: object = {}, statusCode = 200) => {
+    res.status(statusCode).json({ message, ...data });
+};
 
-// @route   POST /api/orders/initiate/:listingId
-// @desc    Initiate an order/make an offer on a listing
-// @access  Private (Buyer only)
+const sendError = (res: Response, error: any, defaultMessage: string) => {
+    console.error(`Error in OrderController: ${error.message}`);
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || defaultMessage });
+};
+
 export const initiateOrder = async (req: Request, res: Response) => {
-  const { listingId } = req.params;
-  const { offerPrice, messageToSeller } = req.body;
-  const buyerId = req.user?._id; // Buyer's ID from the token
-
-  try {
-    if (!buyerId) {
-      return res.status(401).json({ message: 'Not authorized: Buyer not logged in.' });
-    }
-
-    const listing = await Listing.findById(listingId);
-
-    if (!listing) {
-      return res.status(404).json({ message: 'Listing not found.' });
-    }
-
-    // Ensure the listing is available
-    if (!listing.isAvailable) {
-      return res.status(400).json({ message: 'This listing is not available for purchase.' });
-    }
-
-    // Prevent buyer from buying their own listing
-    if (listing.seller.toString() === buyerId.toString()) {
-      return res.status(400).json({ message: 'You cannot initiate an order on your own listing.' });
-    }
-
-    // Check if an order for this listing by this buyer is already pending
-    const existingPendingOrder = await Order.findOne({
-      buyer: buyerId,
-      listing: listingId,
-      status: 'pending'
-    });
-
-    if (existingPendingOrder) {
-      return res.status(400).json({ message: 'You already have a pending order for this listing.' });
-    }
-
-    // Get seller information for the order
-    const seller = await User.findById(listing.seller);
-    if (!seller) {
-      return res.status(404).json({ message: 'Seller for this listing not found.' });
-    }
-
-    // Create the new order
-    const newOrder = new Order({
-      buyer: buyerId,
-      seller: listing.seller,
-      listing: listingId,
-      offerPrice: offerPrice,
-      messageToSeller: messageToSeller,
-      status: 'pending', // Initial status
-      paymentStatus: 'pending' // Initial payment status
-    });
-
-    const order = await newOrder.save() as IOrder & { _id: Types.ObjectId }; // Explicitly cast to IOrder with _id type
-
-    // ---  Send Email Notification to Seller ---
     try {
-      const emailSubject = `You've Received a New Offer on Passitpal!`;
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>Hi ${seller.username || 'Seller'},</h2>
-          <p>Great news! You've received a new offer on your listing.</p>
-          <h3>Offer Details:</h3>
-          <ul>
-            <li><strong>Listing:</strong> ${listing.cultPassType}</li>
-            <li><strong>Offer Price:</strong> ₹${offerPrice.toLocaleString('en-IN')}</li>
-            <li><strong>From Buyer:</strong> ${req.user?.username || 'A Passitpal User'}</li>
-          </ul>
-          ${messageToSeller ? `<p><strong>Message from buyer:</strong> "${messageToSeller}"</p>` : ''}
-          <p>Please log in to your dashboard to review, accept, or reject this offer.</p>
-          <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="background-color: #1d4ed8; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-            Go to Your Dashboard
-          </a>
-          <p>Thank you,<br>The Passitpal Team</p>
-        </div>
-      `;
-      await sendEmail(seller.email, emailSubject, `You have a new offer for ${listing.cultPassType}.`, emailHtml);
-      // console.log(`[Email Notification] New order email sent to seller: ${seller.email}`);
-    } catch (emailError) {
-      console.error("[Email Notification] Failed to send new order email:", emailError);
-      // We don't block the main API response if the email fails, but we log the error.
+        const { listingId } = req.params;
+        const { offerPrice, messageToSeller } = req.body;
+        const buyer = req.user;
+
+        if (!buyer?._id || !buyer.username) {
+            return res.status(401).json({ message: 'User not authenticated.' });
+        }
+
+        const order = await OrderService.initiateOrder(listingId, buyer._id.toString(), buyer.username, offerPrice, messageToSeller);
+        sendSuccess(res, 'Offer submitted successfully. The seller has been notified.', { order }, 201);
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not initiate order.');
     }
-
-
-    // Optionally, mark the listing as temporarily unavailable (e.g., 'on_hold')
-    // For now, we'll keep it available until seller accepts.
-    // listing.isAvailable = false;
-    // await listing.save();
-
-    // Notify the seller about the new order/offer
-    await createAndEmitNotification(
-      listing.seller.toString(),
-      'new_order',
-      `You have a new offer of ₹${offerPrice} for your listing "${listing.cultPassType}".`,
-      { type: 'listing', id: order._id.toString() } // Link to the new order details page (future)
-    );
-
-    res.status(201).json({
-      message: 'Order initiated successfully. Seller has been notified.',
-      order: {
-        id: order._id,
-        listing: order.listing,
-        offerPrice: order.offerPrice,
-        status: order.status,
-        paymentStatus: order.paymentStatus
-      }
-    });
-
-  } catch (error: any) {
-    console.error('Error initiating order:', error.message);
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ message: 'Invalid listing ID or user ID.' });
-    }
-    res.status(500).json({ message: 'Server error: Could not initiate order.' });
-  }
 };
 
-// @route   GET /api/orders/seller
-// @desc    Get all orders for listings owned by the logged-in seller
-// @access  Private (Seller only)
 export const getListingOrders = async (req: Request, res: Response) => {
-  try {
-    if (!req.user || req.user.role !== 'seller') {
-      return res.status(403).json({ message: 'Only sellers can view orders on their listings.' });
+    try {
+        const sellerId = req.user?._id.toString();
+        if (!sellerId) {
+            return res.status(401).json({ message: 'User not authenticated.' });
+        }
+        const orders = await OrderService.getOrdersForSeller(sellerId);
+        sendSuccess(res, 'Seller orders fetched successfully.', { orders });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not fetch orders.');
     }
-
-    // Find all listings belonging to the seller
-    const sellerListings = await Listing.find({ seller: req.user._id }).select('_id');
-    const listingIds = sellerListings.map(listing => listing._id);
-
-    // Find all orders associated with these listings
-    
-    const orders = await Order.find({ listing: { $in: listingIds } })
-      .populate('buyer', 'username email profilePictureUrl') // Populate buyer details
-      .populate('listing', 'cultPassType askingPrice adImageUrl') // Populate listing details
-      .sort({ createdAt: -1 }); // Sort by newest first
-
-    res.status(200).json({ message: 'Orders fetched successfully', orders });
-  } catch (error: any) {
-    console.error('Error fetching seller listings orders:', error.message);
-    res.status(500).json({ message: 'Server error: Could not fetch seller orders.' });
-  }
 };
 
-// @route   GET /api/orders/me
-// @desc    Get all orders initiated by the logged-in buyer
-// @access  Private (Buyer only)
 export const getMyOrders = async (req: Request, res: Response) => {
-  try {
-    if (!req.user || req.user.role !== 'buyer') {
-      return res.status(403).json({ message: 'Only buyers can view their own initiated orders.' });
+    try {
+        const buyerId = req.user?._id.toString();
+        if (!buyerId) {
+            return res.status(401).json({ message: 'User not authenticated.' });
+        }
+        const orders = await OrderService.getMyOrders(buyerId);
+        sendSuccess(res, 'Your orders fetched successfully.', { orders });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not fetch your orders.');
     }
-
-    const orders = await Order.find({ buyer: req.user._id })
-      .populate('seller', 'username email mobileNumber profilePictureUrl') // Populate seller details
-      .populate('listing', 'cultPassType askingPrice adImageUrl isAvailable') // Populate listing details
-      .sort({ createdAt: -1 }); // Sort by newest first
-
-    res.status(200).json({ message: 'My orders fetched successfully', orders });
-  } catch (error: any) {
-    console.error('Error fetching buyer orders:', error.message);
-    res.status(500).json({ message: 'Server error: Could not fetch your orders.' });
-  }
 };
 
-// src/controllers/orderController.ts (add this function)
-
-// @route   PUT /api/orders/:orderId/status
-// @desc    Update the status of an order (e.g., accept, reject, complete)
-// @access  Private (Seller only)
 export const updateOrderStatus = async (req: Request, res: Response) => {
-  const { orderId } = req.params;
-  const { status } = req.body; // Expected status: 'accepted' | 'rejected' | 'completed' | 'cancelled' (optional, buyer initiated)
-  const sellerId = req.user?._id; // Seller's ID from the token
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body; // 'accepted' or 'rejected'
+        const sellerId = req.user?._id.toString();
 
-  try {
-    if (!sellerId || req.user?.role !== 'seller') {
-      return res.status(403).json({ message: 'Only sellers are authorized to update order status.' });
-    }
-    const order = await Order.findById(orderId).populate('listing') as IOrder & { _id: Types.ObjectId; listing: IListing }; // Populate listing to access its details
-
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found.' });
-    }
-
-    // Ensure the logged-in user is the seller of this order's listing
-    if (order.seller.toString() !== sellerId.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this order.' });
-    }
-
-    // Validate the new status
-    const validSellerStatuses = ['accepted', 'rejected', 'completed']; // Seller can set these
-    if (!validSellerStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status provided. Valid statuses are: accepted, rejected, completed.' });
-    }
-
-    // Prevent status changes if already completed or cancelled (unless specific business logic allows)
-    if (order.status === 'completed' || order.status === 'cancelled') {
-        return res.status(400).json({ message: `Order is already ${order.status} and cannot be updated.` });
-    }
-
-    // Specific logic based on status update
-    if (status === 'accepted') {
-        // If accepted, check if listing is available. If not, it means another order was accepted.
-        if (order.listing && !order.listing.isAvailable && order.listing.seller.toString() === sellerId.toString()) {
-            return res.status(400).json({ message: 'Listing is already marked as unavailable by another accepted order.' });
+        if (!sellerId) {
+            return res.status(401).json({ message: 'User not authenticated.' });
         }
-        // Mark listing as unavailable if order is accepted (assuming one pass per listing)
-        if (order.listing) {
-            order.listing.isAvailable = false;
-            await order.listing.save();
+        if (status !== 'accepted' && status !== 'rejected') {
+            return res.status(400).json({ message: "Invalid status. Must be 'accepted' or 'rejected'." });
         }
 
-        // Notify buyer that their offer was accepted
-        await createAndEmitNotification(
-            order.buyer.toString(),
-            'transaction', // or a more specific 'order_accepted' type
-            `Your offer for "${order.listing?.cultPassType}" was accepted by the seller!`,
-            { type: 'listing', id: order._id.toString() } // Link to the order details page
-        );
-
-    } else if (status === 'rejected') {
-        // If rejected, the listing might become available again if it was put on hold (current logic keeps it available initially)
-        // No change to listing.isAvailable unless it was previously set to false by this order.
-        // If multiple pending orders, this just rejects one.
-
-        // Notify buyer that their offer was rejected
-        await createAndEmitNotification(
-            order.buyer.toString(),
-            'transaction', // or 'order_rejected'
-            `Your offer for "${order.listing?.cultPassType}" was rejected by the seller.`,
-            { type: 'listing', id: order._id.toString() }
-        );
-
-    } else if (status === 'completed') {
-        // 'completed' implies payment is handled externally and confirmed.
-        // Ensure status sequence: pending -> accepted -> completed
-        if (order.status !== 'accepted') {
-            return res.status(400).json({ message: 'Order must be accepted before it can be marked as completed.' });
-        }
-        // Ensure listing is marked unavailable. If not, mark it.
-        if (order.listing && order.listing.isAvailable) {
-             order.listing.isAvailable = false;
-             await order.listing.save();
-        }
-
-        order.paymentStatus = 'paid'; // Assume payment is confirmed upon completion
-        // Notify buyer that the transaction is completed
-        await createAndEmitNotification(
-            order.buyer.toString(),
-            'transaction', // or 'order_completed'
-            `Your transaction for "${order.listing?.cultPassType}" is completed!`,
-            { type: 'listing', id: order._id.toString() }
-        );
+        const order = await OrderService.updateOrderStatus(orderId, sellerId, status);
+        sendSuccess(res, `Order has been ${status}.`, { order });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not update order status.');
     }
-
-    order.status = status;
-    order.updatedAt = new Date(); // Manually update updatedAt as save() might not trigger it directly with partial updates
-    await order.save();
-
-    res.status(200).json({ message: `Order status updated to ${status} successfully.`, order });
-
-  } catch (error: any) {
-    console.error('Error updating order status:', error.message);
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ message: 'Invalid order ID.' });
-    }
-    res.status(500).json({ message: 'Server error: Could not update order status.' });
-  }
 };
-// @route   PUT /api/orders/:orderId/cancel
-// @desc    Allow buyer to cancel their pending order
-// @access  Private (Buyer only)
+
 export const cancelOrder = async (req: Request, res: Response) => {
-  const { orderId } = req.params;
-  const buyerId = req.user?._id; // Buyer's ID from the token
-
-  try {
-    if (!buyerId || req.user?.role !== 'buyer') {
-      return res.status(403).json({ message: 'Only buyers are authorized to cancel their orders.' });
+    try {
+        const { orderId } = req.params;
+        const buyerId = req.user?._id.toString();
+        if (!buyerId) {
+            return res.status(401).json({ message: 'User not authenticated.' });
+        }
+        const order = await OrderService.cancelOrder(orderId, buyerId);
+        sendSuccess(res, 'Your offer has been cancelled.', { order });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not cancel order.');
     }
-
-    // Find the order and populate listing (optional, but good for consistency)
-    const order = await Order.findById(orderId).populate('listing') as IOrder & { _id: Types.ObjectId; listing: IListing };
-
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found.' });
-    }
-
-    // Ensure the logged-in user is the actual buyer of this order
-    if (order.buyer.toString() !== buyerId.toString()) {
-      return res.status(403).json({ message: 'Not authorized to cancel this order.' });
-    }
-
-    // Check if the order can be cancelled (only if pending)
-    if (order.status !== 'pending') {
-      return res.status(400).json({ message: `Order cannot be cancelled as it is currently ${order.status}.` });
-    }
-
-    order.status = 'cancelled';
-    order.updatedAt = new Date();
-    await order.save();
-
-    // Notify the seller about the cancelled order
-    await createAndEmitNotification(
-      order.seller.toString(),
-      'order_cancelled',
-      `An order for "<span class="math-inline">\{order\.listing\.cultPassType\}" \(Offer\: ₹</span>{order.offerPrice}) has been cancelled by the buyer.`,
-      { type: 'listing', id: order._id.toString() } // Link to the order details
-    );
-
-    res.status(200).json({ message: 'Order cancelled successfully.', order });
-
-  } catch (error: any) {
-    console.error('Error cancelling order:', error.message);
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ message: 'Invalid order ID.' });
-    }
-    res.status(500).json({ message: 'Server error: Could not cancel order.' });
-  }
 };
 
-// @route   POST /api/orders/:orderId/complete
-// @desc    Buyer confirms receipt, completing the transaction.
-// @access  Private (Buyer Only)
 export const completeOrder = async (req: Request, res: Response) => {
-  try {
-    const { orderId } = req.params;
-    const buyerId = req.user?._id;
-
-    const order = await Order.findById(orderId) as IOrder & { _id: Types.ObjectId };
-
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found.' });
+    try {
+        const { orderId } = req.params;
+        const buyerId = req.user?._id.toString();
+        if (!buyerId) {
+            return res.status(401).json({ message: 'User not authenticated.' });
+        }
+        const order = await OrderService.completeOrder(orderId, buyerId);
+        sendSuccess(res, 'Transaction completed successfully! Thank you for using Passitpal.', { order });
+    } catch (error: any) {
+        sendError(res, error, 'Server error: Could not complete order.');
     }
-    if (order.buyer.toString() !== buyerId?.toString()) {
-      return res.status(403).json({ message: 'You are not authorized to complete this order.' });
-    }
-    if (order.status !== 'accepted') {
-      return res.status(400).json({ message: `Cannot complete order with status: ${order.status}. Seller must accept it first.` });
-    }
-
-    // 1. Update Order status to 'completed'
-    order.status = 'completed';
-    order.paymentStatus = 'paid'; // We assume payment was handled directly
-    await order.save();
-
-    // 2. Update the associated Listing to be 'unavailable'
-    await Listing.findByIdAndUpdate(order.listing, { isAvailable: false });
-
-    // 3. Notify the Seller that the transaction is finalized
-    await createAndEmitNotification(
-      order.seller.toString(),
-      'transaction',
-      `The buyer has confirmed receipt for order #${order._id.toString().slice(-6)}. The deal is complete!`,
-      { type: 'listing', id: order._id.toString() }
-    );
-
-    // 4. For your manual payout system
-    // console.log(`--- PAYOUT DUE ---
-    //   Order ID: ${order._id}
-    //   Amount: ₹${order.offerPrice}
-    //   Pay to Seller ID: ${order.seller}
-    // --------------------`);
-
-    res.status(200).json({ message: 'Transaction completed successfully! Thank you for using Passitpal.' });
-
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error while completing order.' });
-  }
 };

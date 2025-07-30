@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
 
 const LocationPrompt = () => {
-  const navigate = useNavigate();
+  //  Use setSearchParams to update URL query parameters without a full page reload.
+  const [searchParams, setSearchParams] = useSearchParams();
   const [prompted, setPrompted] = useState(sessionStorage.getItem('locationPrompted') === 'true');
 
   useEffect(() => {
@@ -17,8 +19,11 @@ const LocationPrompt = () => {
             // Ask our backend to convert coordinates to a city name
             const response = await api.post('/listings/reverse-geocode', { latitude, longitude });
             if (response.data.locationName) {
-              // Redirect to listings page, pre-filtered by their location
-              navigate(`/listings?locationName=${encodeURIComponent(response.data.locationName)}`);
+              // FIX: Update the search params to filter by the user's location.
+              // This will trigger a re-fetch on the ListingsPage without a page refresh.
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('locationName', response.data.locationName);
+              setSearchParams(newParams);
             }
           } catch (error) {
             console.error("Failed to reverse geocode:", error);
@@ -42,11 +47,10 @@ const LocationPrompt = () => {
         }
       );
     }
-  }, [prompted, navigate]);
+  }, [prompted, setSearchParams, searchParams]); // Added dependencies
 
   // This component renders nothing, it only contains logic
   return null;
 };
 
 export default LocationPrompt;
-

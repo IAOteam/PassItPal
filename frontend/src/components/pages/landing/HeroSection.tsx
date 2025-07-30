@@ -28,10 +28,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ scrollToCategory }) => {
 
 
         <h1 className='text-black dark:text-white text-6xl md:text-6xl lg:text-8xl font-bold'>PassItPal</h1>
-        <p className='text-black dark:text-white text-xl  md:text-2xl md:px-3 pt-3 md:ml-12'>With ease, Exchange your unused
-          {""}
+        <div className='text-black dark:text-white text-xl  md:text-2xl md:px-3 pt-3 md:ml-12'>With ease, Exchange your unused
+          {" "}
           <ContainerTextFlip
-            words={["Passes", "Subscriptions", "GYM passes", "Event Tickets"]} /> </p>
+            words={["Passes", "Subscriptions", "GYM passes", "Event Tickets"]} /> </div>
       </div>
 
 
@@ -43,6 +43,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ scrollToCategory }) => {
        >
         Find Your Nearest Pass
       </RainbowButton>
+
+
+
+
+
 
     </div>
   );

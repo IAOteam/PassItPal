@@ -1,18 +1,21 @@
 // frontend/src/components/admin/ManageUsers.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { User } from '@/context/AuthContext';
+import type { IUser } from '@passitpal/types';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import toast from 'react-hot-toast';
+
 
 
 
 
 const ManageUsers: React.FC = () => {
-  const { user: adminUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const { user: adminUser } = useAuthStore();
+  const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,9 +42,9 @@ const ManageUsers: React.FC = () => {
       return;
     }
     try {
-      // This endpoint is ready in our adminController
-      await api.put(`/admin/users/${userId}/block`, { isBlocked: !isCurrentlyBlocked });
-      alert(`User successfully ${action}ed.`);
+      
+      await api.put(`/admin/users/${userId}/toggle-block`);
+      toast.success(`User successfully ${action}ed.`);
       fetchUsers(); // Refresh the user list
     } catch (err: any) {
       alert(err.response?.data?.message || `Failed to ${action} user.`);

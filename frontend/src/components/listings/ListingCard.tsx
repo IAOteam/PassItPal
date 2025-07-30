@@ -1,7 +1,7 @@
 // src/components/listings/ListingCard.tsx
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { type IListing } from '@/types';
+
+
 import { getDistance } from '@/lib/utils';
 
 // UI Components
@@ -13,10 +13,28 @@ import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Star, Bookmark, CalendarDays, MapPin, NotebookText, MessageCircle } from 'lucide-react';
 
+import useAuthStore from '@/hooks/zustand/useAuthStore';
+import type { IListing } from '@passitpal/types';
+
 interface ListingCardProps {
   listing: IListing;
   onClick: () => void;
 }
+
+// Helper function to safely extract the category name.
+// Moved outside the component to prevent re-declaration on every render.
+const getCategoryName = (listing: IListing): string => {
+  if (!listing.categories || listing.categories.length === 0) {
+    return 'General';
+  }
+  const firstCategory = listing.categories[0];
+  // Check if the category is populated (i.e., it's an object with a 'name' property)
+  if (typeof firstCategory === 'object' && firstCategory !== null && 'name' in firstCategory) {
+    return firstCategory.name;
+  }
+  // Fallback for an unpopulated category ID or other unexpected shapes.
+  return 'Category';
+};
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   const navigate = useNavigate();
@@ -26,12 +44,10 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
     getOrCreateConversation,
     saveListing,
     unsaveListing,
-  } = useAuth();
+  } = useAuthStore();
 
-  const isSaved = user?.savedListings?.includes(listing._id);
-  const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF?text=${encodeURIComponent(
-    listing.cultPassType
-  )}`;
+  const isSaved = user?.savedListings?.some(item => (typeof item === 'string' ? item : item._id) === listing._id);
+  const placeholderImage = `https://placehold.co/600x400/171717/FFFFFF.png?text=${encodeURIComponent(listing.cultPassType)}&font=lato`;
 
   const handleContactSeller = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,6 +76,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
       console.error("Save error:", err.message);
     }
   };
+
+  const displayCategory = getCategoryName(listing);
 
   return (
     <div
@@ -95,7 +113,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
-              {listing.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General'}
+              {displayCategory}
             </Badge>
             <h3 className="truncate text-xl font-bold dark:text-white mt-1" title={listing.cultPassType}>
               {listing.cultPassType}
@@ -129,7 +147,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
           </a>
           <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
             <MapPin className="h-3 w-3" />
-            <p>{listing.city}</p>
+            <p>{listing.displayLocation}</p>
+
             {user?.latitude && user?.longitude && (
               <p className="font-semibold">
                 • {getDistance(user.latitude, user.longitude, listing.latitude, listing.longitude).toFixed(1)} km

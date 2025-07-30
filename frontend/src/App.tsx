@@ -1,8 +1,6 @@
 
-// import { NavBar } from "./components/nav/NavBar";
-import HeroSection from "./components/pages/landing/HeroSection";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Router components
-import { AuthProvider } from "./context/AuthContext"; // 
+import { useJsApiLoader } from '@react-google-maps/api';
 import ListingsPage from './pages/auth/ListingsPage'; 
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import RegisterPage from "./pages/auth/RegisterPage.tsx";
@@ -23,7 +21,6 @@ import SubmitReviewPage from "./components/pages/reviews/SubmitReviewPage.tsx";
 import MessagingLayout from "./components/pages/messaging/MessagingLayout.tsx";
 import AdminLayout from './components/admin/layout/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
-// import ManageRoleRequests from './components/admin/ManageRoleRequests';
 import ManageReports from './components/admin/ManageReports';
 import ManageUsers from './components/admin/ManageUsers';
 import ManageListings from './components/admin/ManageListings';
@@ -44,8 +41,42 @@ import BlogPostSafetyTips from "./pages/blogs/BlogPostSafetyTips.tsx";
 import BlogPostGymPass from "./pages/blogs/BlogPostGymPass.tsx";
 import BlogPostAiSub from "./pages/blogs/BlogPostAiSub.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
+import ReactGA from "react-ga4";
+import CookieConsent from './components/shared/CookieConsent';
+import { useEffect } from "react";
+import EditListingPage from "./components/pages/seller/EditListingPage.tsx";
 
+const GOOGLE_MAPS_LIBRARIES: ("places")[] = ['places'];
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 function App() {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!,
+    libraries: GOOGLE_MAPS_LIBRARIES, 
+  });
+
+  const initializeAnalytics = () => {
+    if (GA_MEASUREMENT_ID) {
+      ReactGA.initialize(GA_MEASUREMENT_ID);
+      console.log("Google Analytics initialized.");
+    }
+  };
+
+  useEffect(() => {
+    // Check for consent on initial app load
+    const consent = localStorage.getItem('cookie_consent');
+    if (consent === 'true') {
+      initializeAnalytics();
+    }
+  }, []);
+
+  // This will display a message until the Google Maps script is fully loaded and ready.
+  /*if (loadError) {
+    return <div>Error loading maps. Please check your API key and internet connection.</div>;
+  }
+  if (!isLoaded) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading Application...</div>;
+  }*/
   return (
     <>
     <Toaster
@@ -59,8 +90,11 @@ function App() {
           duration: 4000,
         }}
       />
-    <Router>
-      <AuthProvider>
+    
+      
+    
+    <Router future={{ v7_startTransition: true }}>
+        <CookieConsent onAccept={initializeAnalytics} />
         <Routes>
           {/* Routes that use the shared Layout (NavBar, Footer) */}
           <Route path="/" element={<Layout />}>
@@ -75,6 +109,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
+              
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
@@ -98,6 +133,7 @@ function App() {
             {/* Seller-only protected route */}
             <Route element={<ProtectedRoute allowedRoles={['seller']} unauthorizedMessage="Only sellers can create listings." />}>
               <Route path="/seller/create-listing" element={<CreateListingPage />} />
+              <Route path="/seller/edit-listing/:listingId" element={<EditListingPage />}/>
             </Route>
             <Route path="/advertise" element={<AdvertisePage />} />
           </Route>
@@ -128,8 +164,8 @@ function App() {
             </div>
           } />
         </Routes>
-      </AuthProvider>
     </Router>
+    
     </>
   );
 }

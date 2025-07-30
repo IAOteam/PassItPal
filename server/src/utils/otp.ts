@@ -4,6 +4,7 @@ import { sendEmail } from './emailService';
 import dotenv from 'dotenv';
 dotenv.config(); 
 import twilio from 'twilio';
+import { getWelcomeEmailTemplate } from './emailTemplates';
 
 
 
@@ -174,13 +175,25 @@ export const verifyOtp = async (email: string, otp: string, type: 'email' | 'mob
   user.otpPurpose = undefined;
   user.otpVerifiedAt = new Date(); // Set verification timestamp
 
-  if (type === 'email') {
+//   if (type === 'email') {
+//     user.isEmailVerified = true;
+//   } else if (type === 'mobile') {
+//     user.isMobileVerified = true;
+//   }
+
+//   await user.save();
+//   // console.log(`Verify OTP: OTP successfully verified for ${user.email}.`);
+//   return true;
+// };
+if (type === 'email' && purpose === 'verification' && !user.isEmailVerified) {
     user.isEmailVerified = true;
+    // Send welcome email ONLY on the first successful email verification
+    const { subject, html } = getWelcomeEmailTemplate(user.username);
+    sendEmail(user.email, subject, '', html).catch(err => console.error("Failed to send welcome email on verification:", err));
   } else if (type === 'mobile') {
     user.isMobileVerified = true;
   }
 
   await user.save();
-  // console.log(`Verify OTP: OTP successfully verified for ${user.email}.`);
   return true;
 };

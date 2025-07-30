@@ -2,19 +2,21 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import type { IListing } from '@/types';
+import { Helmet } from 'react-helmet-async';
+
 
 // UI & Map Components
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from 'antd';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import ReportModal from '../shared/ReportModal';
 
 // Icons
 import { UserOutlined } from '@ant-design/icons';
 import { X, CalendarDays, MapPin, Star, Share2, Flag, Check, MessageCircle } from 'lucide-react';
+import type { IListing } from '@passitpal/types';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 
 interface ListingDetailModalProps {
@@ -24,17 +26,13 @@ interface ListingDetailModalProps {
 }
 
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose, isDirectLink = false }) => {
-  const { isAuthenticated, user, getOrCreateConversation } = useAuth();
+  const { isAuthenticated, user, getOrCreateConversation } = useAuthStore();
   const navigate = useNavigate();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
 
   // ---  Map setup logic  ---
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY!
-  });
 
   const mapContainerStyle = {
     width: '100%',
@@ -92,6 +90,10 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
 
   return (
     <>
+      <Helmet>
+        <title>{`${listing.cultPassType} in ${listing.city}`} | Passitpal</title>
+        <meta name="description" content={`Find a great deal on ${listing.cultPassType} for just ₹${listing.askingPrice}. Originally priced at ₹${listing.originalPrice}. Buy or sell securely on Passitpal.`} />
+      </Helmet>
       <AnimatePresence>
         <motion.div 
           key="modal-backdrop" 
@@ -107,7 +109,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
             animate={{ y: 0, opacity: 1 }} 
             exit={{ y: 50, opacity: 0 }} 
             transition={{ type: 'spring', stiffness: 300, damping: 25 }} 
-            onClick={(e) => e.stopPropagation()} 
+            onClick={(e: React.MouseEvent) => e.stopPropagation()} 
             className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
           >
             <div className="relative">
@@ -165,7 +167,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
               {/* Map */}
               <div className="mt-2">
                 {isAuthenticated ? (
-                  isLoaded && listing.latitude && listing.longitude ? (
+                  listing.latitude && listing.longitude ? (
                     <GoogleMap 
                       mapContainerStyle={{ width: '100%', height: '150px', borderRadius: '0.5rem' }} 
                       center={{ lat: listing.latitude, lng: listing.longitude }} 

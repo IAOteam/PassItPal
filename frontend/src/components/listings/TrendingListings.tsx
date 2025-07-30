@@ -1,12 +1,14 @@
 // frontend/src/components/pages/landing/TrendingListings.tsx
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import api from "@/lib/api";
-import ListingCard from "@/components/listings/ListingCard";
-import ListingDetailModal from "@/components/listings/ListingDetailModal";
-import { Button } from "@/components/ui/button";
-import type { IListing } from "@/types";
-import ListingCardSkeleton from "./ListingCardSkeleton";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '@/lib/api';
+import ListingCard from '@/components/listings/ListingCard';
+import ListingDetailModal from '@/components/listings/ListingDetailModal';
+import { Button } from '@/components/ui/button';
+import ListingCardSkeleton from './ListingCardSkeleton';
+import type { IListing } from '@passitpal/types';
+
+
 
 const TrendingListings: React.FC = () => {
   const [listings, setListings] = useState<IListing[]>([]);

@@ -1,51 +1,27 @@
-// server/src/controllers/adController.ts
-
 import { Request, Response } from 'express';
-import Ad from '../models/Ad';
-// Import notification controller if you want to notify admins of new submissions
-// import { createAndEmitNotification } from './notificationController';
+import { AdService } from '../services/ad.service';
 
-// @route   POST /api/ads/submit
-// @desc    Allow public users to submit an ad for review
-// @access  Public
+const sendSuccess = (res: Response, message: string, data: object = {}, statusCode = 200) => {
+    res.status(statusCode).json({ message, ...data });
+};
+
+const sendError = (res: Response, error: any, defaultMessage: string) => {
+    console.error(`Error in AdController: ${error.message}`);
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || defaultMessage });
+};
+
+/**
+ * @route   POST /api/ads/submit
+ * @desc    Allow public users to submit an ad for review
+ * @access  Public
+ */
 export const submitAdForReview = async (req: Request, res: Response) => {
     try {
-        const {
-            sponsorName,
-            adTitle,
-            adDescription,
-            targetUrl,
-            locations, // Expecting an array of strings
-            durationDays,
-            adImageBase64 // Assuming you might handle image upload
-        } = req.body;
-
-        // Image upload logic can be added here if needed, for now we assume URL
-        // For simplicity, we'll assume imageUrl is passed directly or handle later.
-
-        const newAd = new Ad({
-            sponsorName,
-            adTitle,
-            adDescription,
-            targetUrl,
-            locations,
-            durationDays,
-            approvalStatus: 'pending', // Always pending on submission
-            isActive: false,           // Never active on submission
-            imageUrl: "https://placehold.co/600x400/cccccc/FFFFFF?text=Ad+Pending" // Placeholder
-        });
-
-        await newAd.save();
-
-        // Optional: Notify all admins about the new submission
-        // const admins = await User.find({ role: 'admin' });
-        // ... loop and call createAndEmitNotification ...
-
-        res.status(201).json({ message: 'Ad submitted for review successfully. We will contact you shortly.' });
-
+        const ad = await AdService.submitForReview(req.body);
+        sendSuccess(res, 'Ad submitted for review successfully. We will contact you shortly.', { ad }, 201);
     } catch (error: any) {
-        // console.error('Error submitting ad for review:', error);
-        res.status(500).json({ message: 'Server error while submitting your ad.' });
+        sendError(res, error, 'Server error while submitting your ad.');
     }
 };
 

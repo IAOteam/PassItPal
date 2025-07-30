@@ -103,12 +103,12 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string |
 
     if (response.data.status === 'OK' && response.data.results.length > 0) {
       // Find the 'locality' component which typically represents the city
-      const addressComponents = response.data.results[0].address_components;
+      /*const addressComponents = response.data.results[0].address_components;
       const cityComponent = addressComponents.find((comp: any) => comp.types.includes('locality'));
       
-      const cityName = cityComponent ? cityComponent.long_name : response.data.results[0].formatted_address.split(',')[0];
+      const cityName = cityComponent ? cityComponent.long_name : response.data.results[0].formatted_address.split(',')[0];*/
       // console.log(`[Reverse Geocode] Found city: ${cityName}`);
-      return cityName;
+      return response.data.results[0].formatted_address;
     }
     return null;
   } catch (error) {

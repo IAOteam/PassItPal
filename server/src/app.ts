@@ -17,10 +17,11 @@ import messageRoutes from './routes/messageRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/adminRoutes';
 import adRoutes from './routes/adRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 import Message, { IMessage } from './models/Message';
 import Conversation, { IConversation } from './models/Conversation';
 import User , {IUser} from './models/User';
-import { createAndEmitNotification } from './controllers/notificationController';
+
 import errorHandler from './middleware/errorHandler';
 import orderRoutes from './routes/orderRoutes';
 import reviewRoutes from './routes/reviewRoutes';
@@ -31,10 +32,13 @@ import emailProcessor from './workers/emailProcessor';
 import cron from 'node-cron';
 import adExpiryProcessor from './workers/adExpiryProcessor';
 import listingExpiryProcessor from './workers/listingExpiryProcessor';
+import listingPromotionExpiryProcessor from './workers/listingPromotionExpiryProcessor';
+import monthlyResetProcessor from './workers/monthlyResetProcessor';
 import './config/passport-setup'; 
 
 // Cloudinary configuration
 import { v2 as cloudinary } from 'cloudinary';
+import { NotificationService } from './services/notification.service';
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
   api_key: process.env.CLOUDINARY_API_KEY!,
@@ -63,6 +67,9 @@ cron.schedule('5 0 * * *', listingExpiryProcessor, { // Runs at 12:05 AM daily
   //scheduled: true,
   timezone: "Asia/Kolkata"
 });
+cron.schedule('10 0 * * *', listingPromotionExpiryProcessor, { timezone: "Asia/Kolkata" });
+// console.log("Scheduled listing promotion expiry job to run daily at 12:10 AM.");
+cron.schedule('0 0 1 * *', monthlyResetProcessor, { timezone: "Asia/Kolkata" });
 // console.log("Scheduled listing expiry job to run daily.");
 
 // Security Middleware
@@ -72,7 +79,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
   origin: [ process.env.CLIENT_URL || 'http://localhost:5173',
-  'https://www.passitpal.com',                        // Your new production domain
+  'https://www.passitpal.com',                        
   'https://passitpal.com',  ],    
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true 
@@ -100,7 +107,7 @@ app.use('/api/ads', adRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes); 
 app.use('/api/reports', reportRoutes); 
-
+app.use('/api/categories', categoryRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
@@ -113,14 +120,9 @@ export const io = new Server(httpServer, {
 const connectedUsers = new Map<string, string>();
 
 io.use(async (socket: Socket, next) => {
-  // const token = socket.handshake.auth.token;
-  // if (!token) {
-  //   return next(new Error('Authentication error: No token provided'));
-  // } 
   try {
     const token = socket.handshake.auth.token;
     if (!token) throw new Error('Authentication error: No token provided');
-    // const decoded: any = jwt.verify(token, 'THIS_IS_MY_VERY_CONSISTENT_TEST_SECRET_123!');
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
@@ -194,18 +196,18 @@ io.on('connection', (socket: Socket) => {
 
 
       conversation.participants.forEach(participantId => {
-        io.to(participantId.toString()).emit('receiveMessage', populatedMessage);
+        io.to(participantId.user.toString()).emit('receiveMessage', populatedMessage);
       });
 
-      if (recipientId && recipientId !== sender._id.toString()) {
-        await createAndEmitNotification(
+      /*if (recipientId && recipientId !== sender._id.toString()) {
+        await NotificationService.createAndEmitNotification(
           recipientId,
           'message',
           `New message from ${user.username || user.email}: ${text.substring(0, 50)}...`,
           { type: 'chat', id: conversationId },
           user._id.toString()
         );
-      }
+      }*/
 
       // --- OFFLINE NOTIFICATION LOGIC ---
       // Check if the recipient is offline
@@ -235,6 +237,36 @@ io.on('connection', (socket: Socket) => {
     }
   });
 
+  socket.on('markAsRead', async ({ conversationId }) => {
+      try {
+          const userId = socket.data.user._id;
+          if (!userId || !conversationId) return;
+
+          // Find all messages in the conversation that this user has NOT read yet.
+          const result = await Message.updateMany(
+              { conversation: conversationId, readBy: { $ne: userId } },
+              { $addToSet: { readBy: userId } }
+          );
+          
+          // If any messages were updated, notify the conversation participants.
+          if (result.modifiedCount > 0) {
+              const conversation = await Conversation.findById(conversationId);
+              if (conversation) {
+                  // Broadcast to everyone in the conversation.
+                  conversation.participants.forEach(participant => {
+                      io.to(participant.user.toString()).emit('messagesRead', { 
+                          conversationId, 
+                          readerId: userId.toString() 
+                      });
+                  });
+              }
+          }
+      } catch (error) {
+          console.error('Error in markAsRead event:', error);
+      }
+  });
+
+
   socket.on('disconnect', () => {
     if (user && user.email) {
       // console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
@@ -251,7 +283,7 @@ io.on('connection', (socket: Socket) => {
 const PORT = parseInt(process.env.PORT || '5001', 10);
 
 httpServer.listen(PORT, "0.0.0.0",() => {
-  // console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   // console.log(`Socket.IO listening on port ${PORT}`);
 });
 

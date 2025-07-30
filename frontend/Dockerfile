@@ -1,34 +1,37 @@
-# --- Stage 1: Build Stage ---
-# Use a specific Node.js version to build the React app
-FROM node:22-alpine AS builder
-
-# Set the working directory
+# ---- Stage 1: Base image with dependencies ----
+FROM node:22-alpine AS base
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy all package.json files from the monorepo root
+COPY package.json package-lock.json ./
+COPY server/package.json ./server/
+COPY frontend/package.json ./frontend/
+COPY packages/types/package.json ./packages/types/
 
-# Install dependencies
+# Install all monorepo dependencies
 RUN npm install
 
-# Copy the rest of the frontend source code
-COPY . .
+# ---- Stage 2: Build the 'types' package ----
+FROM base AS types-builder
+WORKDIR /app
+COPY packages/types ./packages/types
+RUN npm run build --workspace=@passitpal/types
 
-# Build the production-ready static files
-RUN npm run build
+# ---- Stage 3: Build the 'frontend' application ----
+FROM base AS frontend-builder
+WORKDIR /app
+# Copy the built types from the previous stage
+COPY --from=types-builder /app/packages/types/dist ./packages/types/dist
+# Copy frontend source code
+COPY frontend ./frontend
+RUN npm run build --workspace=frontend
 
-# --- Stage 2: Production Stage ---
-# Use a lightweight Nginx image to serve the static files
+# ---- Stage 4: Serve with Nginx ----
 FROM nginx:1.27-alpine
+# Copy the built static assets from the frontend-builder stage
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+# Copy your custom Nginx configuration FROM THE BUILDER STAGE
+COPY --from=frontend-builder /app/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy the built static files from the 'builder' stage to the Nginx public directory
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy the custom Nginx configuration
-# This ensures that all routes are directed to index.html for our Single-Page App
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80 for the Nginx server
 EXPOSE 80
-
-# The default command for Nginx is to start the server, so we don't need a CMD instruction.
+CMD ["nginx", "-g", "daemon off;"]

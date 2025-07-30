@@ -1,5 +1,7 @@
+import { IListing } from '@passitpal/types';
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import validator from 'validator';
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   googleId?: string; 
@@ -8,6 +10,7 @@ export interface IUser extends Document {
   username: string; // Buyer-specific
   mobileNumber?: string; // Seller-specific
   role: 'buyer' | 'seller' | 'admin';
+  authProvider: 'local' | 'google'; // NEW: To track the authentication method
   location: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -23,10 +26,11 @@ export interface IUser extends Document {
   profilePictureUrl?: string;
   averageRating: number;
   reviewCount: number;
+  monthlyListingCount: number;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
-  savedListings: Types.ObjectId[];
+  savedListings?: string[]| Partial<IListing>[];
   requestedRole?: 'buyer' | 'seller';                     
   roleRequestStatus?: 'pending' | 'approved' | 'rejected'; 
   roleRequestTimestamp?: Date;                             
@@ -77,6 +81,12 @@ const UserSchema: Schema = new Schema({
     enum: ['buyer', 'seller', 'admin'],
     default: 'buyer',
    },
+  authProvider: { // NEW FIELD
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local',
+    required: true,
+  },
   location: {
         city: {
         type: String,
@@ -116,6 +126,10 @@ const UserSchema: Schema = new Schema({
     max: [5, 'Rating must be at most 5'],
   },
   reviewCount: {
+    type: Number,
+    default: 0,
+  },
+  monthlyListingCount: { 
     type: Number,
     default: 0,
   },

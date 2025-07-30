@@ -24,10 +24,13 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@passitpal/types": ["../packages/types/index.ts"],
+      "@passitpal/types/*": ["../packages/types/*"]  
     }
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    // "../packages/types/dist"
+  ]
 }

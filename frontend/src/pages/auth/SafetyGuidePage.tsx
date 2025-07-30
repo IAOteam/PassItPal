@@ -1,10 +1,12 @@
 import React from 'react';
 import { ShieldCheck, MessageSquare, Banknote, Search, UserCheck } from 'lucide-react';
+import { BackButton } from '@/components/shared/BackButton';
 
 const SafetyGuidePage: React.FC = () => {
   return (
     <div className="bg-white dark:bg-black py-16 md:py-24">
       <div className="container mx-auto px-4 max-w-4xl">
+         <BackButton />
         <div className="text-center max-w-3xl mx-auto">
           <ShieldCheck className="mx-auto h-16 w-16 text-green-500 mb-4" />
           <h1 className="text-4xl md:text-5xl font-bold dark:text-white">Your Safety, Our Priority</h1>

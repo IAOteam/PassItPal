@@ -2,11 +2,11 @@
   "name": "passitpal-backend",
   "version": "1.0.0",
   "description": "Backend for PassitPal - Cult Fit Subscription Resale Platform",
-  "main": "dist/app.js",
+  "main": "dist/server/src/app.js",
   "scripts": {
-    "start": "node dist/app.js",
-    "dev": "nodemon --exec ts-node src/app.ts",
-    "build": "tsc",
+    "start": "node dist/server/src/app.js",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/app.ts",
+    "build": "tsc && tsc-alias",
     "test": "jest",
     "data:import": "ts-node src/seeder.ts",
     "data:destroy": "ts-node src/seeder.ts -d"
@@ -15,6 +15,7 @@
   "author": "Varaprasad Kare",
   "license": "ISC",
   "dependencies": {
+    "@passitpal/types": "1.0.0",
     "@types/node-cron": "^3.0.11",
     "bcryptjs": "^2.4.3",
     "brace-expansion": "^4.0.1",
@@ -37,6 +38,7 @@
     "passport-google-oauth20": "^2.0.0",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",
+    "tsconfig-paths": "^4.2.0",
     "twilio": "^5.1.1",
     "uuid": "^9.0.1"
   },
@@ -65,6 +67,7 @@
     "supertest": "^7.1.1",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.4.5"
   }
 }

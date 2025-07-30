@@ -6,7 +6,7 @@ import {
   createListing,
   getListings,
   getListingById,
-  getCityFromCoords,
+  getAddressFromCoords,
   updateListing,
   deleteListing,
   getMyListings,
@@ -23,11 +23,12 @@ router.get(
     query('latitude').optional().isFloat().withMessage('Latitude must be a number.'),
     query('longitude').optional().isFloat().withMessage('Longitude must be a number.'),
     query('radiusKm').optional().isFloat({ min: 0.1 }).withMessage('Radius must be a positive number.'),
-    query('cultPassType').optional().isString().trim().escape().withMessage('Cult Pass Type must be a string.'),
+    // query('cultPassType').optional().isString().trim().escape().withMessage('Cult Pass Type must be a string.'),
+    query('searchTerm').optional().isString().trim().escape().withMessage('Search term must be a string.'),
     query('minPrice').optional().isFloat({ min: 0 }).withMessage('Min price must be a non-negative number.'),
     query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Max price must be a non-negative number.'),
-    query('minCredits').optional().isInt({ min: 0 }).withMessage('Min credits must be a non-negative integer.'), // Assuming credits are integers
-    query('maxCredits').optional().isInt({ min: 0 }).withMessage('Max credits must be a non-negative integer.')  // Assuming credits are integers
+    // query('minCredits').optional().isInt({ min: 0 }).withMessage('Min credits must be a non-negative integer.'), // Assuming credits are integers
+    // query('maxCredits').optional().isInt({ min: 0 }).withMessage('Max credits must be a non-negative integer.')  // Assuming credits are integers
   ],
   validate,
   getListings
@@ -42,7 +43,7 @@ router.get(
   authorizeRoles('seller'), // Only sellers can have listings to manage
   getMyListings //  controller function
 );
-router.post('/reverse-geocode', getCityFromCoords);
+router.post('/get-address-from-coords', getAddressFromCoords);
 router.get(
   '/:id',
   [
@@ -65,7 +66,7 @@ router.post(
     // body('availableCredits').optional().isString().trim().escape(),
     body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
     body('locationName').notEmpty().isString().trim().escape().withMessage('Location name is required.'), //  Required location name
-    body('category').notEmpty().withMessage('Category is required.'),
+    body('categories').isArray({ min: 1 }).withMessage('At least one category is required.'),
     body('description').notEmpty().withMessage('Description is required.').isLength({ min: 20, max: 2000 }).withMessage('Description must be between 20 and 2000 characters.'),
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.')
   ],
@@ -86,7 +87,7 @@ router.put(
     body('availableCredits').optional().isInt({ min: 0 }).withMessage('Available credits must be a non-negative integer.'),
     body('locationName').optional().isString().trim().escape().withMessage('Location name must be a string.'), // New: Optional location name
     body('adImageBase64').optional().isString().withMessage('Ad image must be a base64 string.'),
-    body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean.') // Allow seller to update availability
+    body('status').optional().isIn(['available', 'sold', 'expired', 'deactivated', 'pending']).withMessage('Invalid status provided.') // Allow seller to update availability
   ],
   validate,
   updateListing

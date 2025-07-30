@@ -1,8 +1,11 @@
+import { BackButton } from '@/components/shared/BackButton'
 import React from 'react'
 
 export default function PrivacyPolicyPage() {
   return (
     <>
+    <div className="container mx-auto py-12 px-4 max-w-3xl">
+     <BackButton />
         <div className="disclaimer">
             <strong>Last Updated: July 3, 2025.</strong><br/>
             will comtact and take review by a legal professional to ensure full compliance with Indian law.
@@ -28,6 +31,7 @@ export default function PrivacyPolicyPage() {
 
             <h2>6. Grievance Officer</h2>
             <p>In accordance with the Information Technology Act 2000, the name and contact details of the Grievance Officer are provided below: Varaprasad Kare, support@passitpal.com</p>
+            </div>
     </>
   )
 }

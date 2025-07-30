@@ -1,8 +1,10 @@
 import React from 'react'
-
+import { BackButton } from '@/components/shared/BackButton';
 export default function TermsPage() {
   return (
     <>
+    <div className="container mx-auto py-12 px-4 max-w-3xl">
+    <BackButton />
      
         <div className="disclaimer">
             <strong>Last Updated: July 3, 2025.</strong><br/>
@@ -30,6 +32,7 @@ export default function TermsPage() {
 
 <h2>6. Governing Law and Jurisdiction</h2>
 <p>These Terms shall be governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in Bengaluru, Karnataka.</p>
+</div>
     </>
   )
 }

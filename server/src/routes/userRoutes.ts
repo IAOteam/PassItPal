@@ -3,10 +3,6 @@ import {
   getMyProfile, 
   updateMyProfile, 
   getUserProfileById,
-  getAllUsers, 
-  blockUser ,
-  getMe, 
-  updateMe,
   switchUserRole,
   addSavedListing, 
   removeSavedListing,
@@ -15,28 +11,29 @@ import {
 import { protect,authorizeRoles  } from '../middleware/authMiddleware';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validationMiddleware';
+import { getAllUsers } from '@/controllers/adminController';
 
 
 const router = Router();
 // @route   GET /api/users/me
 // @desc    Get current authenticated user's profile
 // @access  Private
-router.get('/me', protect, getMe);
+// router.get('/me', protect, getMe);
 
 // @route   PUT /api/users/me
 // @desc    Update current authenticated user's profile
 // @access  Private
-router.put('/me', 
-  protect,
-  [ // keeping existing validation rules for profile update
-    body('username').optional().isLength({ min: 3 }).trim().escape(),
-    body('mobileNumber').optional().isMobilePhone('any', { strictMode: false }), // made strictMode false for more flexibility
-    body('city').optional().notEmpty(),
-    // ... other validation rules for profile update in future 
-  ],
-  validate,
-  updateMe
-); 
+// router.put('/me', 
+//   protect,
+//   [ // keeping existing validation rules for profile update
+//     body('username').optional().isLength({ min: 3 }).trim().escape(),
+//     body('mobileNumber').optional().isMobilePhone('any', { strictMode: false }), // made strictMode false for more flexibility
+//     body('city').optional().notEmpty(),
+//     // ... other validation rules for profile update in future 
+//   ],
+//   validate,
+//   updateMe
+// ); 
 
 router.post(
   '/me/request-role-change',
@@ -48,33 +45,37 @@ router.post(
   switchUserRole
 );
 
-router.post('/me/saved/:listingId', protect, addSavedListing);
-router.delete('/me/saved/:listingId', protect, removeSavedListing);
+router.post('/me/saved/:listingId', protect, [param('listingId').isMongoId()], validate, addSavedListing);
+
+
+router.delete('/me/saved/:listingId', protect, [param('listingId').isMongoId()], validate, removeSavedListing);
+
 
 // @route   GET /api/users/all
 // @desc    Get all users (Admin only)
 // @access  Private (Admin)
-router.get(
-  '/all',
-  protect,
-  authorizeRoles('admin'),
-  getAllUsers
+// router.get(
+//   '/all',
+//   protect,
+//   authorizeRoles('admin'),
+//   getAllUsers
   
-);
+// );
 // @route   PUT /api/users/block/:id
 // @desc    Block/Unblock a user (Admin only)
 // @access  Private (Admin)
-router.put(
-  '/block/:id',
-  protect,
-  authorizeRoles('admin'),
-  [
-    param('id').isMongoId().withMessage('Invalid user ID format.'),
-    body('isBlocked').isBoolean().withMessage('isBlocked must be a boolean.')
-  ],
-  validate,
-  blockUser
-);
+// router.put(
+//   '/block/:id',
+//   protect,
+//   authorizeRoles('admin'),
+//   [
+//     param('id').isMongoId().withMessage('Invalid user ID format.'),
+//     body('isBlocked').isBoolean().withMessage('isBlocked must be a boolean.')
+//   ],
+//   validate,
+//   blockUser
+// );
+
 // Public route to view any user's basic profile
 router.get(
   '/profile/:id',
@@ -103,4 +104,5 @@ router.put(
   updateMyProfile
 );
 router.get('/me/profile/populated', protect, getMyPopulatedProfile);
+
 export default router;

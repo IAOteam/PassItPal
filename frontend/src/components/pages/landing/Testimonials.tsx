@@ -12,7 +12,7 @@ const testimonials = [
     role: "Seller",
     city: "Bengaluru",
     rating: 5,
-    imageUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=2561&auto=format&fit=crop"
+    imageUrl: "https://placehold.co/100x100/fecaca/991b1b?text=PS"
   },
   {
     quote: "I found an amazing deal on a 6-month yoga pass that I couldn't find anywhere else. The 'Scam Shield' feature made me feel secure throughout the process.",
@@ -20,7 +20,7 @@ const testimonials = [
     role: "Buyer",
     city: "Mumbai",
     rating: 5,
-    imageUrl: "https://images.unsplash.com/photo-1624561172888-ac93c690e10c?q=80&w=2592&auto=format&fit=crop"
+    imageUrl: "https://placehold.co/100x100/c7d2fe/1e3a8a?text=RM"
   },
   {
     quote: "The direct chat with the seller was super helpful. I could ask all my questions before committing. The whole experience was smooth and transparent.",
@@ -28,7 +28,7 @@ const testimonials = [
     role: "Buyer",
     city: "Delhi",
     rating: 4,
-    imageUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=2576&auto=format&fit=crop"
+    imageUrl: "https://placehold.co/100x100/bbf7d0/166534?text=AS"
   }
 ];
 

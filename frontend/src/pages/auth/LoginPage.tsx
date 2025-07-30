@@ -3,15 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+
 import toast from 'react-hot-toast';
 import { Eye, EyeOff } from 'lucide-react';
+import useAuthStore from '@/hooks/zustand/useAuthStore';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isAuthenticated, loading, error, clearError } = useAuth();
+  const { login, isAuthenticated, loading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {

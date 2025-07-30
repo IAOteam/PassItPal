@@ -106,8 +106,6 @@ const FeaturedContent: React.FC = () => {
   );
 };
 
-export default FeaturedContent;
-
 const LearMore = ({ link }: { link: string }) => {
   const navigate = useNavigate();
   return (
@@ -122,3 +120,5 @@ const LearMore = ({ link }: { link: string }) => {
     </div>
   );
 };
+
+export default FeaturedContent;

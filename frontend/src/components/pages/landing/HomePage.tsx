@@ -9,6 +9,7 @@ import HowItWorks from "./HowItWorks";
 import Testimonials from "./Testimonials";
 import Achievements from "./Achievements";
 import { Helmet } from 'react-helmet-async'; // Kept from HEAD for SEO
+import FAQ from "./FAQs";
 
 const HomePage: React.FC = () => {
   const categoryRef = useRef<HTMLDivElement | null>(null);
@@ -31,7 +32,8 @@ const HomePage: React.FC = () => {
       <TrendingListings />
       <Achievements />
       <HowItWorks />
-      <Testimonials />
+      {/* <Testimonials /> */}
+      <FAQ/>
     </div>
   );
 };

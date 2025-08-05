@@ -1,6 +1,12 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "installCommand": "npm install",
+  "buildCommand": "npm run build --workspaces",
+  "outputDirectory": "frontend/dist"
 }

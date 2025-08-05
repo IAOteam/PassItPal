@@ -56,8 +56,8 @@ jobs:
       - name: Build All Workspaces
         run: npm run build --workspaces # Build types and frontend
 
-      # - name: Run Frontend Tests
-      #   run: npm test --workspace=frontend
+      - name: Run Frontend Tests
+        run: npm test --workspace=frontend
 
       #  Run the tests. If this step fails, the workflow stops.
       # - name: Run Tests

@@ -14,5 +14,9 @@
   "devDependencies": {
     "shx": "^0.3.4",
     "typescript": "^5.4.5"
-  }
+  },
+  "engines": {
+  "node": ">=18",
+  "npm": ">=9"
+}
 }

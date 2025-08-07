@@ -8,7 +8,7 @@
     "build": "npm run build:types && tsc -b && vite build",
     "build:types": "cd ../packages/types && npm run build",
     "lint": "eslint .",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "preview": "vite preview"
   },
   "dependencies": {

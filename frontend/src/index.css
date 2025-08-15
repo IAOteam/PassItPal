@@ -11,7 +11,7 @@
   :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --foreground: oklch(0.151 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
@@ -44,7 +44,7 @@
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
+    --background: oklch(0 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
@@ -332,4 +332,18 @@
   body {
     @apply bg-background text-foreground;
   }
+  
 }
+
+.ant-timeline .ant-timeline-item-head{
+  background-color: rgba(0, 0, 0, 0) !important;
+  
+     }
+  .ant-timeline-item-tail{
+    color: var(--foreground) !important;
+  }
+
+  .ant-collapse-header-text,
+  .ant-collapse-expand-icon {
+    color: var(--foreground) !important;
+  }

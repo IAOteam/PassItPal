@@ -16,10 +16,10 @@ const FAQ = () => {
           <Collapse
             accordion
             bordered={false}
-            className="bg-transparent"
+            className="bg-transparent text-foreground"
             expandIconPosition="end"
           >
-            <Panel header="How do I list my item?" key="1">
+            <Panel header="How do I list my item?" key="1" >
               <p className="content-secondary">
                 Once your account is set to <b>"Seller"</b> mode, click on{" "}
                 <b>"List a Pass"</b> in the navigation bar and fill out the

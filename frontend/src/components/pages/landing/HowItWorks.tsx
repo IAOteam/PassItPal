@@ -48,30 +48,30 @@ const HowItWorks: React.FC = () => {
   const { name, quote, role } = testimonials[index];
 
   return (
-    <section className="bg-white dark:bg-neutral-900 py-16 md:py-24 pagePadding">
+    <section className="bg-transparent dark:bg-neutral-900 py-16 md:py-24 pagePadding">
       {/* GRID SPLIT */}
       <div className="grid grid-cols-1 md:grid-cols-2 max-w-6xl mx-auto gap-14 items-center">
         {/* LEFT: How it Works */}
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold dark:text-white mb-3">
+          <h2 className="text-3xl md:text-4xl font-bold dark:text-white mb-3 text-foreground">
             Simple, Safe, Secure
           </h2>
           <p className="content-secondary text-lg mb-6 w-3/4">
             Exchange passes instantly—no hassle, total peace of mind. Here’s how it works:
           </p>
           <Timeline
-            className="ml-4"
+            className="ml-4 "
             
             items={[
               {
                 dot: (
-                  <span className="flex items-center justify-center h-9 w-9 rounded-full bg-violet-100 dark:bg-violet-600 translate-y-1">
-                    <SearchOutlined className="text-violet-600 dark:text-white text-2xl" />
+                  <span className="flex items-center justify-center h-9 w-9 rounded-full bg-background dark:bg-violet-600 translate-y-1">
+                    <SearchOutlined className="text-violet-600 dark:text-white text-2xl " />
                   </span>
                 ),
                 children: (
                   <div className="ml-3 h-16">
-                    <div className="text-xl font-semibold mb-0.5">
+                    <div className="text-xl font-semibold mb-0.5 text-foreground">
                       Find/List Pass
                     </div>
                     <div className="content-secondary text-sm">
@@ -88,7 +88,7 @@ const HowItWorks: React.FC = () => {
                 ),
                 children: (
                   <div className="ml-3 h-16">
-                    <div className="text-lg font-semibold mb-0.5">
+                    <div className="text-lg font-semibold mb-0.5 text-foreground">
                       Connect & Secure Transaction
                     </div>
                     <div className="content-secondary text-sm">
@@ -105,7 +105,7 @@ const HowItWorks: React.FC = () => {
                 ),
                 children: (
                   <div className="ml-3">
-                    <div className="text-lg font-semibold mb-0.5">
+                    <div className="text-lg font-semibold mb-0.5 text-foreground">
                       Verify & Enjoy
                     </div>
                     <div className="content-secondary text-sm">
@@ -117,7 +117,7 @@ const HowItWorks: React.FC = () => {
             ]}
             // Use Ant’s timeline but style as super minimal
             style={{
-              background: "none",
+              background: "transparent",
               paddingLeft: 0,
               marginTop: 24,
             }}

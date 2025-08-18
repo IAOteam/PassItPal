@@ -126,8 +126,25 @@ app.use('/api/categories', categoryRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.CLIENT_URL || "http://localhost:5173",
+        "https://www.passitpal.com",
+        "https://passitpal.com"
+      ];
+
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.includes(origin) || 
+        /\.vercel\.app$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"), false);
+    },
+    methods: ["GET", "POST"],
     credentials: true
   }
 });

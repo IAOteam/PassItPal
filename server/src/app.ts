@@ -78,11 +78,26 @@ app.use(helmet()); // Add Helmet to set various HTTP headers for security
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
-  origin: [ process.env.CLIENT_URL || 'http://localhost:5173',
-  'https://www.passitpal.com',                        
-  'https://passitpal.com',  ],    
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  credentials: true 
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "https://www.passitpal.com",
+      "https://passitpal.com"
+    ];
+
+    if (!origin) return callback(null, true); // allow mobile apps, curl, etc.
+
+    if (
+      allowedOrigins.includes(origin) || 
+      /\.vercel\.app$/.test(origin)   // ✅ regex test works here
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"), false);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  credentials: true
 }));
 
 app.use(passport.initialize());
@@ -111,8 +126,25 @@ app.use('/api/categories', categoryRoutes);
 // Socket.IO setup
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.CLIENT_URL || "http://localhost:5173",
+        "https://www.passitpal.com",
+        "https://passitpal.com"
+      ];
+
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.includes(origin) || 
+        /\.vercel\.app$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"), false);
+    },
+    methods: ["GET", "POST"],
     credentials: true
   }
 });

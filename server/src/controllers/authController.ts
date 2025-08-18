@@ -186,7 +186,7 @@ export const googleOAuthCallbackController = async (req: Request, res: Response)
             path: '/' 
         });
 
-        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
         const queryParams = new URLSearchParams({
             token: accessToken,
             user: JSON.stringify(user)
@@ -196,6 +196,8 @@ export const googleOAuthCallbackController = async (req: Request, res: Response)
 
     } catch (error: any) {
         console.error('[Google Callback] Error processing Google OAuth callback:', error);
-        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_callback_processing_error`);
+        // Use the request origin for the error redirect as well
+        const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+        res.redirect(`${clientUrl}/login?error=google_callback_processing_error`);
     }
 };

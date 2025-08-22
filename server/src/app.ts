@@ -39,6 +39,8 @@ import './config/passport-setup';
 // Cloudinary configuration
 import { v2 as cloudinary } from 'cloudinary';
 import { NotificationService } from './services/notification.service';
+import { createAdapter } from '@socket.io/redis-adapter';
+import IORedis from 'ioredis';
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
   api_key: process.env.CLOUDINARY_API_KEY!,
@@ -149,7 +151,13 @@ export const io = new Server(httpServer, {
   }
 });
 
-const connectedUsers = new Map<string, string>();
+// Initialize Redis clients for the socket adapter
+const pubClient = new IORedis(process.env.REDIS_URL!);
+const subClient = pubClient.duplicate();
+// Use the Redis adapter for socket.io
+io.adapter(createAdapter(pubClient, subClient));
+
+// const connectedUsers = new Map<string, string>();
 
 io.use(async (socket: Socket, next) => {
   try {
@@ -178,7 +186,7 @@ io.on('connection', (socket: Socket) => {
   }
   console.log(`Socket connected: ${socket.id} for user: ${user.email}`);
 
-  connectedUsers.set(user._id.toString(), socket.id);
+  // connectedUsers.set(user._id.toString(), socket.id);
   socket.join(user._id.toString()); // Join a room named after the user's ID
 
   socket.on('sendMessage', async ({ conversationId, text, recipientId , imageBase64 }) => {
@@ -227,8 +235,8 @@ io.on('connection', (socket: Socket) => {
       const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username profilePictureUrl');
 
 
-      conversation.participants.forEach(participantId => {
-        io.to(participantId.user.toString()).emit('receiveMessage', populatedMessage);
+      conversation.participants.forEach(participant => {
+        io.to(participant.user.toString()).emit('receiveMessage', populatedMessage);
       });
 
       /*if (recipientId && recipientId !== sender._id.toString()) {
@@ -243,7 +251,8 @@ io.on('connection', (socket: Socket) => {
 
       // --- OFFLINE NOTIFICATION LOGIC ---
       // Check if the recipient is offline
-      const isRecipientOnline = connectedUsers.has(recipientId);
+      const recipientSocket = await io.in(recipientId).fetchSockets();
+      const isRecipientOnline = recipientSocket.length > 0;
 
       if (!isRecipientOnline) {
         // console.log(`[Queue] Recipient ${recipientId} is offline. Scheduling an email notification.`);
@@ -302,7 +311,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {
     if (user && user.email) {
       // console.log(`Socket disconnected: ${socket.id} for user: ${user.email}`);
-      connectedUsers.delete(user._id.toString());
+      // connectedUsers.delete(user._id.toString());
     }
   });
 

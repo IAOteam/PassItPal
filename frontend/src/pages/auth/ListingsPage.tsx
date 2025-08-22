@@ -26,21 +26,17 @@ interface ListingsResponse {
   totalCount: number;
 }
 
-// Define a precise type for our query key array.
 type ListingsQueryKey = readonly [string, Record<string, string | null>];
 
-// Define the data-fetching function with correct, explicit types.
 const fetchListings = async ({ queryKey }: QueryFunctionContext<ListingsQueryKey>): Promise<ListingsResponse> => {
     const [_key, filters] = queryKey;
     
-    // This ensures we only add non-empty filters to the URL, fixing the URLSearchParams argument error.
     const validFilters: Record<string, string> = {};
     for (const [key, value] of Object.entries(filters)) {
         if (value) {
             validFilters[key] = value;
         }
     }
-
     const params = new URLSearchParams(validFilters);
     const { data } = await api.get(`/listings?${params.toString()}`);
     return data;
@@ -62,11 +58,11 @@ const NoLocalListings: React.FC<{ location: string; onClear: () => void }> = ({ 
         </Button>
     </div>
 );
+
 const ListingsPage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     
-    // State is only for filter inputs, not for the data itself.
     const [selectedListing, setSelectedListing] = useState<IListing | null>(null);
     const [searchTerm, setSearchTerm] = useState(searchParams.get('cultPassType') || '');
     const [locationTerm, setLocationTerm] = useState(searchParams.get('locationName') || '');
@@ -78,7 +74,6 @@ const ListingsPage: React.FC = () => {
     const [directLinkListing, setDirectLinkListing] = useState<IListing | null>(null);
     const [category, setCategory] = useState(searchParams.get('category') || '');
     const [city, setCity] = useState(searchParams.get('city') || '');
-
     
     const { ready, value, suggestions, setValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
 
@@ -96,21 +91,19 @@ const ListingsPage: React.FC = () => {
     };
 
     useEffect(() => {
-    const listingIdFromUrl = searchParams.get('listingId');
-    if (listingIdFromUrl) {
-      // Fetch this specific listing's data to show in the modal
-      api.get(`/listings/${listingIdFromUrl}`)
-        .then(response => {
-          setDirectLinkListing(response.data);
-        })
-        .catch(error => {
-          console.error("Failed to fetch direct link listing:", error);
-          toast.error("Could not load the requested listing.");
-        });
-    }
-  }, [searchParams]);
+        const listingIdFromUrl = searchParams.get('listingId');
+        if (listingIdFromUrl) {
+            api.get(`/listings/${listingIdFromUrl}`)
+                .then(response => {
+                    setDirectLinkListing(response.data);
+                })
+                .catch(error => {
+                    console.error("Failed to fetch direct link listing:", error);
+                    toast.error("Could not load the requested listing.");
+                });
+        }
+    }, [searchParams]);
 
-    //  This is the fully-typed and corrected useQuery hook.
     const { data, isLoading, isError, error } = useQuery<ListingsResponse, Error, ListingsResponse, ListingsQueryKey>({
         queryKey: ['listings', { 
             locationName: searchParams.get('locationName'),
@@ -123,10 +116,9 @@ const ListingsPage: React.FC = () => {
             category: searchParams.get('category'),
         }],
         queryFn: fetchListings,
-        placeholderData: keepPreviousData, // Correct property name for keeping data during loads.
+        placeholderData: keepPreviousData,
     });
 
-    // Filter handlers now simply update the URL. useQuery does the rest.
     const handleApply = () => {
         const newParams = new URLSearchParams();
         if (searchTerm) newParams.set('cultPassType', searchTerm);
@@ -134,7 +126,7 @@ const ListingsPage: React.FC = () => {
         if (city) newParams.set('city', city);
         if (category) newParams.set('category', category);
         if (sortBy) newParams.set('sortBy', sortBy);
-        if (priceRange[0] > 0) newParams.set('minPrice', priceRange[0].toString());
+        if (priceRange[0] > 0) newParams.set('minPrice', priceRange.toString());
         if (priceRange[1] < 50000) newParams.set('maxPrice', priceRange[1].toString());
         newParams.set('page', '1');
         setSearchParams(newParams);
@@ -158,13 +150,11 @@ const ListingsPage: React.FC = () => {
         });
     };
     
-    // Safely destructure data. The `|| {}` provides a safe fallback.
     const { promotedListings = [], regularListings = [], ads = [], totalPages = 0, currentPage = 1 } = data || {};
 
     const displayItems = useMemo<DisplayItem[]>(() => {
         const items: DisplayItem[] = [];
         let adIdx = 0;
-        // The "spread" errors are gone because TypeScript now knows `regularListings` is an array of IListing objects.
         regularListings.forEach((listing, idx) => {
             items.push({ ...listing, type: 'listing' });
             if ((idx + 1) % 5 === 0 && adIdx < ads.length) {
@@ -180,150 +170,190 @@ const ListingsPage: React.FC = () => {
     const isInitialLocationSearchEmpty = !!locationFilter && !hasOtherFilters && !isLoading && regularListings.length === 0 && promotedListings.length === 0;
 
     return (
-        <div className="min-h-screen bg-neutral-200 dark:bg-neutral-800 py-8 px-4 md:px-8 lg:px-16 mt-10">
+        <div className="min-h-screen">
             <Toaster position="top-center" />
     
-            <header className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold dark:text-white">Find Your Next Pass</h1>
+            {/* Header */}
+            <header className="text-center  px-4 md:px-8 lg:px-16 mt-10 py-7">
+                <h1 className="text-2xl md:text-3xl font-bold dark:text-white ">Find Your Next Pass</h1>
                 <p className="text-lg text-neutral-700 dark:text-neutral-300">
                     {searchParams.get('locationName') ? `Showing for: ${searchParams.get('locationName')}` : 'Browse all available passes.'}
                 </p>
             </header>
-    
-            {/* Filters UI */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Input
-                    placeholder="Pass name…"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="rounded-full dark:text-white"
-                />
-                <div className="relative">
-                    <Input
-                        placeholder="Location…"
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        disabled={!ready}
-                        className="rounded-full dark:text-white"
-                    />
-                    {suggestions.status === 'OK' && (
-                        <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg">
-                            {suggestions.data.map(s => (
-                                <li key={s.place_id} onClick={() => handleLocationSelect(s.description)} className="p-3 hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer text-black dark:text-white">
-                                    {s.description}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-                <Select value={city} onValueChange={setCity}>
-                <SelectTrigger className="rounded-full dark:text-white">
-                    <SelectValue placeholder="City…" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
-                    <SelectItem value="Bangalore">Bangalore</SelectItem>
-                    <SelectItem value="Mumbai">Mumbai</SelectItem>
-                    <SelectItem value="Delhi">Delhi</SelectItem>
-                    {/* Add your cities here */}
-                </SelectContent>
-                </Select>
 
-                <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="rounded-full dark:text-white">
-                    <SelectValue placeholder="Category…" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
-                    <SelectItem value="Gym">Gym</SelectItem>
-                    <SelectItem value="Swimming">Swimming</SelectItem>
-                    <SelectItem value="Yoga">Yoga</SelectItem>
-                    {/* Add your categories here */}
-                </SelectContent>
-                </Select>
+            {/* Main Content Layout */}
+            <div className="flex h-[calc(100vh-100px)]">
+                {/* Filters Sidebar - Fixed, Non-scrolling */}
+                <aside className="w-80 flex-shrink-0  px-6 ">
+                    
+                    <div className="">
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">Pass Name</label>
+                            <Input
+                                placeholder="Pass name…"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full"
+                            />
+                        </div>
 
-                <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="rounded-full dark:text-white">
-                        <SelectValue placeholder="Sort by…" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-neutral-800 text-black dark:text-white">
-                        <SelectItem value="createdAt_desc">Newest First</SelectItem>
-                        <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                        <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                        <SelectItem value="expiry_desc">Longest Expiry</SelectItem>
-                        <SelectItem value="createdAt_asc">Oldest First</SelectItem>
-                    </SelectContent>
-                </Select>
-                <div className="flex gap-2">
-                    <Button className="flex-1 rounded-full bg-blue-300 dark:bg-blue-600" onClick={handleApply}>Apply</Button>
-                    <Button className="flex-1 rounded-full bg-blue-300 dark:bg-blue-600" onClick={handleClear}>Clear</Button>
-                </div>
-            </div>
-            <div className="mb-6">
-                <DualRangeSlider value={priceRange} onValueChange={setPriceRange} min={0} max={50000} step={500} />
-            </div>
-    
-            {/* Listings Section */}
-            {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {Array(8).fill(0).map((_, i) => <ListingCardSkeleton key={i} />)}
-                </div>
-            ) : isError ? (
-                //  Render the error.message property, which is a ReactNode.
-                <div className="text-center text-red-600 py-10">{error.message}</div>
-            ) : (
-                 <>
-                    {/* Conditional rendering for the new "no local listings" message */}
-                    {isInitialLocationSearchEmpty ? (
-                        <NoLocalListings location={locationFilter} onClear={handleClear} />
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">Location</label>
+                            <div className="relative">
+                                <Input
+                                    placeholder="Location…"
+                                    value={value}
+                                    onChange={(e) => setValue(e.target.value)}
+                                    disabled={!ready}
+                                    className="w-full"
+                                />
+                                {suggestions.status === 'OK' && (
+                                    <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                                        {suggestions.data.map(s => (
+                                            <li key={s.place_id} onClick={() => handleLocationSelect(s.description)} className="p-3 hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer text-black dark:text-white">
+                                                {s.description}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">City</label>
+                            <Select value={city} onValueChange={setCity}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="City…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Bangalore">Bangalore</SelectItem>
+                                    <SelectItem value="Mumbai">Mumbai</SelectItem>
+                                    <SelectItem value="Delhi">Delhi</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">Category</label>
+                            <Select value={category} onValueChange={setCategory}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Category…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Gym">Gym</SelectItem>
+                                    <SelectItem value="Swimming">Swimming</SelectItem>
+                                    <SelectItem value="Yoga">Yoga</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">Sort By</label>
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Sort by…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="createdAt_desc">Newest First</SelectItem>
+                                    <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                                    <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                                    <SelectItem value="expiry_desc">Longest Expiry</SelectItem>
+                                    <SelectItem value="createdAt_asc">Oldest First</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2 dark:text-white">Price Range</label>
+                            <DualRangeSlider 
+                                value={priceRange} 
+                                onValueChange={setPriceRange} 
+                                min={0} 
+                                max={50000} 
+                                step={500} 
+                                className="mb-2"
+                            />
+                            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                                <span>₹{priceRange[0]}</span>
+                                <span>₹{priceRange[1]}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-4">
+                            <Button className="flex-1" onClick={handleApply}>Apply</Button>
+                            <Button variant="outline" className="flex-1" onClick={handleClear}>Clear</Button>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Passes Section - Scrollable */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {Array(8).fill(0).map((_, i) => <ListingCardSkeleton key={i} />)}
+                        </div>
+                    ) : isError ? (
+                        <div className="text-center text-red-600 py-10">{error.message}</div>
                     ) : (
                         <>
-                            {promotedListings.length > 0 && (
-                                <section className="mb-8">
-                                    <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Featured Passes</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                        {promotedListings.map((l) => (
-                                            <ListingCard key={l._id} listing={l} onClick={() => setSelectedListing(l)} />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-                            <section>
-                                {(displayItems.length > 0 || promotedListings.length > 0) && <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">All Passes</h2>}
-                                {displayItems.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                        {displayItems.map((item) =>
-                                            item.type === 'listing' ? (
-                                                <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />
-                                            ) : (
-                                                <AdCard key={item._id} ad={item} />
-                                            )
+                            {isInitialLocationSearchEmpty ? (
+                                <NoLocalListings location={locationFilter} onClear={handleClear} />
+                            ) : (
+                                <>
+                                    {promotedListings.length > 0 && (
+                                        <section className="mb-8">
+                                            <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Featured Passes</h2>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                {promotedListings.map((l) => (
+                                                    <ListingCard key={l._id} listing={l} onClick={() => setSelectedListing(l)} />
+                                                ))}
+                                            </div>
+                                        </section>
+                                    )}
+                                    
+                                    <section>
+                                        {(displayItems.length > 0 || promotedListings.length > 0) && (
+                                            <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">All Passes</h2>
                                         )}
-                                    </div>
-                                ) : !isInitialLocationSearchEmpty && (
-                                    <p className="text-center py-10 text-gray-500 dark:text-gray-400">No listings found matching your criteria.</p>
-                                )}
-                            </section>
+                                        {displayItems.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                {displayItems.map((item) =>
+                                                    item.type === 'listing' ? (
+                                                        <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />
+                                                    ) : (
+                                                        <AdCard key={item._id} ad={item} />
+                                                    )
+                                                )}
+                                            </div>
+                                        ) : !isInitialLocationSearchEmpty && (
+                                            <p className="text-center py-10 text-gray-500 dark:text-gray-400">No listings found matching your criteria.</p>
+                                        )}
+                                    </section>
+                                </>
+                            )}
+                            
+                            {totalPages > 1 && (
+                                <div className="pt-8">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
+                                </div>
+                            )}
                         </>
                     )}
-                    {totalPages > 1 && (
-                      <div className="pt-8">
-                          <Pagination
-                              currentPage={currentPage}
-                              totalPages={totalPages}
-                              onPageChange={handlePageChange}
-                          />
-                      </div>
-                    )}
-                </>
-            )}
+                </main>
+            </div>
+
             <ListingDetailModal 
-          listing={selectedListing || directLinkListing} 
-          onClose={() => {
-            setSelectedListing(null);
-            setDirectLinkListing(null);
-            // Optional: remove the query param from URL without reloading
-            navigate('/listings', { replace: true });
-          }} 
-        />
+                listing={selectedListing || directLinkListing} 
+                onClose={() => {
+                    setSelectedListing(null);
+                    setDirectLinkListing(null);
+                    navigate('/listings', { replace: true });
+                }} 
+            />
         </div>
     );
 };

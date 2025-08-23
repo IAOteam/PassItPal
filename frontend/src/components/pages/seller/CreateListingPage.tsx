@@ -262,8 +262,11 @@ const CreateListingPage: React.FC = () => {
     ? Math.round(((parseFloat(originalPrice) - parseFloat(askingPrice)) / parseFloat(originalPrice)) * 100)
     : 0;
 
+  const formContainerClass = showPreview ? "flex-1" : "w-full";
+  const mainContainerClass = showPreview ? "flex flex-col lg:flex-row gap-8" : "flex flex-col gap-8";
+
   return (
-    <> 
+    <React.Fragment>
       <ListingLimitModal 
         isOpen={isLimitModalOpen}
         onClose={() => setIsLimitModalOpen(false)}
@@ -286,8 +289,8 @@ const CreateListingPage: React.FC = () => {
           )}
         </div>
         
-        <div className={flex flex-col ${showPreview ? 'lg:flex-row' : ''} gap-8}>
-          <div className={showPreview ? "flex-1" : "w-full"}>
+        <div className={mainContainerClass}>
+          <div className={formContainerClass}>
             <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
               
               <div>
@@ -425,11 +428,7 @@ const CreateListingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewMode('seller')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        previewMode === 'seller'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'
-                      }`}
+                      className={previewMode === 'seller' ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'}
                     >
                       <User className="h-4 w-4 inline mr-1" />
                       Seller
@@ -437,11 +436,7 @@ const CreateListingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewMode('buyer')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        previewMode === 'buyer'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'
-                      }`}
+                      className={previewMode === 'buyer' ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'}
                     >
                       <ShoppingCart className="h-4 w-4 inline mr-1" />
                       Buyer
@@ -569,7 +564,7 @@ const CreateListingPage: React.FC = () => {
           )}
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 

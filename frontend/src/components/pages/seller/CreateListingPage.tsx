@@ -69,7 +69,11 @@ const CreateListingPage: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-  const { ready, value: locationValue, suggestions: { status, data: locationData }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
+  // Fix the usePlacesAutocomplete destructuring
+  const placesAutocomplete = usePlacesAutocomplete({ debounce: 300 });
+  const { ready, value: locationValue, setValue: setLocationValue, clearSuggestions } = placesAutocomplete;
+  const { status, data: locationData } = placesAutocomplete.suggestions;
+  
   const [markerPosition, setMarkerPosition] = useState(defaultCenter);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
@@ -265,6 +269,15 @@ const CreateListingPage: React.FC = () => {
   const formContainerClass = showPreview ? "flex-1" : "w-full";
   const mainContainerClass = showPreview ? "flex flex-col lg:flex-row gap-8" : "flex flex-col gap-8";
 
+  // Fix the button classes - use separate variables
+  const sellerButtonClass = previewMode === 'seller' 
+    ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' 
+    : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300';
+
+  const buyerButtonClass = previewMode === 'buyer' 
+    ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' 
+    : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300';
+
   return (
     <React.Fragment>
       <ListingLimitModal 
@@ -428,7 +441,7 @@ const CreateListingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewMode('seller')}
-                      className={previewMode === 'seller' ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'}
+                      className={sellerButtonClass}
                     >
                       <User className="h-4 w-4 inline mr-1" />
                       Seller
@@ -436,7 +449,7 @@ const CreateListingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewMode('buyer')}
-                      className={previewMode === 'buyer' ? 'px-3 py-1 rounded-md text-sm font-medium bg-primary text-white' : 'px-3 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'}
+                      className={buyerButtonClass}
                     >
                       <ShoppingCart className="h-4 w-4 inline mr-1" />
                       Buyer

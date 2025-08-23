@@ -244,50 +244,35 @@ const CreateListingPage: React.FC = () => {
       </Card>
 
        {/* Right Column - Live Preview */}
-        <Card className="shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Live Preview</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={viewMode === "buyer" ? "default" : "outline"}
-                onClick={() => setViewMode("buyer")}
-              >
-                Buyer View
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "seller" ? "default" : "outline"}
-                onClick={() => setViewMode("seller")}
-              >
-                Seller View
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Submit Button */}
-            <div className="flex justify-end mt-6">
-              <button
-                type="button"
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-                disabled={createListingMutation.isPending}
-                onClick={() => { /* handle preview action if needed */ }}
-              >
-                {createListingMutation.isPending
-                  ? "Submitting..."
-                  : "Create Listing"}
-              </button>
-            </div>
-
-            {/* Error Message */}
-            {createListingMutation.isError && (
-              <p className="text-red-500 text-sm mt-2">
-                {String(createListingMutation.error)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Live Preview</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={viewMode === "buyer" ? "default" : "outline"}
+              onClick={() => setViewMode("buyer")}
+            >
+              Buyer View
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "seller" ? "default" : "outline"}
+              onClick={() => setViewMode("seller")}
+            >
+              Seller View
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Error Message */}
+          {createListingMutation.isError && (
+            <p className="text-red-500 text-sm mt-2">
+              {String(createListingMutation.error)}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

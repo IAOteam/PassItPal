@@ -37,8 +37,8 @@ const fetchCategories = async (): Promise<Category[]> => {
 };
 
 const createNewCategory = async (name: string): Promise<Category> => {
-    const { data } = await api.post('/categories', { name });
-    return data;
+  const { data } = await api.post('/categories', { name });
+  return data;
 };
 
 const mapContainerStyle = {
@@ -135,23 +135,21 @@ const CreateListingPage: React.FC = () => {
   });
   
   const createListingMutation = useMutation({
-      mutationFn: (listingData: any) => api.post('/listings', listingData),
-      onSuccess: () => {
-          toast.success("Listing created successfully!");
-          navigate('/dashboard');
-      },
-      onError: (error: any) => {
-          // CATCH the specific 403 error for listing limits
-          if (error.response?.status === 403) {
-              setLimitModalMessage(error.response.data.message);
-              setIsLimitModalOpen(true);
-          } else {
-              toast.error(error.response?.data?.message || 'An unexpected error occurred.');
-          }
+    mutationFn: (listingData: any) => api.post('/listings', listingData),
+    onSuccess: () => {
+      toast.success("Listing created successfully!");
+      navigate('/dashboard');
+    },
+    onError: (error: any) => {
+      // CATCH the specific 403 error for listing limits
+      if (error.response?.status === 403) {
+        setLimitModalMessage(error.response.data.message);
+        setIsLimitModalOpen(true);
+      } else {
+        toast.error(error.response?.data?.message || 'An unexpected error occurred.');
       }
+    }
   });
-
-  // --- Handlers ---
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,36 +166,34 @@ const CreateListingPage: React.FC = () => {
     setLocationValue(address, false);
     clearSuggestions();
     try {
-        const results = await getGeocode({ address });
-        const { lat, lng } = await getLatLng(results[0]);
-        const newPosition = { lat, lng };
-        setMapCenter(newPosition);
-        setMarkerPosition(newPosition); // Directly set the marker position
-        // Pan the map to the new location
-        if (mapRef) {
-          mapRef.panTo(newPosition);
-        }
+      const results = await getGeocode({ address });
+      const { lat, lng } = await getLatLng(results[0]);
+      const newPosition = { lat, lng };
+      setMapCenter(newPosition);
+      setMarkerPosition(newPosition);
+      if (mapRef) {
+        mapRef.panTo(newPosition);
+      }
     } catch (error) {
-        console.error("Error geocoding address: ", error);
-        toast.error("Could not find that location on the map.");
+      console.error("Error geocoding address: ", error);
+      toast.error("Could not find that location on the map.");
     }
   }, [setLocationValue, clearSuggestions, mapRef]); 
 
   const handleMarkerDragEnd = useCallback(async (e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
-        const lat = e.latLng.lat();
-        const lng = e.latLng.lng();
-        setMarkerPosition({ lat, lng });
-        try {
-            // Call our new backend endpoint to get the address for these coordinates
-            const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
-            if (data.address) {
-                setLocationValue(data.address, false); // Update the text input
-            }
-        } catch (error) {
-            console.error("Reverse geocoding failed:", error);
-            toast.error("Could not get address for this location.");
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      try {
+        const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
+        if (data.address) {
+          setLocationValue(data.address, false);
         }
+      } catch (error) {
+        console.error("Reverse geocoding failed:", error);
+        toast.error("Could not get address for this location.");
+      }
     }
   }, [setLocationValue]);
 
@@ -207,22 +203,21 @@ const CreateListingPage: React.FC = () => {
 
   const handleMapIdle = useCallback(async () => {
     if (mapRef) {
-        const newCenter = mapRef.getCenter();
-        if (newCenter) {
-            const lat = newCenter.lat();
-            const lng = newCenter.lng();
-            setMarkerPosition({ lat, lng });
-            try {
-                // Call our new backend endpoint to get the address for these coordinates
-                const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
-                if (data.address) {
-                    setLocationValue(data.address, false); // Update the text input
-                }
-            } catch (error) {
-                console.error("Reverse geocoding failed:", error);
-                toast.error("Could not get address for this location.");
-            }
+      const newCenter = mapRef.getCenter();
+      if (newCenter) {
+        const lat = newCenter.lat();
+        const lng = newCenter.lng();
+        setMarkerPosition({ lat, lng });
+        try {
+          const { data } = await api.post('/listings/get-address-from-coords', { latitude: lat, longitude: lng });
+          if (data.address) {
+            setLocationValue(data.address, false);
+          }
+        } catch (error) {
+          console.error("Reverse geocoding failed:", error);
+          toast.error("Could not get address for this location.");
         }
+      }
     }
   }, [mapRef, setLocationValue]);
 
@@ -238,16 +233,16 @@ const CreateListingPage: React.FC = () => {
   };
   
   const handleCategoryCreation = () => {
-      if (categorySearch.trim() && !createCategoryMutation.isPending) {
-          createCategoryMutation.mutate(categorySearch);
-      }
+    if (categorySearch.trim() && !createCategoryMutation.isPending) {
+      createCategoryMutation.mutate(categorySearch);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategories.length === 0) {
-        toast.error("Please select at least one category.");
-        return;
+      toast.error("Please select at least one category.");
+      return;
     }
     
     createListingMutation.mutate({
@@ -278,7 +273,6 @@ const CreateListingPage: React.FC = () => {
 
   return (
     <> 
-      {/* RENDER the modal */}
       <ListingLimitModal 
         isOpen={isLimitModalOpen}
         onClose={() => setIsLimitModalOpen(false)}
@@ -315,7 +309,7 @@ const CreateListingPage: React.FC = () => {
                     <div className="text-center">
                       <ImagePlus className="mx-auto h-12 w-12 text-gray-400" />
                       <div className="mt-4 flex text-sm leading-6 text-primary">
-                        <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-dark ">
+                        <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-dark">
                           <span>Upload a file</span>
                           <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/png, image/jpeg, image/webp" required />
                         </label>
@@ -335,38 +329,38 @@ const CreateListingPage: React.FC = () => {
                 <div className="md:col-span-2 relative">
                   <Label htmlFor="category">Categories</Label>
                   <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md bg-white dark:bg-neutral-800">
-                      {selectedCategories.map(cat => (
-                          <div key={cat._id} className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-1 rounded-full">
-                              <span className="capitalize">{cat.name}</span>
-                              <button type="button" onClick={() => handleRemoveCategory(cat._id)} className="focus:outline-none">
-                                  <X className="h-3 w-3" />
-                              </button>
-                          </div>
-                      ))}
-                      <input
-                          id="category"
-                          type="text"
-                          value={categorySearch}
-                          onChange={(e) => setCategorySearch(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-                          placeholder={selectedCategories.length === 0 ? "Search or create categories..." : ""}
-                          className="flex-grow bg-transparent outline-none text-sm"
-                      />
+                    {selectedCategories.map(cat => (
+                      <div key={cat._id} className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-1 rounded-full">
+                        <span className="capitalize">{cat.name}</span>
+                        <button type="button" onClick={() => handleRemoveCategory(cat._id)} className="focus:outline-none">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <input
+                      id="category"
+                      type="text"
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                      placeholder={selectedCategories.length === 0 ? "Search or create categories..." : ""}
+                      className="flex-grow bg-transparent outline-none text-sm"
+                    />
                   </div>
                   {categorySearch && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-800 border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                          {categoriesLoading && <div className="p-2 text-xs text-gray-500">Loading...</div>}
-                          {filteredCategories.length > 0 && (
-                              filteredCategories.map(cat => (
-                                  <div key={cat._id} onClick={() => handleCategorySelect(cat)} className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-sm capitalize">
-                                      {cat.name}
-                                  </div>
-                              ))
-                          )}
-                          <div onClick={handleCategoryCreation} className="p-2 border-t text-blue-600 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-sm font-semibold flex items-center">
-                              {createCategoryMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : + Create "${categorySearch}"}
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-800 border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {categoriesLoading && <div className="p-2 text-xs text-gray-500">Loading...</div>}
+                      {filteredCategories.length > 0 && (
+                        filteredCategories.map(cat => (
+                          <div key={cat._id} onClick={() => handleCategorySelect(cat)} className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-sm capitalize">
+                            {cat.name}
                           </div>
+                        ))
+                      )}
+                      <div onClick={handleCategoryCreation} className="p-2 border-t text-blue-600 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer text-sm font-semibold flex items-center">
+                        {createCategoryMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : + Create "${categorySearch}"}
                       </div>
+                    </div>
                   )}
                 </div>
 
@@ -392,35 +386,34 @@ const CreateListingPage: React.FC = () => {
                   <Input id="availableCredits" type="number" value={availableCredits} onChange={(e) => setAvailableCredits(e.target.value)} placeholder="e.g., 50" />
                 </div>
                 <div className="md:col-span-2 relative">
-                    <Label htmlFor="locationName">Location / City</Label>
-                    <div className="relative">
+                  <Label htmlFor="locationName">Location / City</Label>
+                  <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        
                     <Input id="locationName" value={locationValue} onChange={(e) => setLocationValue(e.target.value)} disabled={!ready} placeholder="Start typing your address..." required className="pl-9"/>
+                  </div>
+                  {status === 'OK' && (
+                    <div className="relative">
+                      <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg">
+                        {locationData.map(suggestion => (
+                          <li key={suggestion.place_id} onClick={() => handleLocationSelect(suggestion.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer">
+                            {suggestion.description}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    {status === 'OK' && (
-                      <div className="relative">
-                        <ul className="absolute z-10 w-full bg-white dark:bg-neutral-800 border rounded-md mt-1 shadow-lg">
-                            {locationData.map(suggestion => (
-                                <li key={suggestion.place_id} onClick={() => handleLocationSelect(suggestion.description)} className="p-3 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer">
-                                    {suggestion.description}
-                                </li>
-                            ))}
-                        </ul>
-                        </div>
-                    )}
-                    <div className="mt-2">
-                      <GoogleMap
-                          mapContainerStyle={mapContainerStyle}
-                          center={isMapInteractive ? undefined : mapCenter} // Stop re-centering when user pans/zooms
-                          zoom={14}
-                          onLoad={onMapLoad}
-                          onIdle={handleMapIdle}
-                          onCenterChanged={() => setIsMapInteractive(true)} // User is interacting
-                      >
-                          <MarkerF position={markerPosition} draggable={true} onDragEnd={handleMarkerDragEnd} />
-                      </GoogleMap>
-                    </div>
+                  )}
+                  <div className="mt-2">
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={isMapInteractive ? undefined : mapCenter}
+                      zoom={14}
+                      onLoad={onMapLoad}
+                      onIdle={handleMapIdle}
+                      onCenterChanged={() => setIsMapInteractive(true)}
+                    >
+                      <MarkerF position={markerPosition} draggable={true} onDragEnd={handleMarkerDragEnd} />
+                    </GoogleMap>
+                  </div>
                 </div>
               </div>
             

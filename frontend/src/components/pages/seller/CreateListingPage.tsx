@@ -47,7 +47,6 @@ const mapContainerStyle = {
   borderRadius: '0.5rem',
 };
 
-// Default center (Bengaluru)
 const defaultCenter = {
   lat: 12.9716,
   lng: 77.5946,
@@ -57,7 +56,6 @@ const CreateListingPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- Form State ---
   const [cultPassType, setCultPassType] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [askingPrice, setAskingPrice] = useState('');
@@ -67,27 +65,22 @@ const CreateListingPage: React.FC = () => {
   const [adImageBase64, setAdImageBase64] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  // --- Preview State ---
   const [previewMode, setPreviewMode] = useState<'seller' | 'buyer'>('seller');
   const [showPreview, setShowPreview] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-  // --- Location State ---
   const { ready, value: locationValue, suggestions: { status, data: locationData }, setValue: setLocationValue, clearSuggestions } = usePlacesAutocomplete({ debounce: 300 });
   const [markerPosition, setMarkerPosition] = useState(defaultCenter);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [isMapInteractive, setIsMapInteractive] = useState(false);
 
-  // --- Category State ---
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   
-  // --- Modal State ---
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [limitModalMessage, setLimitModalMessage] = useState('');
 
-  // Check if user has started typing to show preview
   useEffect(() => {
     const hasContent = 
       cultPassType.trim() || 
@@ -141,7 +134,6 @@ const CreateListingPage: React.FC = () => {
       navigate('/dashboard');
     },
     onError: (error: any) => {
-      // CATCH the specific 403 error for listing limits
       if (error.response?.status === 403) {
         setLimitModalMessage(error.response.data.message);
         setIsLimitModalOpen(true);
@@ -266,7 +258,6 @@ const CreateListingPage: React.FC = () => {
       !selectedCategories.some((selected) => selected._id === cat._id)
   );
 
-  // Calculate savings percentage
   const savingsPercentage = originalPrice && askingPrice 
     ? Math.round(((parseFloat(originalPrice) - parseFloat(askingPrice)) / parseFloat(originalPrice)) * 100)
     : 0;
@@ -296,7 +287,6 @@ const CreateListingPage: React.FC = () => {
         </div>
         
         <div className={flex flex-col ${showPreview ? 'lg:flex-row' : ''} gap-8}>
-          {/* Form Section */}
           <div className={showPreview ? "flex-1" : "w-full"}>
             <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-lg shadow-md border">
               
@@ -423,7 +413,6 @@ const CreateListingPage: React.FC = () => {
             </form>
           </div>
 
-          {/* Live Preview Section - Only shown when toggled and user has interacted */}
           {showPreview && hasUserInteracted && (
             <div className="w-full lg:w-96">
               <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-md border sticky top-24">
@@ -461,7 +450,6 @@ const CreateListingPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Image Preview */}
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -474,7 +462,6 @@ const CreateListingPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Title */}
                   {cultPassType ? (
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                       {cultPassType}
@@ -483,7 +470,6 @@ const CreateListingPage: React.FC = () => {
                     <div className="h-6 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse"></div>
                   )}
 
-                  {/* Price Section */}
                   <div className="space-y-2">
                     {originalPrice && askingPrice && (
                       <div className="flex items-center gap-2">
@@ -507,9 +493,7 @@ const CreateListingPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Details Grid */}
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    {/* Expiry Date */}
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       {expiryDate ? (
@@ -519,7 +503,6 @@ const CreateListingPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Credits */}
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-gray-400" />
                       {availableCredits ? (
@@ -529,7 +512,6 @@ const CreateListingPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Location */}
                     <div className="flex items-center gap-2 col-span-2">
                       <MapPinIcon className="h-4 w-4 text-gray-400" />
                       {locationValue ? (
@@ -540,7 +522,6 @@ const CreateListingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Categories */}
                   {selectedCategories.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedCategories.map(cat => (
@@ -554,7 +535,6 @@ const CreateListingPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Description */}
                   {description ? (
                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
                       {description}
@@ -566,7 +546,6 @@ const CreateListingPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Action Button based on preview mode */}
                   <div className="pt-4">
                     {previewMode === 'buyer' ? (
                       <Button className="w-full" variant="default">
@@ -581,7 +560,6 @@ const CreateListingPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Preview Mode Indicator */}
                   <div className="text-xs text-center text-gray-500 dark:text-gray-400">
                     Previewing as: {previewMode === 'buyer' ? 'Potential Buyer' : 'Seller'}
                   </div>

@@ -82,7 +82,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col"
+      className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-neutral-100 dark:bg-neutral-900 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col w-72"
     >
       {/* Save Button */}
       <Button
@@ -110,25 +110,25 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
 
       {/* Details */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col justify-between items-start">
           <div className="flex-1">
             <Badge variant="secondary" className="text-neutral-700 dark:text-neutral-300">
               {displayCategory}
             </Badge>
-            <h3 className="truncate text-xl font-bold dark:text-white mt-1" title={listing.cultPassType}>
-              {listing.cultPassType}
+            <h3 className="truncate text-xl font-bold dark:text-white mt-1">
+              {listing.cultPassType.slice(0, 20)+(listing.cultPassType.length > 20 ? '...' : '')}
             </h3>
             <div className="mt-2 flex items-center text-xs font-medium text-gray-500 gap-1">
               <CalendarDays className="h-3 w-3" />
               <span>Expires: {new Date(listing.expiryDate).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="ml-4 text-right whitespace-nowrap">
-            <p className="line-through text-xs font-medium text-gray-500">
-              ₹{listing.originalPrice.toLocaleString('en-IN')}
-            </p>
+          <div className="text-right flex items-baseline gap-2">
             <p className="text-lg font-bold text-green-600 mt-1">
               ₹{listing.askingPrice.toLocaleString('en-IN')}
+            </p>
+            <p className="line-through text-xs font-medium text-gray-500">
+              ₹{listing.originalPrice.toLocaleString('en-IN')}
             </p>
           </div>
         </div>

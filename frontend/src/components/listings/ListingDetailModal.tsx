@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
-
 // UI & Map Components
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,6 @@ import { X, CalendarDays, MapPin, Star, Share2, Flag, Check, MessageCircle } fro
 import type { IListing } from '@passitpal/types';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
 
-
 interface ListingDetailModalProps {
   listing: IListing | null;
   onClose: () => void;
@@ -31,14 +29,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-
-  // ---  Map setup logic  ---
-
   const mapContainerStyle = {
     width: '100%',
-    height: '200px',
+    height: '220px',
     borderRadius: '0.5rem',
-  };
+  } as const;
 
   const handleContactSeller = async () => {
     if (!isAuthenticated || !user) {
@@ -47,16 +42,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
     }
 
     if (!listing || user._id === listing.seller._id) {
-      // Prevent user from contacting themselves
-
-      alert("You cannot contact yourself.");
+      alert('You cannot contact yourself.');
       return;
     }
     try {
       const conversationId = await getOrCreateConversation(listing.seller._id);
       navigate(`/messages/${conversationId}`);
     } catch (err: any) {
-      alert(err.message || "Could not start chat.");
+      alert(err.message || 'Could not start chat.');
     }
   };
 
@@ -71,141 +64,208 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
   const handleShare = () => {
     if (!listing) return;
     const listingUrl = `${window.location.origin}/listings?listingId=${listing._id}`;
-
-    // Use the modern clipboard API
-    navigator.clipboard.writeText(listingUrl).then(() => {
-      setIsCopied(true);
-      // Reset the "copied" state after 2 seconds
-
-      setTimeout(() => setIsCopied(false), 2000);
-    }).catch(err => {
-      console.error('Failed to copy text: ', err);
-      alert('Failed to copy link.');
-    });
+    navigator.clipboard
+      .writeText(listingUrl)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy link.');
+      });
   };
 
   if (!listing) return null;
 
-  const placeholderImage = `https://placehold.co/600x400/E7E7E7/6D6D6D?text=${encodeURIComponent(listing.cultPassType)}`;
+  const placeholderImage = `https://placehold.co/800x600/E7E7E7/6D6D6D?text=${encodeURIComponent(
+    listing.cultPassType
+  )}`;
 
   return (
     <>
       <Helmet>
         <title>{`${listing.cultPassType} in ${listing.city}`} | Passitpal</title>
-        <meta name="description" content={`Find a great deal on ${listing.cultPassType} for just ₹${listing.askingPrice}. Originally priced at ₹${listing.originalPrice}. Buy or sell securely on Passitpal.`} />
+        <meta
+          name="description"
+          content={`Find a great deal on ${listing.cultPassType} for just ₹${listing.askingPrice}. Originally priced at ₹${listing.originalPrice}. Buy or sell securely on Passitpal.`}
+        />
       </Helmet>
+
       <AnimatePresence>
-        <motion.div 
-          key="modal-backdrop" 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }} 
-          onClick={handleClose} 
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2"
+        <motion.div
+          key="modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={handleClose}
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 md:p-6"
         >
-          <motion.div 
-            key="modal-content" 
-            initial={{ y: 50, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            exit={{ y: 50, opacity: 0 }} 
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }} 
-            onClick={(e: React.MouseEvent) => e.stopPropagation()} 
-            className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
+          <motion.div
+            key="modal-content"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden"
           >
-            <div className="relative">
-              <img 
-                src={listing.adImageUrl || placeholderImage} 
-                alt={listing.cultPassType} 
-                onError={(e) => { (e.target as HTMLImageElement).src = placeholderImage; }} 
-                className="w-full h-40 object-cover"
-              />
+            {/* Rectangle body with equal columns on md+; fixed max height for symmetry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 md:h-[72vh] relative">
               <div className="absolute top-2 right-2 flex gap-2">
-                <Button variant="link" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full" onClick={handleShare}>
-                  {isCopied ? <Check className="text-green-400" /> : <Share2 />}
-                </Button>
-                <Button variant="link" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full" onClick={handleClose}>
-                  <X />
-                </Button>
-              </div>
-              {listing.isPromoted && (
-                <div className="absolute top-2 left-2 flex items-center gap-1 bg-yellow-400 px-2 py-0.5 text-xs font-bold text-neutral-900 rounded-full">
-                  <Star className="h-3 w-3" fill="currentColor" /> Promoted
-                </div>
-              )}
-            </div>
-  
-            <div className="p-4 space-y-3">
-              {/* Compact Title & Location Row */}
-              <div className="flex justify-between items-center">
-                <h2 className="truncate text-lg font-semibold text-gray-900 dark:text-white">{listing.cultPassType}</h2>
-                <div className="flex items-center text-xs text-gray-600 gap-2">
-                  <MapPin className="h-4 w-4" /> {listing.city}
-                </div>
-              </div>
-  
-              {/* Price Section */}
-              <div className="flex justify-between items-center bg-gray-50 dark:bg-neutral-800 p-2 rounded-lg">
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  <p className="line-through text-red-500">₹{listing.originalPrice.toLocaleString('en-IN')}</p>
-                </div>
-                <div className="text-lg font-bold text-green-500">
-                  ₹{listing.askingPrice.toLocaleString('en-IN')}
-                </div>
-              </div>
-  
-              {/* Expiry */}
-              <div className="flex justify-between text-xs text-gray-600">
-                <div className="flex items-center gap-1"><CalendarDays className="h-4 w-4" /> Expires: {new Date(listing.expiryDate).toLocaleDateString()}</div>
-                {listing.availableCredits && <div>Credits: <b>{listing.availableCredits}</b></div>}
-              </div>
-  
-              {/* Description */}
-              {listing.description && (
-                <p className="text-sm text-gray-800 dark:text-gray-300 line-clamp-4">{listing.description}</p>
-              )}
-  
-              {/* Map */}
-              <div className="mt-2">
-                {isAuthenticated ? (
-                  listing.latitude && listing.longitude ? (
-                    <GoogleMap 
-                      mapContainerStyle={{ width: '100%', height: '150px', borderRadius: '0.5rem' }} 
-                      center={{ lat: listing.latitude, lng: listing.longitude }} 
-                      zoom={13}
+                    <Button
+                      variant="link"
+                      size="icon"
+                      className="bg-black/30 hover:bg-black/50 rounded-full"
+                      onClick={handleShare}
                     >
-                      <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
-                    </GoogleMap>
-                  ) : (
-                    <div className="h-[150px] flex items-center justify-center bg-gray-200 rounded-md">Loading map...</div>
-                  )
-                ) : (
-                  <div className="h-[150px] flex items-center justify-center bg-gray-200 rounded-md text-center text-gray-600 p-3">
-                      Login to view maps
+                      {isCopied ? <Check className="text-green-400" /> : <Share2 />}
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="icon"
+                      className="bg-black/30 hover:bg-black/50 rounded-full"
+                      onClick={handleClose}
+                    >
+                      <X />
+                    </Button>
                   </div>
-                )}
+              {/* LEFT: Image + details */}
+              <div className="flex flex-col min-h-0">
+                {/* Image */}
+                <div className="relative">
+                  <img
+                    src={listing.adImageUrl || placeholderImage}
+                    alt={listing.cultPassType}
+                    onError={e => {
+                      (e.target as HTMLImageElement).src = placeholderImage;
+                    }}
+                    className="w-full h-56   object-cover"
+                  />
+                  {/* Top-left badge */}
+                  {listing.isPromoted && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-yellow-400 px-2 py-0.5 text-xs font-bold text-neutral-900 rounded-full">
+                      <Star className="h-3 w-3" fill="currentColor" /> Promoted
+                    </div>
+                  )}
+                  {/* Top-right actions */}
+                  
+                </div>
+
+                {/* Details */}
+                <div className="p-4 md:p-6 flex-1 overflow-y-auto space-y-4">
+                  {/* Title & Location */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {listing.cultPassType}
+                    </h2>
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {listing.city}
+                    </div>
+                  </div>
+
+                  {/* Price + Expiry/Credits */}
+                  <div className="flex items-start justify-between gap-4 bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
+                    <div>
+                      <p className="line-through text-red-500 text-sm">
+                        ₹{listing.originalPrice.toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-lg font-bold text-green-500">
+                        ₹{listing.askingPrice.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-700 dark:text-gray-300 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <CalendarDays className="h-4 w-4" />
+                        Expires: {new Date(listing.expiryDate).toLocaleDateString()}
+                      </div>
+                      {listing.availableCredits ? (
+                        <div>
+                          Credits: <b>{listing.availableCredits}</b>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {listing.description ? (
+                    <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed">
+                      {listing.description}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-  
-              {/* Contact & Seller */}
-              <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" size="sm" onClick={handleContactSeller}>
-                <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
-              </Button>
-  
-              <div className="flex justify-between items-center pt-3 border-t dark:border-neutral-700 mt-3">
-                <Link to={`/profile/${listing.seller._id}`} className="flex items-center gap-2 group">
-                  <Avatar size="small" src={listing.seller.profilePictureUrl} icon={<UserOutlined />} />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary">{listing.seller.username}</span>
-                </Link>
-                {isAuthenticated && user?._id !== listing.seller._id && (
-                  <Button variant="link" className="text-xs text-neutral-500 hover:text-red-500" onClick={() => setIsReportModalOpen(true)}>
-                    <Flag className="mr-1 h-3 w-3" /> Report
+
+              {/* RIGHT: Map + CTAs (stick to bottom) */}
+              <div className="flex flex-col p-4 md:p-6 min-h-0">
+                {/* Map */}
+                <div className="rounded-lg overflow-hidden">
+                  {isAuthenticated ? (
+                    listing.latitude && listing.longitude ? (
+                      <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={{ lat: listing.latitude, lng: listing.longitude }}
+                        zoom={13}
+                      >
+                        <MarkerF position={{ lat: listing.latitude, lng: listing.longitude }} />
+                      </GoogleMap>
+                    ) : (
+                      <div className="h-[220px] flex items-center justify-center bg-gray-200 dark:bg-neutral-800 rounded-md text-gray-600 dark:text-gray-300">
+                        Location loading…
+                      </div>
+                    )
+                  ) : (
+                    <div className="h-[220px] flex items-center justify-center bg-gray-200 dark:bg-neutral-800 rounded-md text-center text-gray-700 dark:text-gray-300 p-3">
+                      Login to view map
+                    </div>
+                  )}
+                </div>
+
+                {/* CTAs & Seller info */}
+                <div className="mt-auto pt-5 space-y-4">
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                    onClick={handleContactSeller}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" /> Contact Seller
                   </Button>
-                )}
+
+                  <div className="flex items-center justify-between border-t pt-3 dark:border-neutral-700">
+                    <Link to={`/profile/${listing.seller._id}`} className="flex items-center gap-2 group">
+                      <Avatar size="small" src={listing.seller.profilePictureUrl} icon={<UserOutlined />} />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary">
+                        {listing.seller.username}
+                      </span>
+                    </Link>
+
+                    {isAuthenticated && user?._id !== listing.seller._id && (
+                      <Button
+                        variant="link"
+                        className="text-xs text-neutral-500 hover:text-red-500"
+                        onClick={() => setIsReportModalOpen(true)}
+                      >
+                        <Flag className="mr-1 h-3 w-3" /> Report
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
         </motion.div>
       </AnimatePresence>
-      {listing && (<ReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} contentId={listing._id} contentType="Listing" contentTitle={listing.cultPassType} />)}
+
+      {listing && (
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          contentId={listing._id}
+          contentType="Listing"
+          contentTitle={listing.cultPassType}
+        />
+      )}
     </>
   );
 };

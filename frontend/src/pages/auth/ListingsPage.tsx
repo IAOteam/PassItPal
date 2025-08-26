@@ -126,7 +126,7 @@ const ListingsPage: React.FC = () => {
         if (city) newParams.set('city', city);
         if (category) newParams.set('category', category);
         if (sortBy) newParams.set('sortBy', sortBy);
-        if (priceRange[0] > 0) newParams.set('minPrice', priceRange.toString());
+        if (priceRange[0] > 0) newParams.set('minPrice', priceRange[0].toString());
         if (priceRange[1] < 50000) newParams.set('maxPrice', priceRange[1].toString());
         newParams.set('page', '1');
         setSearchParams(newParams);
@@ -144,10 +144,9 @@ const ListingsPage: React.FC = () => {
     };
 
     const handlePageChange = (page: number) => {
-        setSearchParams(prev => {
-            prev.set('page', page.toString());
-            return prev;
-        });
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("page", page.toString());
+        setSearchParams(newParams);
     };
     
     const { promotedListings = [], regularListings = [], ads = [], totalPages = 0, currentPage = 1 } = data || {};
@@ -184,7 +183,7 @@ const ListingsPage: React.FC = () => {
             {/* Main Content Layout */}
             <div className="flex h-[calc(100vh-100px)]">
                 {/* Filters Sidebar - Fixed, Non-scrolling */}
-                <aside className="w-80 flex-shrink-0  px-6 ">
+                <aside className="w-72 flex-shrink-0  px-6 ">
                     
                     <div className="">
                         <div>
@@ -203,7 +202,10 @@ const ListingsPage: React.FC = () => {
                                 <Input
                                     placeholder="Location…"
                                     value={value}
-                                    onChange={(e) => setValue(e.target.value)}
+                                      onChange={(e) => {
+                                        setValue(e.target.value);
+                                        setLocationTerm(e.target.value);
+                                    }}
                                     disabled={!ready}
                                     className="w-full"
                                 />
@@ -225,10 +227,13 @@ const ListingsPage: React.FC = () => {
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="City…" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Bangalore">Bangalore</SelectItem>
+                                <SelectContent className='bg-white dark:bg-neutral-800'>
+                                    <SelectItem value="Bengaluru">Bengaluru</SelectItem>
                                     <SelectItem value="Mumbai">Mumbai</SelectItem>
                                     <SelectItem value="Delhi">Delhi</SelectItem>
+                                    <SelectItem value="Chennai">Chennai</SelectItem>
+                                    <SelectItem value="Hyderabad">Hyderabad</SelectItem>
+                                    <SelectItem value="Pune">Pune</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -239,7 +244,7 @@ const ListingsPage: React.FC = () => {
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Category…" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-neutral-800'>
                                     <SelectItem value="Gym">Gym</SelectItem>
                                     <SelectItem value="Swimming">Swimming</SelectItem>
                                     <SelectItem value="Yoga">Yoga</SelectItem>
@@ -248,12 +253,12 @@ const ListingsPage: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2 dark:text-white">Sort By</label>
+                            <label className="block text-sm font-medium mb-2 dark:text-white ">Sort By</label>
                             <Select value={sortBy} onValueChange={setSortBy}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Sort by…" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-neutral-800'>
                                     <SelectItem value="createdAt_desc">Newest First</SelectItem>
                                     <SelectItem value="price_asc">Price: Low to High</SelectItem>
                                     <SelectItem value="price_desc">Price: High to Low</SelectItem>
@@ -303,7 +308,7 @@ const ListingsPage: React.FC = () => {
                                     {promotedListings.length > 0 && (
                                         <section className="mb-8">
                                             <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Featured Passes</h2>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 {promotedListings.map((l) => (
                                                     <ListingCard key={l._id} listing={l} onClick={() => setSelectedListing(l)} />
                                                 ))}
@@ -316,7 +321,7 @@ const ListingsPage: React.FC = () => {
                                             <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">All Passes</h2>
                                         )}
                                         {displayItems.length > 0 ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-6">
                                                 {displayItems.map((item) =>
                                                     item.type === 'listing' ? (
                                                         <ListingCard key={item._id} listing={item} onClick={() => setSelectedListing(item)} />

@@ -23,7 +23,7 @@ const getBaseUrl = (urlWithApiPath: string | undefined): string => {
   }
 };
 
-const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL;
+const backendApiUrl = import.meta.env.VITE_BACKEND_URL;
 ;
 const SOCKET_SERVER_URL = getBaseUrl(backendApiUrl);
 

@@ -4,15 +4,15 @@ import { io, type Socket } from 'socket.io-client';
 const getBaseUrl = (urlWithApiPath: string | undefined): string => {
   try {
     if (urlWithApiPath) {
-      return new URL(urlWithApiPath).origin; // e.g. https://api.passitpal.com
+      return new URL(urlWithApiPath).origin;
     }
 
-    // Fallbacks:
     if (typeof window !== 'undefined') {
-      // In browser, if no env var: use localhost during dev
       if (window.location.hostname === 'localhost') {
         return 'http://localhost:5001';
       }
+      // In production, default to the same origin as the frontend.
+      return window.location.origin;
     }
 
     // Safe fallback if nothing is set
@@ -28,7 +28,7 @@ const backendApiUrl = import.meta.env.VITE_BACKEND_URL;
 const SOCKET_SERVER_URL = getBaseUrl(backendApiUrl);
 
 export const socket: Socket = io(SOCKET_SERVER_URL, {
-  autoConnect: false, // IMPORTANT: do not connect automatically
+  autoConnect: false, //  do not connect automatically
 });
 
 socket.on("connect_error", (err: Error & { data?: unknown }) => {

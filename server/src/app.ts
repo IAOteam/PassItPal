@@ -82,16 +82,17 @@ app.use(cookieParser());
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
-      process.env.CLIENT_URL || "http://localhost:5173",
+      process.env.CLIENT_URL,
       "https://www.passitpal.com",
-      "https://passitpal.com"
+      "https://passitpal.com",
+      "https://api.passitpal.com"
     ];
 
-    if (!origin) return callback(null, true); // allow mobile apps, curl, etc.
+    if (!origin) return callback(null, true);
 
     if (
       allowedOrigins.includes(origin) || 
-      /\.vercel\.app$/.test(origin)   // ✅ regex test works here
+      origin.endsWith(".vercel.app") 
     ) {
       return callback(null, true);
     }
@@ -130,16 +131,17 @@ export const io = new Server(httpServer, {
   cors: {
     origin: (origin, callback) => {
       const allowedOrigins = [
-        process.env.CLIENT_URL || "http://localhost:5173",
+        process.env.CLIENT_URL,
         "https://www.passitpal.com",
-        "https://passitpal.com"
+        "https://passitpal.com",
+        "https://api.passitpal.com"
       ];
 
       if (!origin) return callback(null, true);
 
       if (
         allowedOrigins.includes(origin) || 
-        /\.vercel\.app$/.test(origin)
+        origin.endsWith(".vercel.app")
       ) {
         return callback(null, true);
       }

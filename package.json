@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present && shx rm -rf public && shx mv frontend/dist public",
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "vercel-build": "npm install && npm run build --workspace=@passitpal/types && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public"
   },
   "devDependencies": {
     "shx": "^0.3.4",

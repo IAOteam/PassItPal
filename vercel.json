@@ -13,7 +13,7 @@
       "status": 200
     }
   ],
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "public"
 }

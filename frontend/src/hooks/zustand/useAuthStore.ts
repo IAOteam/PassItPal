@@ -289,22 +289,26 @@ const useAuthStore = create<AuthState>()(
 
       // --- SOCKET ACTIONS ---
       connectSocket: () => {
-        const token = get().token;
+      const token = get().token;
         if (token && !get().socket?.connected) {
-          const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
-          const socketURL = VITE_BACKEND_URL.replace('/api', '');
+          const socketURL =
+            import.meta.env.VITE_SOCKET_SERVER_URL ||
+            (import.meta.env.DEV ? "http://localhost:5001" : "https://api.passitpal.com");
+
           const newSocket = io(socketURL, { auth: { token } });
-          
+
           newSocket.on('newNotification', (notification: INotification) => {
-              toast.success(notification.message, { icon: '🔔' });
-              set(state => ({ 
-                  notifications: [notification, ...state.notifications],
-                  unreadCount: state.unreadCount + 1 
-              }));
+            toast.success(notification.message, { icon: '🔔' });
+            set(state => ({
+              notifications: [notification, ...state.notifications],
+              unreadCount: state.unreadCount + 1
+            }));
           });
+
           set({ socket: newSocket });
         }
       },
+
       disconnectSocket: () => {
         get().socket?.disconnect();
         set({ socket: null });

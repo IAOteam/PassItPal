@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import twilio from 'twilio';
 import { getWelcomeEmailTemplate } from './emailTemplates';
 import { HttpError } from '../services/auth.service'; // Use HttpError for consistent error handling
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -35,12 +36,13 @@ export const sendOtp = async (
   email: string,
   mobileNumber: string | undefined,
   type: 'email' | 'mobile',
-  purpose: 'verification' | 'password_reset'
+  purpose: 'verification' | 'password_reset',
+  session?: mongoose.ClientSession
 ): Promise<void> => {
   const otp = generateOtp();
   const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).session(session || null);
   if (!user) throw new HttpError('User not found.', 404);
 
   user.otp = otp;

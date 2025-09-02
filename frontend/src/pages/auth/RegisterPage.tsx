@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import useAuthStore from '@/hooks/zustand/useAuthStore';
+import LocationSelect from '@/components/ui/LocationSelect';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -212,17 +213,8 @@ const RegisterPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    type="text"
-                    // placeholder="City name"
-                    className="placeholder-gray-400 placeholder-opacity-80"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    required
-                  />
+                <div className="space-y-1 w-full">
+                  <LocationSelect onSelect={setCity} className='w-full' label='City'  />
                 </div>
 
                 <div className="space-y-1 md:col-span-2">

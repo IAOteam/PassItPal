@@ -16,6 +16,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import usePlacesAutocomplete from 'use-places-autocomplete';
 import type { IListing, IAd } from '@passitpal/types';
 import { MapPin, Search } from 'lucide-react';
+import LocationSelect from '@/components/ui/LocationSelect';
 
 interface ListingsResponse {
   promotedListings: IListing[];
@@ -222,20 +223,7 @@ const ListingsPage: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2 dark:text-white">City</label>
-                            <Select value={city} onValueChange={setCity}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="City…" />
-                                </SelectTrigger>
-                                <SelectContent className='bg-white dark:bg-neutral-800'>
-                                    <SelectItem value="Bengaluru">Bengaluru</SelectItem>
-                                    <SelectItem value="Mumbai">Mumbai</SelectItem>
-                                    <SelectItem value="Delhi">Delhi</SelectItem>
-                                    <SelectItem value="Chennai">Chennai</SelectItem>
-                                    <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                                    <SelectItem value="Pune">Pune</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <LocationSelect onSelect={setCity} label='city' />
                         </div>
 
                         <div>

@@ -100,7 +100,8 @@ export class AuthService {
       });
 
       await user.save({ session });
-      await sendOtp(user.email, user.mobileNumber, 'email', 'verification');
+  
+      await sendOtp(user.email, user.mobileNumber, 'email', 'verification',session);
 
       await session.commitTransaction();
       return UserService.createFrontendUserObject(user);

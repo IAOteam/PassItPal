@@ -10,10 +10,7 @@
     "build": "pnpm turbo run build",
     "test": "pnpm turbo run test",
     "lint": "pnpm turbo run lint",
-    "dev": "pnpm turbo run dev",
-    "start": "node server/dist/app.js",
-    "data:import": "pnpm --filter=server data:import",
-    "data:destroy": "pnpm --filter=server data:destroy"
+    "dev": "pnpm turbo run dev"
   },
   "devDependencies": {
     "shx": "^0.3.4",

@@ -1,55 +1,71 @@
 # GitHub Actions Workflow for deploying the backend to Render
 
+# Name of the workflow, which will be displayed on GitHub
 name: Deploy Backend to Render
 
-# This workflow runs on pushes to the 'main' branch
+# Controls when the workflow will run
 on:
+  # Triggers the workflow on push events to the 'main' branch
   push:
     branches: [ main ]
-    # Only run if there are changes in the 'server/' directory
+    # Only runs if changes are made in these specific paths
     paths:
       - 'server/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-backend.yml'
+  # Triggers the workflow on pull request events to the 'main' branch
   pull_request:
     branches: [ main ]
+    # Only runs if changes are made in these specific paths
     paths:
       - 'server/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-backend.yml'
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # Defines a job named 'deploy'
   deploy:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    # The name of the job displayed on GitHub
     name: Build, Test, and Deploy Backend
 
+    # A sequence of tasks called 'steps' that will be executed as part of the job
     steps:
+      # Step 1: Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Node.js in the environment
-      - name: Setup pnpm and Node.js
+      # Step 2: Sets up the pnpm package manager
+      - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 8.15.5
       
+      # Step 3: Sets up a Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          # Caches pnpm dependencies for faster subsequent runs
           cache: 'pnpm'
 
+      # Step 4: Installs project dependencies using pnpm
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile # Install all dependencies for the monorepo
+        run: pnpm install
 
+      # Step 5: Builds the 'server' package using Turborepo
       - name: Build Backend and Types
         run: pnpm turbo run build --filter=server
 
+      # Step 6: Runs tests for the 'server' package
       - name: Run Backend Tests
         run: pnpm test --filter=server
 
+      # Step 7: Triggers a deploy on Render.com via a deploy hook URL
+      # This step only runs on a push to the 'main' branch
       - name: Trigger Render Deploy Hook
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        # This step sends a request to the Render Deploy Hook URL.
-        # Render then pulls the latest code from your 'main' branch and redeploys the service.
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+

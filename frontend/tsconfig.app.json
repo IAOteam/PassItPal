@@ -26,11 +26,12 @@
     "paths": {
       "@/*": ["./src/*"],
       "@passitpal/types": ["../packages/types/index.ts"],
-      "@passitpal/types/*": ["../packages/types/dist/*"]  
+      "@passitpal/types/*": ["../packages/types/dist/*"],
+      "react-router-dom": ["./node_modules/react-router-dom"]
     }
   },
   "include": [
     "src",
-    // "../packages/types/dist"
+    "../packages/types"
   ]
 }

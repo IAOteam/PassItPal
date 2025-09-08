@@ -27,7 +27,7 @@ COPY frontend ./frontend
 RUN npm run build --workspace=frontend
 
 # ---- Stage 4: Serve with Nginx ----
-FROM nginx:1.27-alpine
+FROM nginx:1.27-alpine-slim
 # Copy the built static assets from the frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 # Copy your custom Nginx configuration FROM THE BUILDER STAGE

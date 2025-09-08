@@ -26,8 +26,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@passitpal/types": ["../packages/types/index.ts"],
-      "@passitpal/types/*": ["../packages/types/dist/*"],
-      "react-router-dom": ["./node_modules/react-router-dom"]
+      "react-router-dom": ["../node_modules/react-router-dom"]
     }
   },
   "include": [

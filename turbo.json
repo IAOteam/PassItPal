@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "tasks": {
+"tasks": {
     "build": {
       "dependsOn": [
         "^build"
@@ -17,9 +17,6 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": [
-        "build"
-      ],
       "outputs": []
     }
   }

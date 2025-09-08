@@ -1,83 +1,55 @@
 # GitHub Actions Workflow for deploying the frontend to Vercel
 
-# The name of the workflow, which will be displayed on GitHub's Actions tab.
 name: Deploy Frontend to Vercel
 
-# Specifies the events that trigger this workflow.
 on:
-  # Trigger the workflow on push events.
   push:
-    # Only for pushes to the 'main' branch.
     branches: [ main ]
-    # Only when files in these paths are modified.
     paths:
       - 'frontend/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-frontend.yml'
-  # Trigger the workflow on pull request events.
   pull_request:
-    # Only for pull requests targeting the 'main' branch.
     branches: [ main ]
-    # Only when files in these paths are modified.
     paths:
       - 'frontend/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-frontend.yml'
 
-# Defines the jobs that will run as part of the workflow.
 jobs:
-  # A single job named 'build_and_deploy'.
   build_and_deploy:
-    # The type of runner that the job will run on.
     runs-on: ubuntu-latest
-    # The name of the job displayed on GitHub.
     name: Build, Test, and Deploy Frontend
 
-    # A sequence of tasks called steps that will be executed as part of the job.
     steps:
-      # Step 1: Check out the repository code.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up the pnpm package manager.
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 8.15.5
 
-      # Step 3: Set up the Node.js environment.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # Enable caching for pnpm to speed up subsequent runs.
           cache: 'pnpm'
 
-      # Step 4: Install project dependencies using pnpm.
       - name: Install Dependencies
         run: pnpm install
 
-      # Step 5: Build the frontend application and the 'types' package using Turborepo.
       - name: Build Frontend and Types
         run: pnpm turbo run build --filter=frontend
 
-      # Step 6: Run tests for the frontend application.
       - name: Run Frontend Tests
         run: pnpm test --filter=frontend
 
-      # Step 7: Deploy the application to Vercel.
       - name: Deploy to Vercel
-        # This step only runs on a push event to the 'main' branch.
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        # Use the 'vercel-action' to handle the deployment.
         uses: amondnet/vercel-action@v20
         with:
-          # Vercel authentication token.
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          # Vercel organization ID.
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          # Vercel project ID.
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          # Specifies the directory to deploy.
           working-directory: ./frontend
-

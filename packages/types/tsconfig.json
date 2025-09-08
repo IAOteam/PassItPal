@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "NodeNext",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -12,17 +11,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@passitpal/types": ["../packages/types/index.ts"], 
-      "@passitpal/types/*": ["../packages/types/*"]      
-    }
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true
   },
   "include": [
-    "index.ts" 
+    "index.ts"
   ],
   "exclude": [
     "node_modules",

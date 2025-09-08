@@ -1,19 +1,6 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/[^.]+",
-      "dest": "/",
-      "status": 200
-    }
-  ],
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "public"
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build --filter=frontend",
+  "outputDirectory": "frontend/dist"
 }

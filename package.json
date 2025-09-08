@@ -7,16 +7,22 @@
     "packages/types"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present && shx rm -rf public && shx mv frontend/dist public",
-    "test": "npm test --workspaces --if-present",
-    "vercel-build": "npm install && npm run build --workspace=@passitpal/types && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public"
+    "build": "pnpm turbo run build",
+    "test": "pnpm turbo run test",
+    "lint": "pnpm turbo run lint",
+    "dev": "pnpm turbo run dev",
+    "start": "node server/dist/app.js",
+    "data:import": "pnpm --filter=server data:import",
+    "data:destroy": "pnpm --filter=server data:destroy"
   },
   "devDependencies": {
     "shx": "^0.3.4",
+    "turbo": "^2.0.7",
     "typescript": "^5.4.5"
   },
   "engines": {
-  "node": ">=18",
-  "npm": ">=9"
-}
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "packageManager": "pnpm@8.15.5"
 }

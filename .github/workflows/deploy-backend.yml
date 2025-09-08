@@ -17,52 +17,36 @@ on:
       - 'server/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-backend.yml'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Build, Test, and Deploy Backend
-
-    # Define the working directory for all steps in this job
-    # defaults:
-    #   run:
-    #     working-directory: ./
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # Setup Node.js in the environment
+      - name: Setup pnpm and Node.js
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.5
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Use the same Node version as your Dockerfile
-
-      # - name: Install and Build Shared Types
-      #   run: |
-      #     cd ../packages/types
-      #     npm install
-      #     npm run build
-      #   # cd ../../server
-      #   # npm install
-      
-      # - name: Install & Build Backend
-      #   run: |
-      #     cd ../../server
-      #     npm install
-      #     npm run build
+          node-version: '18'
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm install # Single install at the root
+        run: pnpm install --no-frozen-lockfile # Install all dependencies for the monorepo
 
-      - name: Build All Workspaces
-        run: npm run build --workspaces # Build types and server
+      - name: Build Backend and Types
+        run: pnpm turbo run build --filter=server
 
       - name: Run Backend Tests
-        run: npm test --workspace=server
-
-      #  Run the tests. If this step fails, the workflow stops.
-      # - name: Run Tests
-      #   run:  npm test
+        run: pnpm test --filter=server
 
       - name: Trigger Render Deploy Hook
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

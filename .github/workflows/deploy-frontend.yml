@@ -17,58 +17,41 @@ on:
       - 'frontend/**'
       - 'packages/types/**'
       - '.github/workflows/deploy-frontend.yml'
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     name: Build, Test, and Deploy Frontend
 
-    # defaults:
-    #   run:
-    #     working-directory: ./
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm and Node.js
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.5
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Use the same Node version as your Dockerfile
-
-      # - name: Install and Build Shared Types
-      #   run: |
-      #     cd ../packages/types
-      #     npm install
-      #     npm run build
-
-      #   # cd ../../frontend
-      #   # npm install
-      
-      # - name: Install & Build Frontend
-      #   run: |
-      #     cd ../../frontend
-      #     npm install
-      #     npm run build
+          node-version: '18'
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm install # Single install at the root
+        run: pnpm install --no-frozen-lockfile # Install all dependencies for the monorepo
 
-      - name: Build All Workspaces
-        run: npm run build --workspaces # Build types and frontend
+      - name: Build Frontend and Types
+        run: pnpm turbo run build --filter=frontend
 
       - name: Run Frontend Tests
-        run: npm test --workspace=frontend
-
-      #  Run the tests. If this step fails, the workflow stops.
-      # - name: Run Tests
-      #   run: npm test
+        run: pnpm test --filter=frontend
 
       # This action builds and deploys your app to Vercel.
       # It automatically uses the Vercel CLI to handle everything.
       - name: Deploy to Vercel
-      # This will now ONLY deploy to production when you merge to main
+        # This will now ONLY deploy to production when you merge to main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
         uses: amondnet/vercel-action@v20
         with:
           # The Vercel access token we stored in GitHub secrets
@@ -78,4 +61,3 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           # Specifies the directory of our frontend code
           working-directory: ./frontend
-

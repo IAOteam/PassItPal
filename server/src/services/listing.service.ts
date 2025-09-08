@@ -217,13 +217,13 @@ export class ListingService {
             }
         });
         // console.log({ queryParams, matchStage, pipeline });
-        // console.log('💡 Incoming Query Params:', queryParams);
-        // console.log('💡 Match Stage:', matchStage);
-        // console.log('💡 Aggregation Pipeline:', JSON.stringify(pipeline, null, 2));
+        // console.log('庁 Incoming Query Params:', queryParams);
+        // console.log('庁 Match Stage:', matchStage);
+        // console.log('庁 Aggregation Pipeline:', JSON.stringify(pipeline, null, 2));
 
 
         const results = await Listing.aggregate(pipeline);
-        // console.log("🔍 Aggregation Results Sample:", JSON.stringify(results[0].listings[0], null, 2));
+        // console.log("剥 Aggregation Results Sample:", JSON.stringify(results[0].listings[0], null, 2));
 
         const regularListings = results[0].listings;
         const totalCount = results[0].totalCount[0]?.count || 0;
@@ -332,11 +332,11 @@ export class ListingService {
         return { activeListings, successfulDeals, moneySaved };
     }
 
-     public static async getAddressFromCoords(latitude: number, longitude: number): Promise<{ address: string | null }> {
+    public static async getAddressFromCoords(latitude: number, longitude: number): Promise<string> {
         const address = await reverseGeocode(latitude, longitude);
         if (!address) {
             throw new HttpError('Could not determine location from coordinates.', 404);
         }
-        return { address };
+        return address.locationName;
     }
 }

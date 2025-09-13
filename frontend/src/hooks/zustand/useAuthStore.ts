@@ -100,11 +100,14 @@ const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         toast.success('Logged out successfully.');
-        const token = get().token;
-        get().setToken(null);
         try {
+          const token = get().token;
           if (token) await api.post('/auth/logout');
-        } catch (error) { console.error("Logout API call failed", error); }
+        } catch (error) {
+          console.error("Logout API call failed", error);
+        } finally {
+          get().setToken(null);
+        }
       },
 
       updateProfile: async (profileData) => {

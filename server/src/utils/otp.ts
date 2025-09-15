@@ -63,17 +63,39 @@ export const sendOtp = async (
   } else if (type === 'mobile') {
     if (!mobileNumber) throw new HttpError('Mobile number required for OTP.', 400);
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.error('[sendOtp] TWILIO CREDENTIALS MISSING:', {
+        hasSid: !!twilioAccountSid,
+        hasToken: !!twilioAuthToken,
+        hasPhone: !!twilioPhoneNumber
+      });
       throw new HttpError('SMS service not configured.', 500);
     }
+    
+    // Validate mobile number (Indian numbers only for now)
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(mobileNumber)) {
+      throw new HttpError('Invalid mobile number format. Please enter a valid 10-digit Indian mobile number.', 400);
+    }
+    
     try {
-      await twilioClient.messages.create({
+      const formattedNumber = `+91${mobileNumber}`;
+      console.log('[sendOtp] Attempting to send SMS to:', formattedNumber);
+      
+      const message = await twilioClient.messages.create({
         body: `Your PassItPal OTP is: ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes.`,
         from: twilioPhoneNumber,
-        to: `+91${mobileNumber}`,
+        to: formattedNumber,
       });
+      
+      console.log('[sendOtp] SMS sent successfully. SID:', message.sid);
     } catch (err: any) {
-      console.error('[sendOtp] ERROR sending SMS:', err.message);
-      throw new HttpError(`Failed to send SMS OTP: ${err.message}`, 500);
+      console.error('[sendOtp] DETAILED SMS ERROR:', {
+        message: err.message,
+        code: err.code,
+        moreInfo: err.moreInfo,
+        status: err.status
+      });
+      throw new HttpError(`Failed to send SMS OTP. Please check your mobile number or try email verification instead. Error: ${err.message}`, 500);
     }
   }
 };

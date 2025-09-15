@@ -105,4 +105,10 @@ router.delete(
 
 router.get('/stats/public', getPublicStats);
 
+router.post('/reverse-geocode', [
+  body('latitude').isFloat().withMessage('Latitude is required.'),
+  body('longitude').isFloat().withMessage('Longitude is required.')
+], validate, getAddressFromCoords);
+
+
 export default router;

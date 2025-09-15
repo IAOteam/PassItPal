@@ -1,7 +1,6 @@
 {
   "name": "passitpal-monorepo",
   "version": "1.0.0",
-  "private": true,
   "workspaces": [
     "server",
     "frontend",
@@ -10,7 +9,7 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present && shx rm -rf public && shx mv frontend/dist public",
     "test": "npm test --workspaces --if-present",
-    "vercel-build": "npm install && npm run build --workspace=@passitpal/types && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public"
+    "vercel-build": "cd packages/types && npm run build && cd ../.. && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public"
   },
   "devDependencies": {
     "shx": "^0.3.4",

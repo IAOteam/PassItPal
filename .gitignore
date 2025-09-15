@@ -36,3 +36,9 @@ dist-ssr
 !/.env.example
 
 dist/
+
+# WARP AI configuration file
+WARP.md
+
+# Build outputs
+public/

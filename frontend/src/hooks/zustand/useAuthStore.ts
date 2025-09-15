@@ -99,12 +99,19 @@ const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        toast.success('Logged out successfully.');
         const token = get().token;
-        get().setToken(null);
         try {
-          if (token) await api.post('/auth/logout');
-        } catch (error) { console.error("Logout API call failed", error); }
+          // Make the logout API call first while we still have the token
+          if (token) {
+            await api.post('/auth/logout');
+          }
+        } catch (error) { 
+          console.error("Logout API call failed", error); 
+        } finally {
+          // Clear the token and user data regardless of API call success/failure
+          get().setToken(null);
+          toast.success('Logged out successfully.');
+        }
       },
 
       updateProfile: async (profileData) => {

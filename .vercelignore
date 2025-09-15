@@ -1,0 +1,6 @@
+server/
+*.md
+.env.example
+docker-compose.yml
+packages/types/src/
+packages/types/tsconfig.json

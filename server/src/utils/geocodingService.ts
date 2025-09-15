@@ -113,9 +113,13 @@ export const reverseGeocode = async (
   lat: number,
   lng: number
 ): Promise<{ locationName: string } | null> => {
-  if (!Maps_API_KEY) return null;
+  if (!Maps_API_KEY) {
+    console.error('[reverseGeocode] Google Maps API key is missing');
+    return null;
+  }
 
   const url = `https://maps.googleapis.com/maps/api/geocode/json`;
+  console.log(`[reverseGeocode] Attempting reverse geocoding for: ${lat}, ${lng}`);
 
   try {
     const response = await axios.get(url, {
@@ -126,6 +130,8 @@ export const reverseGeocode = async (
       },
     });
 
+    console.log(`[reverseGeocode] API response status: ${response.data.status}`);
+    
     if (response.data.status === "OK" && response.data.results.length > 0) {
       const result = response.data.results[0];
       const addressComponents = result.address_components;
@@ -137,11 +143,23 @@ export const reverseGeocode = async (
         ? cityComponent.long_name
         : result.formatted_address;
 
+      console.log(`[reverseGeocode] Successfully resolved to: ${locationName}`);
       return { locationName };
+    } else if (response.data.status !== "OK") {
+      console.error(`[reverseGeocode] Google Maps API error: ${response.data.status} - ${response.data.error_message || 'No error message'}`);
     }
+    
     return null;
   } catch (error) {
-    console.error("Error during reverse geocoding:", error);
+    if (axios.isAxiosError(error)) {
+      console.error('[reverseGeocode] Network/API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+    } else {
+      console.error("[reverseGeocode] Unexpected error during reverse geocoding:", error);
+    }
     return null;
   }
 };

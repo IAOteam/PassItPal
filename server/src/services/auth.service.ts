@@ -174,8 +174,16 @@ export class AuthService {
       if (!user) { throw new HttpError('User not found.', 404); }
       if (type === 'email' && purpose === 'verification' && user.isEmailVerified) { throw new HttpError('Email is already verified.', 400); }
       if (type === 'mobile' && purpose === 'verification' && user.isMobileVerified) { throw new HttpError('Mobile number is already verified.', 400); }
-      if (type === 'mobile' && !user.mobileNumber) { throw new HttpError('No mobile number is associated with this account.', 400); }
-      await sendOtp(user.email, user.mobileNumber, type, purpose);
+      if (type === 'mobile' && !user.mobileNumber) { throw new HttpError('No mobile number is associated with this account. Please update your profile first or use email verification.', 400); }
+      try {
+        await sendOtp(user.email, user.mobileNumber, type, purpose);
+      } catch (error: any) {
+        console.error(`[AuthService] Failed to send ${type} OTP:`, error.message);
+        if (type === 'mobile') {
+          throw new HttpError(`SMS delivery failed. This could be due to network issues or invalid mobile number. Please try email verification or check your mobile number. Error: ${error.message}`, 500);
+        }
+        throw error;
+      }
   }
 
   static async verifyOtp(email: string, otp: string, type: 'email' | 'mobile', purpose: 'verification' | 'password_reset'): Promise<LoginReturnType> {

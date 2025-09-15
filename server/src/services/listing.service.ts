@@ -332,11 +332,14 @@ export class ListingService {
         return { activeListings, successfulDeals, moneySaved };
     }
 
-    public static async getAddressFromCoords(latitude: number, longitude: number): Promise<string> {
-        const address = await reverseGeocode(latitude, longitude);
-        if (!address) {
-            throw new HttpError('Could not determine location from coordinates.', 404);
+    public static async getAddressFromCoords(latitude: number, longitude: number): Promise<{ locationName: string; address: string }> {
+        const result = await reverseGeocode(latitude, longitude);
+        if (!result) {
+            throw new HttpError('Could not determine location from coordinates. Please check if the Google Maps API key is configured and has Geocoding API enabled.', 404);
         }
-        return address.locationName;
+        return { 
+            locationName: result.locationName, 
+            address: result.locationName // For backward compatibility with frontend
+        };
     }
 }

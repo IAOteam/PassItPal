@@ -54,8 +54,11 @@ jobs:
       - name: Install Dependencies
         run: npm install # Single install at the root
 
-      - name: Build All Workspaces
-        run: npm run build --workspaces # Build types and server
+      - name: Build Shared Types
+        run: cd packages/types && npm run build
+        
+      - name: Build Backend
+        run: cd server && npm run build
 
       - name: Run Backend Tests
         run: npm test --workspace=server

@@ -80,7 +80,7 @@ api.interceptors.response.use(
         // This is the correct place to handle a failed refresh token attempt
         // We only show this toast and log out if the refresh token itself is invalid
         toast.error('Your session has expired. Please log in again.');
-        useAuthStore.getState().logout();
+        useAuthStore.getState().setToken(null); // Use setToken instead of logout to avoid API call
         return Promise.reject(refreshError);
       }
     }

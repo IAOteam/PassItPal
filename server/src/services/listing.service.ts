@@ -40,20 +40,17 @@ export class ListingService {
             upload_preset: 'passitpal_listings', folder: 'listings'
         }).catch(() => { throw new HttpError('Image upload failed.', 500); });
 
-        // const geocodeResult = await geocodeAddress(locationName);
-        let geocodeResult;
-        if (latitude && longitude) {
-            geocodeResult = await geocodeAddress(locationName); // Still geocode to get city/address components
-            if (geocodeResult) {
-                geocodeResult.latitude = parseFloat(latitude);
-                geocodeResult.longitude = parseFloat(longitude);
-            }
-        } else {
-            geocodeResult = await geocodeAddress(locationName);
-        }
+        // Geocode the location name to get structured address details.
+        const geocodeResult = await geocodeAddress(locationName);
 
         if (!geocodeResult) {
-            throw new HttpError('Could not determine coordinates for the provided location.', 400);
+            throw new HttpError('Could not determine coordinates for the provided location name.', 400);
+        }
+
+        // If the user provided precise coordinates (e.g. from a map), override the geocoded result.
+        if (latitude && longitude) {
+            geocodeResult.latitude = parseFloat(latitude);
+            geocodeResult.longitude = parseFloat(longitude);
         }
 
         const newListing = new Listing({

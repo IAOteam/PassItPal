@@ -9,7 +9,8 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present && shx rm -rf public && shx mv frontend/dist public",
     "test": "npm test --workspaces --if-present",
-    "vercel-build": "cd packages/types && npm run build && cd ../.. && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public"
+    "vercel-build": "npm run build --workspace=packages/types && npm run build --workspace=frontend && shx rm -rf public && shx mv frontend/dist public",
+    "vercel-install": "npm ci --workspaces --include-workspace-root"
   },
   "devDependencies": {
     "shx": "^0.3.4",

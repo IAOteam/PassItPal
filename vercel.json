@@ -13,7 +13,7 @@
       "status": 200
     }
   ],
-  "installCommand": "npm install",
+  "installCommand": "npm run vercel-install",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "public"
 }

@@ -11,9 +11,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@passitpal/types": ["../packages/types/index.ts"],
-      "@passitpal/types/*": ["../packages/types/*"]
+      "@/*": ["src/*"]
     },
   },
   "include": [

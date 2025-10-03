@@ -1,7 +1,7 @@
 {
   "name": "passitpal-backend",
   "version": "1.0.0",
-  "description": "Backend for PassitPal - Cult Fit Subscription Resale Platform",
+  "description": "Backend for PassItPal - Cult Fit Subscription Resale Platform",
   "main": "dist/server/src/app.js",
   "scripts": {
     "start": "node dist/server/src/app.js",
@@ -68,7 +68,6 @@
     "supertest": "^7.1.1",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.16",
-    "typescript": "^5.4.5"
+    "tsc-alias": "^1.8.16"
   }
 }

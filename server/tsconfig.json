@@ -10,10 +10,9 @@
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["src/*"],
-      "@passitpal/types": ["../packages/types/index.ts"],
-      "@passitpal/types/*": ["../packages/types/*"]
+      "@/*": ["src/*"]
     },
   },
   "include": [

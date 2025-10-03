@@ -82,24 +82,25 @@ app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      process.env.CLIENT_URL,
-      "https://www.passitpal.com",
-      "https://passitpal.com",
-      "https://api.passitpal.com"
-    ];
+      const allowedOrigins = [
+        process.env.CLIENT_URL, // Local frontend (e.g., http://localhost:5173)
+        'https://www.passitpal.com', // Production frontend
+        'https://passitpal.com', // Alias for production
+        "https://api.passitpal.com",
+      ];
 
-    if (!origin) return callback(null, true);
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return callback(null, true);
+      }
 
-    if (
-      allowedOrigins.includes(origin) || 
-      origin.endsWith(".vercel.app") 
-    ) {
-      return callback(null, true);
-    }
+      // Check if the origin is in the explicit list or is a Vercel preview for this project
+      if (allowedOrigins.includes(origin) || (origin.includes('passitpal') && origin.endsWith('.vercel.app'))) {
+        return callback(null, true);
+      }
 
-    return callback(new Error("Not allowed by CORS"), false);
-  },
+      return callback(new Error('Not allowed by CORS'), false);
+    },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true
 }));
@@ -133,22 +134,23 @@ export const io = new Server(httpServer, {
   cors: {
     origin: (origin, callback) => {
       const allowedOrigins = [
-        process.env.CLIENT_URL,
-        "https://www.passitpal.com",
-        "https://passitpal.com",
-        "https://api.passitpal.com"
+        process.env.CLIENT_URL, // Local frontend (e.g., http://localhost:5173)
+        'https://www.passitpal.com', // Production frontend
+        'https://passitpal.com', // Alias for production
+        "https://api.passitpal.com",
       ];
 
-      if (!origin) return callback(null, true);
-
-      if (
-        allowedOrigins.includes(origin) || 
-        origin.endsWith(".vercel.app")
-      ) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
         return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS"), false);
+      // Check if the origin is in the explicit list or is a Vercel preview for this project
+      if (allowedOrigins.includes(origin) || (origin.includes('passitpal') && origin.endsWith('.vercel.app'))) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'), false);
     },
     methods: ["GET", "POST"],
     credentials: true

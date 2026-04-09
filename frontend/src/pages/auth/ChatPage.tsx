@@ -219,17 +219,17 @@ const ChatPage: React.FC = () => {
                 {imagePreview && (
                     <div className="relative w-24 h-24 mb-2 p-1 border rounded-md">
                         <img src={imagePreview} alt="preview" className="w-full h-full object-cover rounded"/>
-                        <button onClick={() => { setImagePreview(null); setImageToSend(null); if(fileInputRef.current) fileInputRef.current.value = ""; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5">
+                        <button aria-label="Remove attachment" onClick={() => { setImagePreview(null); setImageToSend(null); if(fileInputRef.current) fileInputRef.current.value = ""; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5">
                             <X size={14}/>
                         </button>
                     </div>
                 )}
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/png, image/jpeg, image/webp" className="hidden"/>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}><Paperclip /></Button>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><Smile /></Button>
+                    <Button aria-label="Attach file" type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}><Paperclip /></Button>
+                    <Button aria-label="Add emoji" type="button" variant="ghost" size="icon" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><Smile /></Button>
                     <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." autoComplete="off" />
-                    <Button type="submit" size="icon"><Send /></Button>
+                    <Button aria-label="Send message" type="submit" size="icon"><Send /></Button>
                 </form>
                 {showEmojiPicker && (
                     <div className="mt-2">

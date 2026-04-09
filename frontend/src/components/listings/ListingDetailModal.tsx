@@ -116,6 +116,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                     <Button
                       variant="link"
                       size="icon"
+                      aria-label="Share listing"
                       className="bg-black/30 hover:bg-black/50 rounded-full"
                       onClick={handleShare}
                     >
@@ -124,6 +125,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                     <Button
                       variant="link"
                       size="icon"
+                      aria-label="Close modal"
                       className="bg-black/30 hover:bg-black/50 rounded-full"
                       onClick={handleClose}
                     >

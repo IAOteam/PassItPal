@@ -116,7 +116,7 @@ export function NavBar() {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggleTheme}>
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 dark:text-white" />
               <span className="sr-only">Toggle Theme</span>
@@ -124,14 +124,14 @@ export function NavBar() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link to="/messages" className="dark:text-white"><MessageSquare size={16} /></Link>
+                <Link to="/messages" aria-label="Messages" className="dark:text-white"><MessageSquare size={16} /></Link>
                 <Dropdown menu={{ items: notificationMenuItems }} placement="bottomRight" arrow trigger={['click']} onOpenChange={(open) => open && unreadCount > 0 && markNotificationsAsRead()}>
                   <Badge count={unreadCount} size="small">
-                    <BellOutlined size={20} className="cursor-pointer text-lg dark:text-white" />
+                    <BellOutlined aria-label="Notifications" size={20} className="cursor-pointer text-lg dark:text-white" />
                   </Badge>
                 </Dropdown>
                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-                  <Avatar style={{ backgroundColor: "#2563eb", cursor: "pointer" }} icon={<UserOutlined />}>
+                  <Avatar aria-label="User menu" style={{ backgroundColor: "#2563eb", cursor: "pointer" }} icon={<UserOutlined />}>
                     {user?.username?.charAt(0).toUpperCase()}
                   </Avatar>
                 </Dropdown>
@@ -142,7 +142,7 @@ export function NavBar() {
                 <Button variant="outline" onClick={() => navigate('/register')}>Sign Up</Button>
               </div>
             )}
-            <button className="md:hidden text-neutral-700 dark:text-neutral-300" onClick={() => setIsMobileMenuOpen(true)}>
+            <button aria-label="Open mobile menu" className="md:hidden text-neutral-700 dark:text-neutral-300" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
             </button>
           </div>
@@ -160,7 +160,7 @@ export function NavBar() {
           >
             <div className="flex items-center justify-between px-4 h-16 border-b m-0 border-neutral-800">
               <span className="font-bold  text-xl text-white">Menu</span>
-              <button onClick={closeMobileMenu} className="text-white dark:text-white "><X size={26} /></button>
+              <button aria-label="Close mobile menu" onClick={closeMobileMenu} className="text-white dark:text-white "><X size={26} /></button>
             </div>
             <div className="m-0 flex bg-black flex-col items-center gap-6 mt-10 text-white text-lg">
               {navItems.filter(item => !item.roles || (user && item.roles.includes(user.role))).map(item => (
